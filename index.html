@@ -84,6 +84,19 @@
     transform: rotate(-4deg);
   }
   footer { margin-top: 56px; color: #4a463d; font-size: 12px; }
+  /* where 023 would be: an empty row. it says so if you look. */
+  .gap-row {
+    display: flex;
+    align-items: baseline;
+    gap: 20px;
+    padding: 12px 4px;
+    opacity: 0;
+    cursor: help;
+    transition: opacity 0.4s;
+  }
+  .gap-row:hover, .gap-row:focus-visible { opacity: 1; outline: none; }
+  .gap-row .num, .gap-row .blurb { color: #4a463d; }
+  .gap-row .name { min-width: 1em; }
   /* the secret room, the moment it's found */
   .found a { animation: found 2.4s ease-out; }
   @keyframes found {
@@ -143,7 +156,26 @@
     li.appendChild(a);
     return li;
   }
-  for (const r of rooms) list.appendChild(row(r));
+  // a secret room that isn't unlocked yet leaves an empty row where it would be
+  const gaps = {};
+  function gapRow(r) {
+    const li = document.createElement('li');
+    const div = document.createElement('div');
+    div.className = 'gap-row';
+    div.setAttribute('role', 'button');
+    div.tabIndex = 0;
+    div.setAttribute('aria-label', `there is no ${r.n}`);
+    div.append(span('num', r.n), span('name', ''), span('blurb', `(there is no ${r.n}.)`));
+    const hint = () => window.dispatchEvent(new CustomEvent('cizole:hint'));
+    div.addEventListener('click', hint);
+    div.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); hint(); } });
+    li.appendChild(div);
+    gaps[r.slug] = li;
+    return li;
+  }
+  for (const r of (window.CIZOLE_ALL_ROOMS || rooms)) {
+    list.appendChild(r.hidden && !rooms.includes(r) ? gapRow(r) : row(r));
+  }
 
   // the stamp card
   const open = rooms.filter(r => !r.defunct);
@@ -162,8 +194,7 @@
   // up up down down left right left right b a: the other list
   const KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
   let at = 0;
-  addEventListener('keydown', e => {
-    const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+  function feed(key) {
     at = key === KONAMI[at] ? at + 1 : key === KONAMI[0] ? 1 : 0;
     if (at < KONAMI.length) return;
     at = 0;
@@ -172,15 +203,26 @@
     for (const r of all) {
       if (!r.hidden || rooms.includes(r)) continue;
       rooms.push(r);
-      // slot it in by number, so the list stays in order
-      const after = [...list.children].find(li => li.querySelector('.num') && li.querySelector('.num').textContent > r.n);
       const li = row(r);
       li.classList.add('found');
-      list.insertBefore(li, after || null);
+      // the empty row becomes the real one
+      if (gaps[r.slug]) list.replaceChild(li, gaps[r.slug]);
+      else list.appendChild(li);
       li.scrollIntoView({ block: 'center', behavior: 'smooth' });
     }
     window.dispatchEvent(new CustomEvent('cizole:konami'));
-  });
+  }
+  addEventListener('keydown', e => feed(e.key.length === 1 ? e.key.toLowerCase() : e.key));
+  // phones have no arrow keys: swipes are arrows, and two taps are b and a
+  let touch = null;
+  addEventListener('touchstart', e => { if (e.touches.length === 1) touch = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }, { passive: true });
+  addEventListener('touchend', e => {
+    if (!touch || !e.changedTouches.length) return;
+    const dx = e.changedTouches[0].clientX - touch.x, dy = e.changedTouches[0].clientY - touch.y;
+    touch = null;
+    if (Math.hypot(dx, dy) < 40) { if (at === 8) feed('b'); else if (at === 9) feed('a'); return; }
+    feed(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'ArrowRight' : 'ArrowLeft') : (dy > 0 ? 'ArrowDown' : 'ArrowUp'));
+  }, { passive: true });
 
   // for whoever opens the console
   console.log('%c c ', 'font: bold 40px monospace; background: #c8ff3d; color: #0e0d0b; padding: 6px 14px; border-radius: 10px;');
@@ -272,6 +314,7 @@
     'dustin cleaned this page. you can tell.',
     'the basement is longer than it was.',
     "you've been here before. the eyes remember.",
+    'there is no room 023.',
   ];
   const tag = document.getElementById('tagline');
   let idx = Math.floor(Math.random() * LINES.length);
@@ -291,6 +334,7 @@
     if (e.detail.awayMs > 4000) type("welcome back. we didn't touch anything.");
   });
   addEventListener('cizole:konami', () => type('you found the other list.'));
+  addEventListener('cizole:hint', () => type('there is no 023. there never was. up, up, down, down. you know the rest.'));
 
   // the lobby notices if you just stand there
   let idle;

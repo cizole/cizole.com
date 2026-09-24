@@ -31,7 +31,8 @@
     { n: '021', slug: 'freezer', name: 'freezer', blurb: 'the door closes. they do that.' },
     { n: '022', slug: 'retro', name: 'retro gaming', blurb: 'blow on it first' },
     { n: '023', slug: 'nothing', name: 'nothing', blurb: "you weren't supposed to find this", hidden: true },
-    // new rooms go above this line. about is always 999 and always last.
+    // 023 is the secret room for good. new rooms start at 024 and go above this line;
+    // the missing 023 in the lobby is the clue. about is always 999 and always last.
     { n: '999', slug: 'about', name: 'about', blurb: 'regrettably, a person' },
   ];
   const store = {
