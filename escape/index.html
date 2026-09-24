@@ -1,0 +1,875 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>escape room · cizole</title>
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/site.css">
+<style>
+  .game {
+    --w: max(280px, min(calc(100vw - 32px), calc((100dvh - 190px) * 1.6), 1100px));
+    width: var(--w);
+    margin: 0 auto;
+    padding: 52px 0 16px;
+  }
+
+  /* ---------- the room ---------- */
+  .stage {
+    position: relative;
+    width: var(--w);
+    height: calc(var(--w) / 1.6);
+    overflow: hidden;
+    border-radius: 10px;
+    background: #2c2635;
+    container-type: size;
+    user-select: none;
+  }
+  .wall {
+    position: absolute;
+    inset: 0 0 28% 0;
+    background:
+      repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.025) 0 1.2cqw, transparent 1.2cqw 3cqw),
+      linear-gradient(#453b52, #2f2839);
+  }
+  .wall::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1.4cqw;
+    background: #1f1a26;
+  }
+  .floor {
+    position: absolute;
+    inset: 72% 0 0 0;
+    background:
+      linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0) 45%),
+      repeating-linear-gradient(90deg, #5b3e2c 0 7cqw, #4f3526 7cqw 7.2cqw, #573b2a 7.2cqw 14cqw, #4f3526 14cqw 14.2cqw);
+  }
+
+  .obj {
+    position: absolute;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
+  .obj:focus-visible { outline: 2px solid var(--acid); outline-offset: 2px; }
+
+  /* clock (runs backwards) */
+  .clock {
+    left: 28.5%;
+    top: 7%;
+    width: 8cqw;
+    height: 8cqw;
+    border: 0.5cqw solid #2a2118;
+    border-radius: 50%;
+    background: radial-gradient(circle, #f1ead9 60%, #d9ceb5);
+    box-shadow: 0 0.4cqw 0.8cqw rgba(0, 0, 0, 0.4);
+  }
+  .hand {
+    position: absolute;
+    left: 50%;
+    bottom: 50%;
+    transform-origin: 50% 100%;
+    border-radius: 1px;
+    background: #2a2118;
+  }
+  .hand.hour { width: 0.45cqw; height: 1.9cqw; margin-left: -0.225cqw; transform: rotate(-60deg); }
+  .hand.minute { width: 0.3cqw; height: 2.8cqw; margin-left: -0.15cqw; animation: backwards 3600s linear infinite; }
+  .hand.second { width: 0.15cqw; height: 3cqw; margin-left: -0.075cqw; background: #b8322a; animation: backwards 60s steps(60) infinite; }
+  @keyframes backwards { to { transform: rotate(-360deg); } }
+
+  /* bookshelf */
+  .shelf-unit {
+    position: absolute;
+    left: 4%;
+    top: 14%;
+    width: 20%;
+    height: 66%;
+    display: flex;
+    flex-direction: column;
+    border: 0.7cqw solid #2e1d12;
+    background: #3e2819;
+    box-shadow: 0.6cqw 0.6cqw 1.5cqw rgba(0, 0, 0, 0.4);
+  }
+  .shelf-row {
+    flex: 1;
+    display: flex;
+    align-items: flex-end;
+    gap: 0.2cqw;
+    padding: 0 0.4cqw;
+    border-bottom: 0.7cqw solid #2e1d12;
+  }
+  .shelf-row:last-child { border-bottom: 0; }
+  .book {
+    position: relative;
+    flex-basis: 0;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0.2cqw 0.2cqw 0 0;
+    box-shadow: inset -0.3cqw 0 0 rgba(0, 0, 0, 0.25), inset 0.15cqw 0 0 rgba(255, 255, 255, 0.12);
+    cursor: pointer;
+  }
+  .book:focus-visible { outline: 2px solid var(--acid); outline-offset: 1px; }
+
+  /* painting (hung upside down) */
+  .painting {
+    left: 40%;
+    top: 11%;
+    width: 22%;
+    height: 25%;
+    padding: 0.9cqw;
+    background: linear-gradient(135deg, #c9a24a, #8a6a24);
+    box-shadow: 0 0.6cqw 1.4cqw rgba(0, 0, 0, 0.45);
+  }
+  .canvas {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+    background: linear-gradient(#efe6cf, #e2d5b6);
+    transform: rotate(180deg);
+    transition: transform 0.9s cubic-bezier(0.5, -0.3, 0.4, 1.3);
+  }
+  .stage.painting-upright .canvas { transform: none; }
+  .dot {
+    width: 3.4cqw;
+    height: 3.4cqw;
+    border-radius: 50%;
+    box-shadow: inset -0.3cqw -0.3cqw 0 rgba(0, 0, 0, 0.18);
+  }
+  .dot:nth-child(1) { transform: translateY(-1.2cqw); }
+  .dot:nth-child(2) { transform: translateY(0.6cqw); }
+  .dot:nth-child(3) { transform: translateY(-0.4cqw); }
+  .dot:nth-child(4) { transform: translateY(1.1cqw); }
+  .sig {
+    position: absolute;
+    right: 0.6cqw;
+    bottom: 0.2cqw;
+    color: #5a4630;
+    font: italic 700 1.3cqw Georgia, serif;
+  }
+
+  /* desk */
+  .desk { position: absolute; left: 37%; top: 50%; width: 28%; height: 30%; }
+  .desk-top {
+    position: absolute;
+    left: -3%;
+    right: -3%;
+    top: 0;
+    height: 9%;
+    border-radius: 0.3cqw;
+    background: #6a4630;
+    box-shadow: 0 0.5cqw 0.8cqw rgba(0, 0, 0, 0.35);
+  }
+  .desk-body { position: absolute; left: 0; right: 0; top: 9%; height: 36%; background: #5a3a27; }
+  .leg { position: absolute; top: 45%; bottom: 0; width: 6%; background: #4a301f; }
+  .leg.l { left: 3%; }
+  .leg.r { right: 3%; }
+  .drawer {
+    left: 30%;
+    top: 16%;
+    width: 40%;
+    height: 24%;
+    border: 0.25cqw solid #3a2417;
+    border-radius: 0.2cqw;
+    background: #4c3120;
+    transition: transform 0.4s;
+  }
+  .drawer .handle {
+    position: absolute;
+    left: 38%;
+    top: 30%;
+    width: 24%;
+    height: 22%;
+    border-radius: 1cqw;
+    background: #c9a24a;
+  }
+  .drawer .keyhole {
+    position: absolute;
+    left: 48%;
+    top: 64%;
+    width: 4%;
+    height: 22%;
+    border-radius: 1cqw;
+    background: #1a100a;
+  }
+  .stage.drawer-open .drawer {
+    transform: translateY(45%) scale(1.06);
+    box-shadow: inset 0 1cqw 1cqw rgba(0, 0, 0, 0.6), 0 0.6cqw 1cqw rgba(0, 0, 0, 0.4);
+  }
+
+  /* plant (it talks) */
+  .plant { left: 27%; top: 47%; width: 8%; height: 33%; }
+  .leaf {
+    position: absolute;
+    left: 50%;
+    bottom: 34%;
+    width: 40%;
+    height: 55%;
+    margin-left: -20%;
+    border-radius: 50% 50% 50% 50% / 70% 70% 30% 30%;
+    background: linear-gradient(#5f9a4a, #2f6a2c);
+    transform-origin: 50% 100%;
+  }
+  .leaf.l1 { transform: rotate(-38deg); }
+  .leaf.l2 { transform: rotate(-12deg); height: 50%; }
+  .leaf.l3 { transform: rotate(0deg); height: 64%; }
+  .leaf.l4 { transform: rotate(16deg); height: 52%; }
+  .leaf.l5 { transform: rotate(36deg); }
+  .plant.talking .leaf { animation: rustle 0.15s ease-in-out 4 alternate; }
+  @keyframes rustle { to { rotate: 8deg; } }
+  .pot {
+    position: absolute;
+    left: 12%;
+    right: 12%;
+    bottom: 0;
+    height: 38%;
+    background: #b5603a;
+    clip-path: polygon(0 0, 100% 0, 85% 100%, 15% 100%);
+  }
+  .plant-eyes {
+    position: absolute;
+    left: 34%;
+    right: 34%;
+    bottom: 20%;
+    z-index: 60;
+    display: flex;
+    justify-content: space-between;
+  }
+  .plant-eyes i {
+    width: 0.55cqw;
+    height: 0.55cqw;
+    border-radius: 50%;
+    background: #3a1c10;
+    transition: background 0.4s, box-shadow 0.4s;
+  }
+  .stage.dark .plant-eyes i { background: #d8ff6a; box-shadow: 0 0 0.8cqw #c8ff3d; }
+
+  /* rug */
+  .rug {
+    left: 30%;
+    top: 82%;
+    width: 40%;
+    height: 13%;
+    border: 0.6cqw double #c9a24a;
+    background: repeating-linear-gradient(90deg, #7a2e3a 0 2cqw, #8e3a45 2cqw 4cqw);
+    box-shadow: 0 0.4cqw 0.8cqw rgba(0, 0, 0, 0.35);
+    transition: transform 0.6s cubic-bezier(0.3, 1.3, 0.5, 1);
+  }
+  .stage.rug-moved .rug { transform: translateX(-14%) rotate(-4deg); }
+
+  /* door, keypad, light switch */
+  .door-frame {
+    position: absolute;
+    left: 76%;
+    top: 14%;
+    width: 17%;
+    height: 62%;
+    border: 0.8cqw solid #5a4a3a;
+    border-bottom: 0;
+    background: #1b1620;
+    perspective: 60cqw;
+  }
+  .beyond {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 60%, #fffbe6, var(--acid) 55%, #7fa825);
+  }
+  .door {
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, #7b5438, #6a4630);
+    box-shadow: inset 0 0 0 0.5cqw rgba(0, 0, 0, 0.15);
+    transform-origin: 0 50%;
+    transition: transform 1.4s cubic-bezier(0.3, 0.1, 0.2, 1);
+  }
+  .door::before, .door::after {
+    content: "";
+    position: absolute;
+    left: 14%;
+    right: 14%;
+    height: 38%;
+    border: 0.3cqw solid rgba(0, 0, 0, 0.2);
+  }
+  .door::before { top: 7%; }
+  .door::after { top: 53%; }
+  .knob {
+    position: absolute;
+    right: 9%;
+    top: 52%;
+    width: 1.4cqw;
+    height: 1.4cqw;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #f3d98a, #9c7a2e);
+  }
+  .stage.door-open .door { transform: rotateY(-100deg); }
+
+  .keypad-plate {
+    left: 71.2%;
+    top: 33%;
+    width: 3cqw;
+    height: 4.4cqw;
+    border: 0.2cqw solid #111;
+    border-radius: 0.3cqw;
+    background: #2b2b2e radial-gradient(circle, #9aa 0.22cqw, transparent 0.28cqw) 0.25cqw 0.9cqw / 0.85cqw 0.85cqw;
+  }
+  .keypad-plate::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 0.3cqw;
+    width: 0.5cqw;
+    height: 0.5cqw;
+    margin-left: -0.25cqw;
+    border-radius: 50%;
+    background: #e0413a;
+    box-shadow: 0 0 0.5cqw #e0413a;
+  }
+  .stage.door-open .keypad-plate::after { background: var(--acid); box-shadow: 0 0 0.5cqw var(--acid); }
+
+  .switch {
+    left: 71.8%;
+    top: 46%;
+    z-index: 55; /* stays findable when the lights are off */
+    width: 2cqw;
+    height: 3.2cqw;
+    border-radius: 0.3cqw;
+    background: #e9e2d0;
+    box-shadow: 0 0.2cqw 0.4cqw rgba(0, 0, 0, 0.4);
+    transition: background 0.3s, box-shadow 0.3s;
+  }
+  .switch .toggle {
+    position: absolute;
+    left: 30%;
+    top: 18%;
+    width: 40%;
+    height: 30%;
+    border-radius: 0.2cqw;
+    background: #bdb4a0;
+    transition: top 0.15s;
+  }
+  .stage.dark .switch {
+    background: #15140f;
+    box-shadow: 0 0 0 0.15cqw rgba(200, 255, 61, 0.55), 0 0 1.2cqw rgba(200, 255, 61, 0.35);
+  }
+  .stage.dark .switch .toggle { top: 52%; background: #3a3a2a; }
+
+  /* ---------- darkness + purple light ---------- */
+  .blackout {
+    position: absolute;
+    inset: 0;
+    z-index: 50;
+    background: rgba(3, 2, 6, 0.96);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s;
+  }
+  .stage.dark .blackout { opacity: 1; }
+  .stage.uvon .blackout {
+    background: radial-gradient(circle 12cqw at var(--mx, 50%) var(--my, 50%), rgba(60, 20, 110, 0.45), rgba(3, 2, 6, 0.96));
+  }
+  .stage.uvon { cursor: crosshair; }
+
+  /* writing that only shows under the purple flashlight, masked to the beam */
+  .uv {
+    position: absolute;
+    z-index: 60;
+    color: #ecc8ff;
+    font-weight: 700;
+    text-shadow: 0 0 0.4cqw #c07bff, 0 0 1.2cqw #8a3dff;
+    opacity: 0;
+    pointer-events: none;
+    -webkit-mask-image: radial-gradient(circle 12cqw at var(--lx, -999px) var(--ly, -999px), #000 40%, transparent 100%);
+    mask-image: radial-gradient(circle 12cqw at var(--lx, -999px) var(--ly, -999px), #000 40%, transparent 100%);
+  }
+  .stage.uvon .uv { opacity: 1; }
+  .book-digit { inset: 0; display: grid; place-items: center; font-size: 1.7cqw; }
+  .wall-msg { left: 40%; top: 39%; font-size: 1.6cqw; white-space: nowrap; transform: rotate(-3deg); }
+
+  /* ---------- text + inventory ---------- */
+  .msg { margin: 12px 0 8px; min-height: 2.8em; font-size: 15px; line-height: 1.4; }
+  .inventory { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--dim); font-size: 13px; }
+  .item {
+    padding: 6px 12px;
+    border: 1px solid #3a372f;
+    border-radius: 999px;
+    background: #1a1916;
+    color: var(--fg);
+    font: inherit;
+    cursor: pointer;
+  }
+  .item.on { border-color: #b36bff; color: #ecc8ff; box-shadow: 0 0 10px rgba(179, 107, 255, 0.45); }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .rotate-hint { display: none; color: var(--dim); font-size: 12px; margin: 10px 0 0; }
+  @media (orientation: portrait) and (max-width: 600px) {
+    .rotate-hint { display: block; }
+  }
+
+  /* ---------- keypad + ending overlays ---------- */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: grid;
+    place-items: center;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.6);
+  }
+  .overlay[hidden] { display: none; }
+  .keypad {
+    position: relative;
+    width: min(280px, 100%);
+    padding: 20px;
+    border: 2px solid #3a3a40;
+    border-radius: 16px;
+    background: #26262a;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  }
+  .keypad.shake { animation: shake 0.35s; }
+  @keyframes shake {
+    20%, 60% { translate: -8px 0; }
+    40%, 80% { translate: 8px 0; }
+  }
+  .kp-display {
+    margin: 8px 0 6px;
+    padding: 10px 0 10px 0.4em;
+    border-radius: 8px;
+    background: #0d130a;
+    color: var(--acid);
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: 0.4em;
+    text-align: center;
+  }
+  .kp-msg { min-height: 1.4em; margin: 0 0 12px; color: var(--dim); font-size: 13px; text-align: center; }
+  .kp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .kp-grid button {
+    padding: 14px 0;
+    border: 0;
+    border-radius: 10px;
+    background: #3a3a41;
+    color: var(--fg);
+    font: 700 20px var(--font);
+    cursor: pointer;
+  }
+  .kp-grid button:active { background: #4a4a52; }
+  .kp-grid .ok { background: var(--acid); color: #10120a; }
+  .kp-close {
+    position: absolute;
+    top: 4px;
+    right: 10px;
+    border: 0;
+    background: none;
+    color: var(--dim);
+    font-size: 26px;
+    cursor: pointer;
+  }
+  .ending {
+    width: min(460px, 100%);
+    padding: 32px 28px;
+    border: 2px solid var(--acid);
+    border-radius: 16px;
+    background: var(--bg);
+    text-align: center;
+  }
+  .ending h2 { margin: 0 0 12px; font-size: 36px; color: var(--acid); }
+  .ending p { color: var(--dim); }
+  .ending .stats { color: var(--fg); }
+  .ending-links { display: flex; justify-content: center; gap: 24px; margin-top: 24px; }
+</style>
+</head>
+<body>
+<a class="lobby-link" href="../">&larr; lobby</a>
+
+<main class="game">
+  <div class="stage" id="stage">
+    <div class="wall"></div>
+    <div class="floor"></div>
+
+    <button class="obj clock" data-obj="clock" aria-label="clock"><span class="hand hour"></span><span class="hand minute"></span><span class="hand second"></span></button>
+
+    <div class="shelf-unit" id="shelves"></div>
+
+    <button class="obj painting" data-obj="painting" aria-label="painting">
+      <span class="canvas" id="canvas"><span class="sig">cz</span></span>
+    </button>
+    <span class="uv wall-msg">the plant knows things.</span>
+
+    <div class="desk">
+      <div class="desk-top"></div>
+      <div class="desk-body"></div>
+      <div class="leg l"></div>
+      <div class="leg r"></div>
+      <button class="obj drawer" data-obj="drawer" aria-label="desk drawer"><span class="handle"></span><span class="keyhole"></span></button>
+    </div>
+
+    <button class="obj plant" data-obj="plant" aria-label="potted plant">
+      <span class="leaf l1"></span><span class="leaf l2"></span><span class="leaf l3"></span><span class="leaf l4"></span><span class="leaf l5"></span>
+      <span class="pot"></span>
+      <span class="plant-eyes"><i></i><i></i></span>
+    </button>
+
+    <button class="obj rug" data-obj="rug" aria-label="rug"></button>
+
+    <div class="door-frame">
+      <div class="beyond"></div>
+      <button class="obj door" data-obj="door" aria-label="door"><span class="knob"></span></button>
+    </div>
+    <button class="obj keypad-plate" data-obj="door" aria-label="door keypad"></button>
+    <button class="obj switch" data-obj="switch" aria-label="light switch"><span class="toggle"></span></button>
+
+    <div class="blackout" aria-hidden="true"></div>
+  </div>
+
+  <p class="msg" id="msg" aria-hidden="true"></p>
+  <p class="sr-only" id="msg-sr" role="status"></p>
+  <div class="inventory" id="inventory"></div>
+  <p class="rotate-hint">tip: this room is bigger sideways.</p>
+</main>
+
+<div class="overlay" id="keypad-wrap" hidden>
+  <div class="keypad" id="keypad" role="dialog" aria-label="door keypad">
+    <button class="kp-close" id="kp-close" type="button" aria-label="close keypad">&times;</button>
+    <div class="kp-display" id="kp-display">____</div>
+    <p class="kp-msg" id="kp-msg"></p>
+    <div class="kp-grid" id="kp-grid">
+      <button type="button">1</button><button type="button">2</button><button type="button">3</button>
+      <button type="button">4</button><button type="button">5</button><button type="button">6</button>
+      <button type="button">7</button><button type="button">8</button><button type="button">9</button>
+      <button type="button" data-key="C">C</button><button type="button">0</button><button type="button" class="ok" data-key="OK">OK</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="ending" hidden>
+  <div class="ending" role="dialog" aria-label="you escaped">
+    <h2>you escaped.</h2>
+    <p>the door leads back to the lobby. it always did.</p>
+    <p class="stats" id="stats"></p>
+    <p class="ending-links"><a href="../">lobby</a><a href="">again (new code)</a></p>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const stage = $('#stage');
+  const msgEl = $('#msg');
+  const msgSr = $('#msg-sr');
+  const inv = $('#inventory');
+  const keypadWrap = $('#keypad-wrap');
+  const keypad = $('#keypad');
+  const kpDisplay = $('#kp-display');
+  const kpMsg = $('#kp-msg');
+
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  const shuffle = arr => {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  };
+
+  // ---------- a fresh code every visit ----------
+  const COLORS = { red: '#b8322a', blue: '#2f5fa7', green: '#3d8a4c', yellow: '#d9b129' };
+  const order = shuffle(Object.keys(COLORS)); // left to right on the painting, right side up
+  const digits = shuffle([1, 2, 3, 4, 5, 7, 8]).slice(0, 4); // no 6 or 9: too easy to misread
+  const digitOf = {};
+  Object.keys(COLORS).forEach((c, i) => { digitOf[c] = digits[i]; });
+  const CODE = order.map(c => digitOf[c]).join('');
+  const BACKWARDS = [...CODE].reverse().join('');
+
+  const S = {
+    rugMoved: false, key: false, drawerOpen: false, flashlight: false, uvOn: false,
+    lights: true, upright: false, sawUV: false, plantTalks: 0,
+    wrong: 0, clicks: 0, start: performance.now(), escaped: false,
+  };
+
+  // ---------- build the shelves and the painting ----------
+  const DULL = ['#6b5a4a', '#5c6770', '#7a6a55', '#4f5a4a', '#6e4f4f', '#5a5560', '#7b7466'];
+  const TITLES = [
+    'how to leave rooms', 'doors: a history', 'the plant and i', 'a book about nothing',
+    'volume 7 of 3', 'escape for dummies', 'rooms i have known', 'keys, and where they hide',
+  ];
+  (() => {
+    const rows = [9, 8, 9].map(n => Array(n).fill(null));
+    const slots = shuffle(rows.flatMap((row, r) => row.map((_, i) => [r, i]))).slice(0, 4);
+    Object.keys(COLORS).forEach((c, k) => { const [r, i] = slots[k]; rows[r][i] = c; });
+    const shelves = $('#shelves');
+    for (const row of rows) {
+      const rowEl = document.createElement('div');
+      rowEl.className = 'shelf-row';
+      for (const color of row) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'book';
+        b.style.height = (66 + Math.random() * 28) + '%';
+        b.style.flexGrow = (0.8 + Math.random() * 0.6).toFixed(2);
+        if (color) {
+          b.style.background = COLORS[color];
+          b.dataset.obj = 'book';
+          b.dataset.color = color;
+          b.setAttribute('aria-label', color + ' book');
+          const uv = document.createElement('span');
+          uv.className = 'uv book-digit';
+          uv.textContent = digitOf[color];
+          b.appendChild(uv);
+        } else {
+          b.style.background = pick(DULL);
+          b.dataset.obj = 'dullbook';
+          b.setAttribute('aria-label', 'book');
+        }
+        rowEl.appendChild(b);
+      }
+      shelves.appendChild(rowEl);
+    }
+    const canvas = $('#canvas');
+    const sig = canvas.querySelector('.sig');
+    for (const c of order) {
+      const dot = document.createElement('span');
+      dot.className = 'dot';
+      dot.style.background = COLORS[c];
+      canvas.insertBefore(dot, sig);
+    }
+  })();
+
+  // ---------- messages ----------
+  let typer;
+  function say(text) {
+    clearInterval(typer);
+    msgSr.textContent = text;
+    let i = 0;
+    msgEl.textContent = '';
+    typer = setInterval(() => {
+      msgEl.textContent = text.slice(0, ++i);
+      if (i >= text.length) clearInterval(typer);
+    }, 16);
+  }
+
+  // ---------- inventory ----------
+  function renderInventory() {
+    inv.textContent = '';
+    const items = [];
+    if (S.key) items.push(['key', 'brass key']);
+    if (S.flashlight) items.push(['flashlight', S.uvOn ? 'purple flashlight (on)' : 'purple flashlight']);
+    if (!items.length) {
+      inv.textContent = 'pockets: empty';
+      return;
+    }
+    inv.append('pockets:');
+    for (const [id, label] of items) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'item' + (id === 'flashlight' && S.uvOn ? ' on' : '');
+      b.dataset.item = id;
+      b.textContent = label;
+      inv.appendChild(b);
+    }
+  }
+
+  inv.addEventListener('click', e => {
+    const b = e.target.closest('[data-item]');
+    if (!b || S.escaped) return;
+    if (b.dataset.item === 'key') {
+      say('a small brass key. it smells like pennies.');
+    } else {
+      S.uvOn = !S.uvOn;
+      if (!S.uvOn) say('you click the flashlight off.');
+      else if (S.lights) say("you click it on. it's way too bright in here to tell if it does anything.");
+      else say("a purple glow. things you couldn't see before start showing up.");
+    }
+    sync();
+  });
+
+  function sync() {
+    if (S.uvOn && !S.lights) S.sawUV = true;
+    stage.classList.toggle('dark', !S.lights);
+    stage.classList.toggle('uvon', S.uvOn && !S.lights);
+    stage.classList.toggle('rug-moved', S.rugMoved);
+    stage.classList.toggle('drawer-open', S.drawerOpen);
+    stage.classList.toggle('painting-upright', S.upright);
+    renderInventory();
+    if (lastPoint) aim(lastPoint);
+  }
+
+  // ---------- the talking plant doubles as the hint system ----------
+  function plantTalk() {
+    const plant = $('.plant');
+    plant.classList.remove('talking');
+    void plant.offsetWidth;
+    plant.classList.add('talking');
+    S.plantTalks++;
+    if (S.plantTalks === 1) return "\"oh. hi. i'm the plant. i know things. poke me if you get stuck.\"";
+    let hint;
+    if (!S.rugMoved) hint = "i've seen things under that rug.";
+    else if (!S.drawerOpen) hint = 'that key belongs to something with a keyhole. desks love keys.';
+    else if (!S.sawUV && !S.uvOn) hint = 'purple flashlights are for the dark. try it with the lights off.';
+    else if (!S.sawUV) hint = "the lights are still on, genius. there's a switch by the door.";
+    else if (!S.upright) hint = "that painting's been upside down since the day they hung it. look at the signature.";
+    else hint = 'colors from the painting, numbers from the books, left to right. the door does the rest.';
+    return `"${hint}"`;
+  }
+
+  // ---------- keypad ----------
+  let entry = '';
+  function renderEntry() { kpDisplay.textContent = entry.padEnd(4, '_'); }
+
+  function openKeypad() {
+    entry = '';
+    kpMsg.textContent = '';
+    renderEntry();
+    keypadWrap.hidden = false;
+    $('#kp-grid button').focus();
+    return "the door's locked. the keypad wants four digits.";
+  }
+  function closeKeypad() { keypadWrap.hidden = true; }
+
+  function submit() {
+    if (entry.length < 4) {
+      kpMsg.textContent = 'four digits. it was very clear about that.';
+      return;
+    }
+    if (entry === CODE) {
+      closeKeypad();
+      escape();
+      return;
+    }
+    S.wrong++;
+    keypad.classList.remove('shake');
+    void keypad.offsetWidth;
+    keypad.classList.add('shake');
+    kpMsg.textContent = entry === BACKWARDS
+      ? 'bzzt. that almost felt right. backwards-right.'
+      : pick(['bzzt. nope.', 'bzzt. the door sighs at you.', 'bzzt. wrong, but confidently.', 'bzzt. the keypad is judging you.']);
+    entry = '';
+    renderEntry();
+  }
+
+  function pressKey(k) {
+    if (k === 'OK') return submit();
+    if (k === 'C') entry = '';
+    else if (entry.length < 4) entry += k;
+    kpMsg.textContent = '';
+    renderEntry();
+  }
+
+  $('#kp-grid').addEventListener('click', e => {
+    const b = e.target.closest('button');
+    if (b) pressKey(b.dataset.key || b.textContent);
+  });
+  $('#kp-close').addEventListener('click', closeKeypad);
+  keypadWrap.addEventListener('click', e => { if (e.target === keypadWrap) closeKeypad(); });
+  addEventListener('keydown', e => {
+    if (keypadWrap.hidden) return;
+    if (/^[0-9]$/.test(e.key)) pressKey(e.key);
+    else if (e.key === 'Backspace') { entry = entry.slice(0, -1); renderEntry(); }
+    else if (e.key === 'Enter') { e.preventDefault(); submit(); }
+    else if (e.key === 'Escape') closeKeypad();
+  });
+
+  function escape() {
+    S.escaped = true;
+    S.uvOn = false;
+    sync();
+    stage.classList.add('door-open');
+    say('click. the door swings open.');
+    const secs = Math.round((performance.now() - S.start) / 1000);
+    const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+    $('#stats').textContent = `${Math.floor(secs / 60)}m ${secs % 60}s · ${plural(S.clicks, 'click')} · ${plural(S.wrong, 'wrong code')}`;
+    setTimeout(() => { $('#ending').hidden = false; }, 1700);
+  }
+
+  // ---------- clicking things in the room ----------
+  const ACT = {
+    rug() {
+      if (S.rugMoved) return 'just floor under there now. you checked twice.';
+      S.rugMoved = true;
+      S.key = true;
+      return 'you shove the rug aside. a small brass key! you pocket it.';
+    },
+    drawer() {
+      if (S.drawerOpen) return 'the drawer is empty except for the note: "some things only show up in the dark."';
+      if (!S.key) return "it's locked. there's a tiny keyhole.";
+      S.key = false;
+      S.drawerOpen = true;
+      S.flashlight = true;
+      return 'the brass key fits (then snaps off in the lock). inside: a flashlight with a purple bulb, and a note: "some things only show up in the dark."';
+    },
+    painting() {
+      S.upright = !S.upright;
+      return S.upright
+        ? 'you flip the painting over. the signature is in the bottom corner now, the right way up. much better.'
+        : "you flip it back. the signature's upside down again. bold choice.";
+    },
+    switch() {
+      S.lights = !S.lights;
+      if (S.lights) return 'click. lights on.';
+      return S.uvOn ? 'click. darkness, except for your purple flashlight.' : "click. it's very dark. something small by the desk is glowing.";
+    },
+    clock: () => pick([
+      "it's running backwards. you decide not to think about it.",
+      'tick. tock. kcot. kcit.',
+      'the time is now. no, wait. now.',
+    ]),
+    plant: plantTalk,
+    door: openKeypad,
+    book: el => pick([
+      `a ${el.dataset.color} book. it's glued shut.`,
+      `the ${el.dataset.color} one. no title. the spine feels like someone wrote on it.`,
+    ]),
+    dullbook: () => `a book called "${pick(TITLES)}". every page is blank.`,
+  };
+
+  stage.addEventListener('click', e => {
+    const el = e.target.closest('[data-obj]');
+    if (!el || S.escaped) return;
+    S.clicks++;
+    const obj = el.dataset.obj;
+    if (!S.lights && obj !== 'switch' && obj !== 'plant') {
+      say(S.uvOn ? 'everything looks haunted in the purple light. better to look than touch.' : "it's too dark. you bump into something. ow.");
+      return;
+    }
+    const text = ACT[obj](el);
+    if (text) say(text);
+    sync();
+  });
+
+  // ---------- aim the purple light ----------
+  let lastPoint = null;
+  function aim(e) {
+    lastPoint = { clientX: e.clientX, clientY: e.clientY };
+    const r = stage.getBoundingClientRect();
+    stage.style.setProperty('--mx', (e.clientX - r.left) + 'px');
+    stage.style.setProperty('--my', (e.clientY - r.top) + 'px');
+    if (!stage.classList.contains('uvon')) return;
+    for (const el of stage.querySelectorAll('.uv')) {
+      const b = el.getBoundingClientRect();
+      el.style.setProperty('--lx', (e.clientX - b.left) + 'px');
+      el.style.setProperty('--ly', (e.clientY - b.top) + 'px');
+    }
+  }
+  stage.addEventListener('pointermove', aim);
+  stage.addEventListener('pointerdown', aim);
+
+  sync();
+  say("you wake up in a small room. the door is locked. there's a plant.");
+})();
+</script>
+</body>
+</html>
