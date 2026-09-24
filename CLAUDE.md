@@ -44,9 +44,11 @@ Room ideas not built yet (numbers continue from the lobby):
 - Libraries are fine when they unlock something new (physics, 3D, face tracking, and so on), not for convenience; skip jQuery. Load them from cdn.jsdelivr.net with exact pinned versions (an import map for ES modules). Use browser APIs directly when they're enough.
 - Each room is its own folder with a self-contained `index.html` (inline `<style>` and `<script>`). Shared color tokens (`--bg`, `--fg`, `--dim`, `--faint`, `--acid`, `--font`) and the `.lobby-link` style live in `assets/site.css`.
 - Every room links back to the lobby with `<a class="lobby-link" href="../">&larr; lobby</a>`.
-- Every page includes `assets/away.js` right before `</body>`. While the tab is hidden it changes the title and favicon, and it fires `cizole:leave` and `cizole:return` (with `detail.awayMs`) on `window`. Rooms can listen for `cizole:return` and react in a small, deadpan way.
+- `assets/away.js` is on every page. While the tab is hidden it changes the title and favicon, and it fires `cizole:leave` and `cizole:return` (with `detail.awayMs`) on `window`. Rooms can listen for `cizole:return` and react in a small, deadpan way.
 - Camera or other sensitive input is always opt-in behind a clear button, processed locally, and never uploaded.
-- Add each new room to the list in `index.html` with the next number and a short deadpan blurb.
+- The list of rooms lives in `assets/rooms.js` (number, folder slug, name, deadpan blurb). The lobby grid and the "rooms" menu inside every room are both built from it, so a new room is one line there with the next number. Room numbers are permanent IDs: don't renumber when a room is removed. `featured: true` puts a room in the lobby's highlighted spot.
+- Every room includes `<script src="../assets/rooms.js"></script>` and then `<script src="../assets/away.js"></script>` right before `</body>`. rooms.js adds the "rooms" button next to the lobby link, so keep the top-left corner clear.
+- Links that leave a room (webrings, doors, real URLs) open in a new tab (`target="_blank" rel="noopener"`, or `window.open` inside the click/key handler), so nobody loses their place. The lobby link, the rooms menu, and the lobby itself navigate in place.
 - Use relative paths (`../assets/site.css`). The exception is `404.html`, which is served at any missing URL, so it uses root paths and inline styles.
 - Respect `prefers-reduced-motion`.
 - Preview with a local server, since folder links like `eyes/` don't work over `file://`: `python -m http.server 8765 --bind 127.0.0.1`, then open http://127.0.0.1:8765/.

@@ -233,8 +233,10 @@
   // ---------- the mountains the window can face ----------
   // set defaultMountain to your home mountain's id. add more by copying a line.
   const WINDOW_VIEW = {
-    defaultMountain: 'washington',
+    defaultMountain: 'snowshoe',
     mountains: [
+      { id: 'snowshoe', name: 'snowshoe, wv', lat: 38.4115, lon: -79.9944, tagline: 'the village is at the top and the skiing goes down. everything here is upside down. it works.', shape: { peaks: 1, height: 0.36, rough: 0.2, width: 0.6 } },
+      { id: 'winterplace', name: 'winterplace, wv', lat: 37.5995, lon: -81.1129, tagline: 'right off the interstate. the mountain is closer than it looks.', shape: { peaks: 2, height: 0.32, rough: 0.25, width: 0.4 } },
       { id: 'washington', name: 'mount washington', lat: 44.2706, lon: -71.3033, tagline: 'famously bad weather. it is proud of that.', shape: { peaks: 1, height: 0.42, rough: 0.25, width: 0.5 } },
       { id: 'alta', name: 'alta', lat: 40.5884, lon: -111.6386, tagline: 'the snow here has a reputation.', shape: { peaks: 3, height: 0.5, rough: 0.55, width: 0.22 } },
       { id: 'jackson', name: 'jackson hole', lat: 43.5875, lon: -110.8279, tagline: 'steep. also weather.', shape: { peaks: 2, height: 0.6, rough: 0.6, width: 0.2 } },
@@ -1285,6 +1287,7 @@
   requestAnimationFrame(frame);
 })();
 </script>
+<script src="../assets/rooms.js"></script>
 <script src="../assets/away.js"></script>
 </body>
 </html>

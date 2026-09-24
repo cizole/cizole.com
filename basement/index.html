@@ -222,7 +222,6 @@ const DOORS = [
   { n: '012', name: 'the 80s', href: '../80s/', glow: '#8a6cff' },
   { n: '013', name: 'the 90s', href: '../90s/', glow: '#2fbfa8' },
   { n: '014', name: 'the other window', href: '../other-window/', glow: '#dfe8ff' },
-  { n: '015', name: 'mirror', href: '../mirror/', glow: '#cfd8e3' },
   { n: '016', name: 'junk drawer', href: '../junk-drawer/', glow: '#c9b98f' },
   { n: '017', name: 'you are here', here: true, glow: '#c8ff3d' },
   { n: '018', name: 'weather', href: '../weather/', glow: '#9fd3ff' },
@@ -967,6 +966,18 @@ function run(renderer) {
     door.target = 1;
     creakSound();
     saveSpot();
+    // rooms open in a new tab, so the basement keeps your place
+    const tab = window.open(door.href, '_blank');
+    if (tab) {
+      say(`${door.n} · ${door.name}. it's in the other tab now.`);
+      setTimeout(() => {
+        door.target = 0;
+        leaving = null;
+        say('the door closed behind you. you are still in the basement.');
+      }, 2600);
+      return;
+    }
+    // new tab blocked: walk through the door instead
     say(`${door.n} · ${door.name}`);
     setTimeout(() => {
       fade.style.background = door.glow;
@@ -1376,6 +1387,7 @@ function run(renderer) {
     : 'the basement. the doors go to the rooms. mostly.'), 700);
 }
 </script>
+<script src="../assets/rooms.js"></script>
 <script src="../assets/away.js"></script>
 </body>
 </html>

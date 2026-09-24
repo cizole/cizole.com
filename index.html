@@ -12,16 +12,16 @@
 <style>
   main {
     min-height: 100%;
-    max-width: 720px;
+    max-width: 980px;
     margin: 0 auto;
-    padding: 48px 24px;
+    padding: 48px 24px 40px;
     display: flex;
     flex-direction: column;
     justify-content: center;
   }
   .wordmark {
     margin: 0;
-    font-size: clamp(64px, 18vw, 160px);
+    font-size: clamp(64px, 15vw, 150px);
     font-weight: 700;
     letter-spacing: -0.04em;
     line-height: 1;
@@ -31,7 +31,7 @@
   .wordmark span { display: inline-block; will-change: transform; }
   .tagline {
     align-self: flex-start;
-    margin: 16px 0 56px;
+    margin: 14px 0 36px;
     padding: 0;
     min-height: 1.5em;
     border: 0;
@@ -43,54 +43,82 @@
   }
   .tagline::after { content: "_"; animation: caret 1s steps(1) infinite; }
   @keyframes caret { 50% { opacity: 0; } }
-  .exhibits { list-style: none; margin: 0; padding: 0; }
-  .exhibits li { border-top: 1px solid var(--faint); }
-  .exhibits li:last-child { border-bottom: 1px solid var(--faint); }
-  .exhibits a {
-    display: flex;
-    align-items: baseline;
-    gap: 20px;
-    padding: 18px 4px;
+  /* the room grid, built from assets/rooms.js */
+  .featured, .room {
+    display: grid;
+    grid-template-columns: 2.6em 1fr;
+    align-content: start;
+    column-gap: 10px;
     color: var(--fg);
     text-decoration: none;
   }
-  .exhibits a:hover { color: var(--acid); }
-  .num { color: var(--dim); font-size: 13px; }
-  .name { font-size: 20px; font-weight: 700; }
-  .blurb { margin-left: auto; color: var(--dim); font-size: 14px; text-align: right; }
-  footer { margin-top: 56px; color: #4a463d; font-size: 12px; }
-  @media (max-width: 520px) {
-    .exhibits a { flex-wrap: wrap; row-gap: 4px; }
-    .blurb { flex-basis: 100%; margin-left: 0; text-align: left; }
+  .featured .num, .room .num { grid-row: span 3; padding-top: 4px; color: var(--dim); font-size: 13px; }
+  .name { font-weight: 700; }
+  .blurb { color: var(--dim); }
+  .featured {
+    margin-bottom: 20px;
+    padding: 16px 18px;
+    border: 1px solid var(--faint);
+    border-left: 3px solid var(--acid);
+    border-radius: 6px;
+    background: #12110f;
   }
+  .featured .name { font-size: 24px; }
+  .featured .blurb { font-size: 14px; }
+  .featured .note { margin-top: 6px; color: var(--acid); font-size: 12px; }
+  .rooms {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+    column-gap: 28px;
+  }
+  .room { padding: 11px 4px; border-top: 1px solid var(--faint); }
+  .room .name { font-size: 17px; }
+  .room .blurb { font-size: 13px; }
+  .featured:hover .name, .room:hover .name, .featured:focus-visible .name, .room:focus-visible .name { color: var(--acid); }
+  .last .blurb::after { content: "  \00b7  you were just here"; color: var(--acid); }
+  footer { margin-top: 36px; color: #4a463d; font-size: 12px; }
 </style>
 </head>
 <body>
 <main>
   <h1 class="wordmark" id="wordmark" aria-label="cizole">cizole</h1>
   <button class="tagline" id="tagline" type="button"></button>
-  <ul class="exhibits">
-    <li><a href="eyes/"><span class="num">001</span><span class="name">eyes</span><span class="blurb">they're watching</span></a></li>
-    <li><a href="button/"><span class="num">002</span><span class="name">the button</span><span class="blurb">it doesn't want this</span></a></li>
-    <li><a href="trip/"><span class="num">003</span><span class="name">trip</span><span class="blurb">don't stare too long</span></a></li>
-    <li><a href="escape/"><span class="num">004</span><span class="name">escape room</span><span class="blurb">there's a way out. probably.</span></a></li>
-    <li><a href="server-room/"><span class="num">005</span><span class="name">server room</span><span class="blurb">please don't touch anything</span></a></li>
-    <li><a href="funky-town/"><span class="num">006</span><span class="name">funky town</span><span class="blurb">population: you</span></a></li>
-    <li><a href="roomba-room/"><span class="num">007</span><span class="name">roomba room</span><span class="blurb">it's doing its best</span></a></li>
-    <li><a href="fish-tank/"><span class="num">008</span><span class="name">fish tank</span><span class="blurb">please do not tap the glass</span></a></li>
-    <li><a href="blacklight/"><span class="num">009</span><span class="name">blacklight room</span><span class="blurb">some things only show up in the dark</span></a></li>
-    <li><a href="game-room/"><span class="num">010</span><span class="name">game room</span><span class="blurb">insert token</span></a></li>
-    <li><a href="70s/"><span class="num">011</span><span class="name">the 70s</span><span class="blurb">it will always be 1976 in here</span></a></li>
-    <li><a href="80s/"><span class="num">012</span><span class="name">the 80s</span><span class="blurb">be kind, rewind</span></a></li>
-    <li><a href="90s/"><span class="num">013</span><span class="name">the 90s</span><span class="blurb">best viewed in 800x600</span></a></li>
-    <li><a href="other-window/"><span class="num">014</span><span class="name">the other window</span><span class="blurb">bring a second window</span></a></li>
-    <li><a href="mirror/"><span class="num">015</span><span class="name">mirror</span><span class="blurb">looks normal</span></a></li>
-    <li><a href="junk-drawer/"><span class="num">016</span><span class="name">junk drawer</span><span class="blurb">no organizational guarantees</span></a></li>
-    <li><a href="basement/"><span class="num">017</span><span class="name">the basement</span><span class="blurb">the doors go to the rooms. mostly.</span></a></li>
-    <li><a href="weather/"><span class="num">018</span><span class="name">weather</span><span class="blurb">it is not snowing in here</span></a></li>
-  </ul>
+  <div id="featured"></div>
+  <nav class="rooms" id="rooms" aria-label="rooms"></nav>
   <footer>more rooms are being dug.</footer>
 </main>
+<script src="assets/rooms.js"></script>
+<script>
+// The room grid comes from assets/rooms.js, the same list every room's menu uses.
+(() => {
+  const rooms = window.CIZOLE_ROOMS || [];
+  let last = null;
+  try { last = sessionStorage.getItem('cizole.last-room'); } catch (err) { /* storage off */ }
+  function card(r, cls) {
+    const a = document.createElement('a');
+    a.className = cls + (r.slug === last ? ' last' : '');
+    a.href = r.slug + '/';
+    for (const [c, t] of [['num', r.n], ['name', r.name], ['blurb', r.blurb]]) {
+      const s = document.createElement('span');
+      s.className = c;
+      s.textContent = t;
+      a.appendChild(s);
+    }
+    return a;
+  }
+  const feature = rooms.find(r => r.featured);
+  if (feature) {
+    const f = card(feature, 'featured');
+    const note = document.createElement('span');
+    note.className = 'note';
+    note.textContent = 'recommended by the management.';
+    f.appendChild(note);
+    document.getElementById('featured').appendChild(f);
+  }
+  const list = document.getElementById('rooms');
+  for (const r of rooms) if (r !== feature) list.appendChild(card(r, 'room'));
+})();
+</script>
 <script>
 // Wordmark letters dodge the cursor, then spring back home.
 (() => {
