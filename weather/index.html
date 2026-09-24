@@ -1,0 +1,1290 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>weather · cizole</title>
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/site.css">
+<style>
+  .page { max-width: 980px; margin: 0 auto; padding: 56px 16px 40px; }
+
+  /* ---------- the window ---------- */
+  .wall { position: relative; }
+  .window {
+    position: relative;
+    overflow: hidden;
+    border: 18px solid #5a3f2c;
+    border-radius: 4px;
+    background: #0b0d12;
+    box-shadow: inset 0 0 0 2px #3d2a1d, 0 0 0 2px #6e4f37, 0 24px 50px rgba(0, 0, 0, 0.55);
+  }
+  #view { display: block; width: 100%; height: auto; touch-action: pan-y; }
+  .muntins {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      linear-gradient(to right, transparent calc(50% - 6px), #5a3f2c calc(50% - 6px), #5a3f2c calc(50% + 6px), transparent calc(50% + 6px)),
+      linear-gradient(to bottom, transparent calc(50% - 6px), #5a3f2c calc(50% - 6px), #5a3f2c calc(50% + 6px), transparent calc(50% + 6px));
+    filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.5));
+  }
+  .glare {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(115deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0) 35%, rgba(255, 255, 255, 0) 60%, rgba(255, 255, 255, 0.04) 75%, rgba(255, 255, 255, 0) 90%);
+  }
+
+  /* the sill, with a mug on it and a note stuck to the frame */
+  .sill {
+    position: relative;
+    height: 16px;
+    margin: 0 -14px;
+    border-radius: 2px;
+    background: linear-gradient(#7a583e, #4d3524);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.4);
+  }
+  .mug {
+    position: absolute;
+    left: 7%;
+    bottom: 100%;
+    z-index: 2;
+    width: 60px;
+    height: 76px;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+  }
+  .mug:focus-visible { outline: 2px solid var(--acid); outline-offset: 2px; }
+  .cup {
+    position: absolute;
+    left: 6px;
+    bottom: 0;
+    width: 38px;
+    height: 42px;
+    border-radius: 3px 3px 10px 10px;
+    background: linear-gradient(90deg, #8e3b30, #b5503f 40%, #7d3228);
+  }
+  .cup::before {
+    content: "";
+    position: absolute;
+    left: 3px;
+    right: 3px;
+    top: 2px;
+    height: 5px;
+    border-radius: 50%;
+    background: #2a1810;
+  }
+  .cup::after {
+    content: "";
+    position: absolute;
+    right: -13px;
+    top: 8px;
+    width: 13px;
+    height: 20px;
+    border: 5px solid #9c4436;
+    border-left: 0;
+    border-radius: 0 12px 12px 0;
+  }
+  .steam { position: absolute; left: 6px; bottom: 42px; width: 38px; height: 34px; opacity: var(--steam, 0.3); transition: opacity 2s; }
+  .steam i {
+    position: absolute;
+    bottom: 0;
+    width: 6px;
+    height: 22px;
+    border-radius: 50%;
+    background: linear-gradient(to top, rgba(235, 229, 214, 0.6), rgba(235, 229, 214, 0));
+    filter: blur(2px);
+    animation: steam 3.2s ease-in-out infinite;
+  }
+  .steam i:nth-child(1) { left: 6px; animation-delay: -0.4s; }
+  .steam i:nth-child(2) { left: 16px; animation-delay: -1.6s; }
+  .steam i:nth-child(3) { left: 26px; animation-delay: -2.4s; }
+  @keyframes steam {
+    0% { transform: translateY(6px) scaleX(1); opacity: 0; }
+    30% { opacity: 1; }
+    100% { transform: translate(4px, -18px) scaleX(1.8); opacity: 0; }
+  }
+  .sticky {
+    position: absolute;
+    right: 4%;
+    bottom: calc(100% + 10px);
+    z-index: 2;
+    max-width: 190px;
+    margin: 0;
+    padding: 8px 10px;
+    background: #e8d9a8;
+    color: #1b1b1b;
+    font-family: "Permanent Marker", cursive;
+    font-size: 13px;
+    line-height: 1.25;
+    transform: rotate(3deg);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
+    pointer-events: none;
+  }
+
+  /* ---------- readout ---------- */
+  .says { min-height: 1.5em; margin: 22px 0 4px; font-size: 16px; line-height: 1.5; }
+  .where { margin: 0 0 16px; color: var(--dim); font-size: 13px; }
+  .station {
+    padding: 12px 14px 14px;
+    border: 1px solid var(--faint);
+    border-radius: 8px;
+    background: #0a0b08;
+  }
+  .station-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+    color: var(--dim);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+  }
+  .readings {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px 18px;
+    margin: 0;
+  }
+  .readings div { min-width: 0; }
+  .readings dt { color: var(--dim); font-size: 11px; }
+  .readings dd {
+    margin: 2px 0 0;
+    color: var(--acid);
+    font-size: 17px;
+    text-shadow: 0 0 6px rgba(200, 255, 61, 0.35);
+  }
+  .readings dd small { display: block; color: #8fb53a; font-size: 11px; text-shadow: none; white-space: normal; }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px 24px;
+    margin-top: 16px;
+    font-size: 13px;
+  }
+  .label { margin-right: 8px; color: var(--dim); }
+  .pill {
+    margin: 0 6px 6px 0;
+    padding: 5px 11px;
+    border: 1px solid #3a372f;
+    border-radius: 999px;
+    background: #1a1916;
+    color: var(--fg);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .pill:hover { color: var(--acid); }
+  .pill[aria-pressed="true"] { border-color: var(--acid); color: var(--acid); }
+
+  @media (max-width: 560px) {
+    .window { border-width: 12px; }
+    .sticky { max-width: 130px; font-size: 11px; }
+    .mug { transform: scale(0.8); transform-origin: bottom left; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .steam i { animation: none; opacity: 0.5; }
+  }
+</style>
+</head>
+<body>
+<a class="lobby-link" href="../">&larr; lobby</a>
+
+<main class="page">
+  <div class="wall">
+    <div class="window">
+      <canvas id="view" width="960" height="540" role="img" aria-label="the view out the window"></canvas>
+      <div class="muntins" aria-hidden="true"></div>
+      <div class="glare" aria-hidden="true"></div>
+    </div>
+    <div class="sill">
+      <button class="mug" id="mug" type="button" aria-label="a mug of coffee on the sill">
+        <span class="steam" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span class="cup" aria-hidden="true"></span>
+      </button>
+      <p class="sticky">powered by an unreasonable interest in weather.</p>
+    </div>
+  </div>
+
+  <p class="says" id="says" role="status">looking out the window...</p>
+  <p class="where" id="where"></p>
+
+  <section class="station" aria-label="weather station">
+    <div class="station-head"><span>weather station</span><span id="updated"></span></div>
+    <dl class="readings" id="readings"></dl>
+  </section>
+
+  <div class="controls">
+    <div><span class="label">window faces:</span><span id="mountains"></span></div>
+    <div><span class="label">units:</span><button class="pill" type="button" data-unit="f">&deg;f</button><button class="pill" type="button" data-unit="c">&deg;c</button></div>
+  </div>
+</main>
+
+<script>
+(() => {
+  // ---------- the mountains the window can face ----------
+  // set defaultMountain to your home mountain's id. add more by copying a line.
+  const WINDOW_VIEW = {
+    defaultMountain: 'washington',
+    mountains: [
+      { id: 'washington', name: 'mount washington', lat: 44.2706, lon: -71.3033, tagline: 'famously bad weather. it is proud of that.', shape: { peaks: 1, height: 0.42, rough: 0.25, width: 0.5 } },
+      { id: 'alta', name: 'alta', lat: 40.5884, lon: -111.6386, tagline: 'the snow here has a reputation.', shape: { peaks: 3, height: 0.5, rough: 0.55, width: 0.22 } },
+      { id: 'jackson', name: 'jackson hole', lat: 43.5875, lon: -110.8279, tagline: 'steep. also weather.', shape: { peaks: 2, height: 0.6, rough: 0.6, width: 0.2 } },
+      { id: 'mammoth', name: 'mammoth', lat: 37.6308, lon: -119.0326, tagline: 'a big mountain with a big parking lot.', shape: { peaks: 1, height: 0.5, rough: 0.3, width: 0.42 } },
+      { id: 'whistler', name: 'whistler', lat: 50.0590, lon: -122.9510, tagline: 'two mountains. one window.', shape: { peaks: 2, height: 0.52, rough: 0.45, width: 0.26 } },
+      { id: 'chamonix', name: 'chamonix', lat: 45.9237, lon: 6.8694, tagline: 'the mountains here are extremely serious.', shape: { peaks: 5, height: 0.66, rough: 0.85, width: 0.1 } },
+    ],
+  };
+
+  const API = 'https://api.open-meteo.com/v1/forecast';
+  const CURRENT_FIELDS = [
+    'temperature_2m', 'apparent_temperature', 'precipitation', 'rain', 'showers', 'snowfall', 'weather_code',
+    'cloud_cover', 'wind_speed_10m', 'wind_direction_10m', 'wind_gusts_10m', 'is_day', 'visibility', 'snow_depth',
+  ];
+  const REFRESH_MS = 10 * 60 * 1000;
+  const KEY = { mountain: 'cizole.weather.mountain', unit: 'cizole.weather.unit', cache: 'cizole.weather.cache.' };
+
+  const W = 960;
+  const H = 540;
+  const LEDGE = 22; // height of the outside ledge at the bottom of the view
+  const TAU = Math.PI * 2;
+  const DEG = '°';
+  const REDUCE = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const MOTION = REDUCE ? 0.35 : 1; // particle counts
+  const SPEED = REDUCE ? 0.6 : 1; // particle speeds
+
+  const $ = s => document.querySelector(s);
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const rand = (lo, hi) => lo + Math.random() * (hi - lo);
+  const mix = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+  const rgb = c => `rgb(${c[0] | 0},${c[1] | 0},${c[2] | 0})`;
+  const rgba = (c, a) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`;
+  function mulberry32(a) {
+    return () => {
+      a |= 0;
+      a = (a + 0x6d2b79f5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function hashStr(s) {
+    let h = 2166136261;
+    for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return h >>> 0;
+  }
+  function store(key, value) { try { localStorage.setItem(key, value); } catch (err) { /* private mode */ } }
+  function recall(key) { try { return localStorage.getItem(key); } catch (err) { return null; } }
+
+  // ---------- state ----------
+  const findMountain = id => WINDOW_VIEW.mountains.find(m => m.id === id);
+  let mountain = findMountain(recall(KEY.mountain)) || findMountain(WINDOW_VIEW.defaultMountain) || WINDOW_VIEW.mountains[0];
+  let unit = recall(KEY.unit) === 'c' ? 'c' : 'f';
+  let data = null; // normalized conditions
+  let status = { cached: false, failed: false };
+  const NO_WEATHER = { kind: 'fog', rain: 0, snow: 0, fog: 0.9, thunder: false, freezing: false };
+  let weather = NO_WEATHER;
+
+  // ---------- the weather, in words ----------
+  const CODE_TEXT = {
+    0: 'clear', 1: 'mostly clear', 2: 'partly cloudy', 3: 'overcast', 45: 'fog', 48: 'freezing fog',
+    51: 'light drizzle', 53: 'drizzle', 55: 'heavy drizzle', 56: 'freezing drizzle', 57: 'freezing drizzle',
+    61: 'light rain', 63: 'rain', 65: 'heavy rain', 66: 'freezing rain', 67: 'freezing rain',
+    71: 'light snow', 73: 'snow', 75: 'heavy snow', 77: 'snow grains', 80: 'rain showers', 81: 'rain showers',
+    82: 'violent rain showers', 85: 'snow showers', 86: 'heavy snow showers', 95: 'thunderstorm',
+    96: 'thunderstorm, hail', 99: 'thunderstorm, hail',
+  };
+  const CODE_LEVEL = {
+    51: 0.25, 53: 0.45, 55: 0.7, 56: 0.3, 57: 0.6, 61: 0.3, 63: 0.6, 65: 1, 66: 0.4, 67: 0.8,
+    71: 0.3, 73: 0.6, 75: 1, 77: 0.25, 80: 0.35, 81: 0.65, 82: 1, 85: 0.45, 86: 0.9, 95: 0.8, 96: 0.9, 99: 1,
+  };
+  const SNOW_CODES = [71, 73, 75, 77, 85, 86];
+  const RAIN_CODES = [61, 63, 65, 66, 67, 80, 81, 82];
+  const DRIZZLE_CODES = [51, 53, 55, 56, 57];
+  const THUNDER_CODES = [95, 96, 99];
+  const FOG_CODES = [45, 48];
+
+  function classify(d) {
+    const code = d.code;
+    let kind = code === 0 ? 'clear'
+      : code <= 2 ? 'fair'
+      : code === 3 ? 'overcast'
+      : FOG_CODES.includes(code) ? 'fog'
+      : DRIZZLE_CODES.includes(code) ? 'drizzle'
+      : RAIN_CODES.includes(code) ? 'rain'
+      : SNOW_CODES.includes(code) ? 'snow'
+      : THUNDER_CODES.includes(code) ? 'thunder'
+      : 'overcast';
+    // what's actually falling beats the weather code
+    if (d.snowfall > 0 && kind !== 'thunder') kind = 'snow';
+    else if (d.rain > 0 && !['rain', 'drizzle', 'thunder', 'snow'].includes(kind)) kind = 'rain';
+    const level = CODE_LEVEL[code] ?? 0;
+    const snowLevel = clamp(d.snowfall / 0.6, 0, 1); // cm per 15 minutes
+    const rainLevel = clamp(d.rain / 1.5, 0, 1); // mm per 15 minutes
+    let snow = 0;
+    let rain = 0;
+    if (kind === 'snow') snow = Math.max(level, snowLevel, 0.25);
+    if (kind === 'rain' || kind === 'drizzle' || kind === 'thunder') rain = Math.max(level, rainLevel, 0.2);
+    if (d.snowfall > 0 && d.rain > 0) { snow = Math.max(snow, snowLevel, 0.2); rain = Math.max(rain, rainLevel, 0.2); }
+    if (kind === 'drizzle') rain = Math.min(rain, 0.35);
+    const fog = FOG_CODES.includes(code) ? 0.75
+      : d.visibility < 1000 ? 0.85
+      : d.visibility < 3000 ? 0.5
+      : d.visibility < 8000 ? 0.2
+      : 0;
+    return { kind, snow, rain, fog, thunder: THUNDER_CODES.includes(code), freezing: [56, 57, 66, 67].includes(code) };
+  }
+
+  const toF = c => (c * 9) / 5 + 32;
+  const fmtTemp = c => (unit === 'f' ? Math.round(toF(c)) + DEG + 'f' : Math.round(c) + DEG + 'c');
+  const fmtWind = kmh => (unit === 'f' ? Math.round(kmh * 0.621371) + ' mph' : Math.round(kmh) + ' km/h');
+  const fmtPrecip = mm => (unit === 'f' ? (mm / 25.4).toFixed(2) + ' in' : mm.toFixed(1) + ' mm');
+  function fmtDist(m) {
+    const v = unit === 'f' ? m / 1609.34 : m / 1000;
+    return (v >= 10 ? Math.round(v) : v.toFixed(1)) + (unit === 'f' ? ' mi' : ' km');
+  }
+  function fmtDepth(m) {
+    if (!(m > 0)) return 'none';
+    return unit === 'f' ? Math.round(m * 39.37) + ' in' : Math.round(m * 100) + ' cm';
+  }
+  const COMPASS = ['n', 'nne', 'ne', 'ene', 'e', 'ese', 'se', 'sse', 's', 'ssw', 'sw', 'wsw', 'w', 'wnw', 'nw', 'nnw'];
+  const compass = deg => COMPASS[Math.round(((deg % 360) + 360) % 360 / 22.5) % 16];
+  function fmtClock(h, m) {
+    const ap = h < 12 ? 'am' : 'pm';
+    return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${ap}`;
+  }
+  const minutesOf = s => { const [h, m] = s.slice(11, 16).split(':').map(Number); return h * 60 + m; };
+  const fmtIsoTime = s => (s ? fmtClock(Math.floor(minutesOf(s) / 60), minutesOf(s) % 60) : '--');
+
+  // time of day at the mountain, not wherever the visitor is
+  function mountainClock() {
+    const t = new Date(Date.now() + (data ? data.offset : 0) * 1000);
+    return { h: t.getUTCHours(), m: t.getUTCMinutes(), min: t.getUTCHours() * 60 + t.getUTCMinutes() + t.getUTCSeconds() / 60 };
+  }
+
+  // light: 0 at night, 1 in daylight. tw: how much sunset is happening.
+  function daylight() {
+    if (!data) return { light: 0.45, tw: 0 };
+    if (!data.sunrise || !data.sunset) return { light: data.isDay ? 1 : 0, tw: 0 };
+    const RAMP = 50;
+    const now = mountainClock().min;
+    const rise = minutesOf(data.sunrise);
+    const set = minutesOf(data.sunset);
+    if (now < rise - RAMP || now > set + RAMP) return { light: 0, tw: 0 };
+    if (now > rise + RAMP && now < set - RAMP) return { light: 1, tw: 0 };
+    const d = now < (rise + set) / 2 ? now - rise : set - now; // minutes past the horizon, negative in the dark
+    return { light: clamp((d + RAMP) / (2 * RAMP), 0, 1), tw: clamp(1 - Math.abs(d) / RAMP, 0, 1) };
+  }
+
+  function sentence() {
+    if (!data) return 'the window is foggy. no data. try again later.';
+    const t = fmtTemp(data.temp);
+    const at = 'at ' + mountain.name;
+    const night = daylight().light < 0.3;
+    let s;
+    switch (weather.kind) {
+      case 'snow': s = `outside: ${t} and snowing ${at}. it is not snowing in here. that's what the window is for.`; break;
+      case 'rain': s = `outside: ${t} and raining ${at}. in here: dry. you're welcome.`; break;
+      case 'drizzle': s = `outside: ${t} and drizzling ${at}. it can't commit to rain.`; break;
+      case 'thunder': s = `outside: ${t} and thunderstorms ${at}. please step away from the window. (you can't. it's a website.)`; break;
+      case 'fog': s = `outside: ${t} and foggy ${at}. the mountain is in there somewhere. trust us.`; break;
+      case 'overcast': s = `outside: ${t} and gray ${at}. the clouds are doing a lot of nothing.`; break;
+      case 'fair': s = night
+        ? `outside: ${t} and partly cloudy ${at}. some stars. not all of them.`
+        : `outside: ${t} and partly cloudy ${at}. a reasonable amount of sky.`; break;
+      default: s = night
+        ? `outside: ${t} and clear ${at}. the stars are out. they're always out. it's a whole thing.`
+        : `outside: ${t} and clear ${at}. a nice day to look at through a window.`;
+    }
+    if (data.wind >= 50) s += ' it is very windy. the trees are having a bad time.';
+    else if (data.temp <= -15) s += ' it is very cold. the thermometer has concerns.';
+    if (status.failed) s += ' (the window is foggy. no data. try again later. this is from before.)';
+    return s;
+  }
+
+  // ---------- the status line ----------
+  const saysEl = $('#says');
+  let baseLine = saysEl.textContent;
+  let tempTimer = 0;
+  function setBase(text) {
+    baseLine = text;
+    if (!tempTimer) saysEl.textContent = text;
+  }
+  function sayFor(text, ms = 8000) {
+    clearTimeout(tempTimer);
+    saysEl.textContent = text;
+    tempTimer = setTimeout(() => { tempTimer = 0; saysEl.textContent = baseLine; }, ms);
+  }
+
+  // ---------- fetching ----------
+  const apiUrl = m => `${API}?latitude=${m.lat}&longitude=${m.lon}&current=${CURRENT_FIELDS.join(',')}&daily=sunrise,sunset&timezone=auto&forecast_days=1`;
+
+  function normalize(j) {
+    const c = j.current;
+    return {
+      fetchedAt: Date.now(),
+      offset: j.utc_offset_seconds ?? 0,
+      elevation: j.elevation ?? null,
+      sunrise: j.daily?.sunrise?.[0] ?? null,
+      sunset: j.daily?.sunset?.[0] ?? null,
+      temp: c.temperature_2m,
+      feels: c.apparent_temperature ?? c.temperature_2m,
+      precip: c.precipitation ?? 0,
+      rain: (c.rain ?? 0) + (c.showers ?? 0),
+      snowfall: c.snowfall ?? 0,
+      code: c.weather_code ?? 0,
+      cloud: c.cloud_cover ?? 0,
+      wind: c.wind_speed_10m ?? 0,
+      windDir: c.wind_direction_10m ?? 0,
+      gusts: c.wind_gusts_10m ?? c.wind_speed_10m ?? 0,
+      isDay: c.is_day ?? 1,
+      visibility: c.visibility ?? 30000,
+      snowDepth: c.snow_depth ?? 0,
+    };
+  }
+  function readCache(id) {
+    try {
+      const d = JSON.parse(recall(KEY.cache + id));
+      return d && typeof d.temp === 'number' ? d : null;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  // one request at a time per mountain; anyone who asks meanwhile gets the same answer
+  let inflight = null;
+  function load() {
+    if (inflight && inflight.id === mountain.id) return inflight.p;
+    const p = fetchConditions().finally(() => { if (inflight && inflight.p === p) inflight = null; });
+    inflight = { id: mountain.id, p };
+    return p;
+  }
+
+  let loadSeq = 0;
+  async function fetchConditions() {
+    const m = mountain;
+    const seq = ++loadSeq;
+    try {
+      const res = await fetch(apiUrl(m), { cache: 'no-store' });
+      if (!res.ok) throw new Error('http ' + res.status);
+      const j = await res.json();
+      if (!j.current || typeof j.current.temperature_2m !== 'number') throw new Error('no current conditions');
+      if (seq !== loadSeq) return null; // the visitor picked another mountain meanwhile
+      const d = normalize(j);
+      store(KEY.cache + m.id, JSON.stringify(d));
+      apply(d, { cached: false, failed: false });
+      return d;
+    } catch (err) {
+      if (seq !== loadSeq) return null;
+      apply(readCache(m.id), { cached: true, failed: true });
+      return null;
+    }
+  }
+
+  // ---------- the scene ----------
+  const canvas = $('#view');
+  const ctx = canvas.getContext('2d');
+  const DPR = Math.min(devicePixelRatio || 1, 2);
+  canvas.width = W * DPR;
+  canvas.height = H * DPR;
+  ctx.scale(DPR, DPR);
+
+  // midpoint displacement, for ridgelines
+  function mpd(n, rough, rnd) {
+    let size = 1;
+    while (size < n - 1) size *= 2;
+    const a = new Float32Array(size + 1);
+    a[0] = rnd() * 2 - 1;
+    a[size] = rnd() * 2 - 1;
+    let step = size;
+    let amp = 1;
+    const decay = Math.pow(2, -(1.3 - rough));
+    while (step > 1) {
+      const half = step / 2;
+      for (let i = half; i < size; i += step) a[i] = (a[i - half] + a[i + half]) / 2 + (rnd() * 2 - 1) * amp;
+      step = half;
+      amp *= decay;
+    }
+    return Array.from({ length: n }, (_, i) => a[Math.round((i * size) / (n - 1))]);
+  }
+
+  const STEP_X = 8;
+  const NPTS = W / STEP_X + 1;
+  let land = null; // ridges, trees, stars for the current mountain
+
+  function buildLand(m) {
+    const rnd = mulberry32(hashStr(m.id));
+    const s = m.shape;
+    const peaks = Array.from({ length: s.peaks }, (_, i) => ({
+      x: (i + 0.5 + (rnd() - 0.5) * 0.6) / s.peaks,
+      h: s.height * (i === Math.floor(s.peaks / 2) ? 1 : 0.62 + rnd() * 0.33),
+    }));
+    const noise = mpd(NPTS, s.rough, rnd);
+    const capNoise = mpd(NPTS, 0.6, rnd);
+    const near = [];
+    for (let i = 0; i < NPTS; i++) {
+      const fx = i / (NPTS - 1);
+      let bump = 0.12 * Math.exp(-((fx - 0.5) ** 2) * 3); // the massif under everything
+      for (const p of peaks) bump = Math.max(bump, p.h * Math.exp(-(((fx - p.x) / s.width) ** 2) * 2.5));
+      const y = H * 0.86 - bump * H * 0.95 - noise[i] * s.rough * 0.045 * H;
+      near.push(Math.max(H * 0.08, y));
+    }
+    const farRnd = mulberry32(hashStr(m.id + ' far'));
+    const farNoise = mpd(NPTS, 0.5, farRnd);
+    const farPeaks = Array.from({ length: 4 }, () => ({ x: farRnd(), h: 0.12 + farRnd() * 0.2, w: 0.12 + farRnd() * 0.2 }));
+    const far = [];
+    for (let i = 0; i < NPTS; i++) {
+      const fx = i / (NPTS - 1);
+      let bump = 0.05;
+      for (const p of farPeaks) bump = Math.max(bump, p.h * Math.exp(-(((fx - p.x) / p.w) ** 2) * 2.5));
+      far.push(H * 0.78 - bump * H - farNoise[i] * 0.03 * H);
+    }
+    const trees = Array.from({ length: 52 }, () => {
+      const h = 24 + rnd() * 44;
+      return { x: rnd() * W, h, w: h * 0.42, ph: rnd() * TAU };
+    }).sort((a, b) => a.h - b.h);
+    const starRnd = mulberry32(99);
+    const stars = Array.from({ length: 150 }, () => ({
+      x: starRnd() * W, y: starRnd() * H * 0.6, r: 0.4 + starRnd() * 0.9, ph: starRnd() * TAU, sp: 0.6 + starRnd() * 1.6,
+    }));
+    return { near, far, capNoise, trees, stars };
+  }
+
+  // clouds keep their shapes and positions; their sprites get repainted as the light changes
+  let clouds = [];
+  function cloudCount() {
+    const cc = data ? data.cloud / 100 : 0.9;
+    return Math.round(cc * 11) + (cc > 0.85 ? 5 : 0);
+  }
+  function layoutClouds(force) {
+    const count = cloudCount();
+    if (!force && count === clouds.length) { paintClouds(); return; } // same sky, keep the clouds where they are
+    const rnd = mulberry32(hashStr(mountain.id + ' clouds') ^ (Date.now() / 3.6e6 | 0));
+    clouds = Array.from({ length: count }, () => {
+      const w = 140 + rnd() * 220;
+      const h = w * (0.32 + rnd() * 0.12);
+      const puffs = Array.from({ length: 6 + Math.floor(rnd() * 6) }, () => ({
+        x: w * (0.15 + rnd() * 0.7), y: h * (0.45 + rnd() * 0.3), r: h * (0.3 + rnd() * 0.35),
+      }));
+      return { x: rnd() * (W + w) - w, y: H * (0.04 + rnd() * 0.38) - h / 2, w, h, puffs, speed: 0.6 + rnd() * 0.8, alpha: 0.75 + rnd() * 0.25, sprite: null };
+    });
+    paintClouds();
+  }
+  function cloudColor() {
+    const L = daylight();
+    const cc = data ? data.cloud / 100 : 0.9;
+    let c = mix([34, 38, 50], [244, 246, 249], L.light);
+    const gray = (cc > 0.7 ? ((cc - 0.7) / 0.3) * 0.6 : 0) + (weather.rain || weather.snow ? 0.2 : 0) + (weather.thunder ? 0.2 : 0);
+    c = mix(c, mix([26, 28, 34], [124, 130, 140], L.light), clamp(gray, 0, 0.9));
+    return mix(c, [236, 168, 146], L.tw * 0.35);
+  }
+  function paintClouds() {
+    const color = cloudColor();
+    for (const cl of clouds) {
+      const sp = cl.sprite || document.createElement('canvas');
+      sp.width = Math.ceil(cl.w);
+      sp.height = Math.ceil(cl.h);
+      const s = sp.getContext('2d');
+      s.clearRect(0, 0, sp.width, sp.height);
+      for (const p of cl.puffs) {
+        const g = s.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r);
+        g.addColorStop(0, rgba(color, 0.9));
+        g.addColorStop(0.6, rgba(color, 0.55));
+        g.addColorStop(1, rgba(color, 0));
+        s.fillStyle = g;
+        s.beginPath();
+        s.arc(p.x, p.y, p.r, 0, TAU);
+        s.fill();
+      }
+      cl.sprite = sp;
+    }
+  }
+
+  // frost at the edges of the glass, grown once
+  function makeFrost() {
+    const c = document.createElement('canvas');
+    c.width = W;
+    c.height = H;
+    const f = c.getContext('2d');
+    const rnd = mulberry32(12345);
+    f.strokeStyle = 'rgba(232, 242, 255, 0.55)';
+    f.lineCap = 'round';
+    const pending = [];
+    for (let i = 0; i < 170; i++) {
+      const side = Math.floor(rnd() * 4);
+      const len = 30 + rnd() * 110;
+      if (side === 0) pending.push([rnd() * W, 0, Math.PI / 2, len, 0]);
+      else if (side === 1) pending.push([rnd() * W, H, -Math.PI / 2, len, 0]);
+      else if (side === 2) pending.push([0, rnd() * H, 0, len, 0]);
+      else pending.push([W, rnd() * H, Math.PI, len, 0]);
+    }
+    while (pending.length) {
+      let [x, y, ang, len, depth] = pending.pop();
+      f.lineWidth = Math.max(0.5, 1.6 - depth * 0.45);
+      f.beginPath();
+      f.moveTo(x, y);
+      for (let i = 0; i < Math.ceil(len / 6); i++) {
+        ang += (rnd() - 0.5) * 0.5;
+        x += Math.cos(ang) * 6;
+        y += Math.sin(ang) * 6;
+        f.lineTo(x, y);
+        if (depth < 2 && rnd() < 0.18) pending.push([x, y, ang + (rnd() < 0.5 ? -1 : 1) * (0.7 + rnd() * 0.5), len * 0.45, depth + 1]);
+      }
+      f.stroke();
+    }
+    f.globalCompositeOperation = 'destination-in';
+    const fade = f.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.25, W / 2, H / 2, Math.hypot(W, H) / 2);
+    fade.addColorStop(0, 'rgba(0,0,0,0)');
+    fade.addColorStop(0.55, 'rgba(0,0,0,0.35)');
+    fade.addColorStop(1, 'rgba(0,0,0,1)');
+    f.fillStyle = fade;
+    f.fillRect(0, 0, W, H);
+    f.globalCompositeOperation = 'source-over';
+    const rime = f.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.45, W / 2, H / 2, Math.hypot(W, H) / 2);
+    rime.addColorStop(0, 'rgba(225,235,248,0)');
+    rime.addColorStop(1, 'rgba(225,235,248,0.35)');
+    f.fillStyle = rime;
+    f.fillRect(0, 0, W, H);
+    return c;
+  }
+  const frost = makeFrost();
+
+  // condensation you can wipe off with a finger
+  const cond = document.createElement('canvas');
+  cond.width = W;
+  cond.height = H;
+  const cg = cond.getContext('2d');
+  function fogTheGlass() {
+    cg.globalCompositeOperation = 'source-over';
+    cg.clearRect(0, 0, W, H);
+    const g = cg.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, 'rgba(214,222,228,0.65)');
+    g.addColorStop(1, 'rgba(214,222,228,1)');
+    cg.fillStyle = g;
+    cg.fillRect(0, 0, W, H);
+    for (let i = 0; i < 2500; i++) {
+      cg.fillStyle = `rgba(255,255,255,${(Math.random() * 0.35).toFixed(2)})`;
+      cg.fillRect(Math.random() * W, Math.random() * H, 1.5, 1.5);
+    }
+  }
+  fogTheGlass();
+  const condAlpha = () => (data && data.temp < 6 ? clamp((6 - data.temp) / 22, 0.1, 0.5) : 0);
+
+  // precipitation, lightning, drops on the glass
+  let rainP = [];
+  let snowP = [];
+  let beads = [];
+  let ledgeSnow = 0;
+  let drift = 0;
+  let gustPulse = 0;
+  let gustTarget = 0;
+  let gustTimer = 0;
+  let nextStrike = 0;
+  let flashes = [];
+  let bolt = null;
+
+  const newRain = anywhere => ({ x: rand(-150, W + 150), y: anywhere ? rand(-H, H) : rand(-60, -10), vy: rand(650, 900) * SPEED });
+  const newSnow = anywhere => ({ x: rand(-150, W + 150), y: anywhere ? rand(-20, H) : rand(-30, -5), vy: rand(30, 75) * SPEED, r: rand(0.8, 2.6), ph: rand(0, TAU) });
+
+  function syncParticles() {
+    const rainTarget = Math.round(weather.rain * 420 * MOTION);
+    const snowTarget = Math.round(weather.snow * 380 * MOTION);
+    while (rainP.length < rainTarget) rainP.push(newRain(true));
+    rainP.length = Math.min(rainP.length, rainTarget);
+    while (snowP.length < snowTarget) snowP.push(newSnow(true));
+    snowP.length = Math.min(snowP.length, snowTarget);
+  }
+
+  function update(dt, now) {
+    const t = now / 1000;
+    // wind, with gusts
+    if (data) {
+      gustTimer -= dt;
+      if (gustTimer <= 0) {
+        gustTarget = Math.random() < 0.35 ? Math.random() : 0;
+        gustTimer = 1.5 + Math.random() * 3;
+      }
+      gustPulse += (gustTarget - gustPulse) * Math.min(1, dt * 2);
+      const speed = data.wind + (Math.max(data.gusts, data.wind) - data.wind) * gustPulse;
+      // wind_direction is where the wind comes FROM; the window faces north, so east is to the right
+      drift = -Math.sin((data.windDir * Math.PI) / 180) * speed * 3.2 * SPEED;
+    } else {
+      drift = 0;
+    }
+
+    const ground = H - LEDGE - ledgeSnow;
+    for (const p of rainP) {
+      p.x += drift * dt;
+      p.y += p.vy * dt;
+      if (p.y > ground || p.x < -200 || p.x > W + 200) {
+        p.y = rand(-60, -10);
+        p.x = rand(0, W) - (drift * H) / p.vy;
+      }
+    }
+    for (const p of snowP) {
+      p.x += (drift * 0.85 + (REDUCE ? 0 : Math.sin(t * 1.4 + p.ph) * 16)) * dt;
+      p.y += p.vy * dt;
+      if (p.y > ground || p.x < -200 || p.x > W + 200) {
+        p.y = rand(-30, -5);
+        p.x = rand(0, W) - (drift * 0.85 * H) / p.vy;
+      }
+    }
+
+    // snow piles up on the outside ledge, and melts when it's warm
+    if (weather.snow > 0) ledgeSnow = Math.min(26, ledgeSnow + weather.snow * 0.25 * dt);
+    else if (data && data.temp > 1) ledgeSnow = Math.max(0, ledgeSnow - 0.02 * data.temp * dt);
+
+    for (const cl of clouds) {
+      cl.x += (drift * 0.12 + (drift >= 0 ? 4 : -4)) * cl.speed * (REDUCE ? 0.5 : 1) * dt;
+      if (cl.x > W + 60) cl.x = -cl.w - rand(0, 80);
+      if (cl.x < -cl.w - 60) cl.x = W + rand(0, 80);
+    }
+
+    // rain on the glass
+    const beadRate = weather.rain > 0.05 ? weather.rain * 26 : 0;
+    if (Math.random() < beadRate * dt && beads.length < 140) {
+      beads.push({ x: rand(0, W), y: rand(0, H * 0.95), r: rand(1.2, 3.8), vy: 0, run: false, y0: 0 });
+    }
+    for (const b of beads) {
+      if (!b.run && b.r > 2.8 && Math.random() < 0.08 * dt) { b.run = true; b.y0 = b.y; }
+      if (b.run) {
+        b.vy = Math.min(b.vy + 260 * dt * SPEED, 190 * SPEED);
+        b.y += b.vy * dt;
+      }
+    }
+    beads = beads.filter(b => b.y < H + 10 && !(beadRate === 0 && Math.random() < 0.3 * dt));
+
+    // the condensation creeps back after you wipe it
+    if (condAlpha() > 0) {
+      cg.globalCompositeOperation = 'source-over';
+      cg.fillStyle = `rgba(214,222,228,${(0.06 * dt).toFixed(4)})`;
+      cg.fillRect(0, 0, W, H);
+    }
+
+    // lightning: two quick flashes, then a long pause (never more than 2 a second)
+    if (weather.thunder && !REDUCE && now > nextStrike) {
+      flashes = [now, now + 170 + Math.random() * 120];
+      const x = rand(W * 0.15, W * 0.85);
+      const pts = [[x, H * 0.1]];
+      let bx = x;
+      const end = land ? land.near[Math.round(clamp(x / STEP_X, 0, NPTS - 1))] : H * 0.7;
+      for (let y = H * 0.1; y < end; y += 20) { bx += rand(-14, 14); pts.push([bx, Math.min(y + 20, end)]); }
+      bolt = pts;
+      nextStrike = now + 4000 + Math.random() * 9000;
+    }
+  }
+
+  function flashAmount(now) {
+    let a = 0;
+    for (const f of flashes) if (now >= f && now < f + 90) a = Math.max(a, 1 - (now - f) / 90);
+    return a;
+  }
+
+  function fillRidge(points, color) {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(0, H);
+    for (let i = 0; i < points.length; i++) ctx.lineTo(i * STEP_X, points[i]);
+    ctx.lineTo(W, H);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function drawThermometer(L) {
+    const x = W - 62;
+    const y = 64;
+    const h = 230;
+    const plate = mix([60, 60, 58], [226, 222, 212], 0.25 + L.light * 0.75);
+    ctx.fillStyle = rgb(plate);
+    ctx.beginPath();
+    ctx.roundRect(x - 8, y - 10, 46, h + 34, 8);
+    ctx.fill();
+    const f = unit === 'f';
+    const lo = f ? -20 : -30;
+    const hi = f ? 100 : 40;
+    const step = f ? 20 : 10;
+    const top = y + 8;
+    const bottom = y + h - 26;
+    const yOf = v => bottom - ((clamp(v, lo, hi) - lo) / (hi - lo)) * (bottom - top);
+    const ink = rgb(mix(plate, [20, 20, 20], 0.75));
+    ctx.fillStyle = ink;
+    ctx.strokeStyle = ink;
+    ctx.lineWidth = 1;
+    ctx.font = '9px "Space Mono", monospace';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    for (let v = lo; v <= hi; v += step) {
+      const ty = yOf(v);
+      ctx.beginPath();
+      ctx.moveTo(x + 1, ty);
+      ctx.lineTo(x + 8, ty);
+      ctx.stroke();
+      ctx.fillText(String(v), x + 21, ty);
+    }
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.fillRect(x + 10, top - 6, 8, bottom - top + 14);
+    ctx.fillStyle = '#c8322a';
+    ctx.beginPath();
+    ctx.arc(x + 14, bottom + 16, 8, 0, TAU);
+    ctx.fill();
+    if (data) {
+      const level = yOf(f ? toF(data.temp) : data.temp);
+      ctx.fillRect(x + 12, level, 4, bottom + 10 - level);
+    }
+  }
+
+  function render(now) {
+    const t = now / 1000;
+    const L = daylight();
+    const cc = data ? data.cloud / 100 : 0.9;
+    const w = weather;
+
+    // sky
+    let top = mix([7, 10, 22], [74, 134, 197], L.light);
+    let hor = mix([20, 28, 50], [172, 206, 232], L.light);
+    const twk = L.tw * (1 - cc * 0.75);
+    top = mix(top, [52, 54, 104], twk * 0.6);
+    hor = mix(hor, [238, 146, 96], twk);
+    const grayK = clamp(Math.pow(cc, 1.3) * 0.85 + (w.rain || w.snow ? 0.1 : 0) + w.fog * 0.3, 0, 1);
+    top = mix(top, mix([16, 18, 24], [118, 126, 136], L.light), grayK);
+    hor = mix(hor, mix([28, 31, 38], [164, 170, 177], L.light), grayK);
+    if (w.thunder) { top = top.map(v => v * 0.7); hor = hor.map(v => v * 0.75); }
+    const sky = ctx.createLinearGradient(0, 0, 0, H * 0.8);
+    sky.addColorStop(0, rgb(top));
+    sky.addColorStop(1, rgb(hor));
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, W, H);
+
+    if (!land) land = buildLand(mountain);
+
+    // stars
+    const starVis = (1 - L.light) * clamp(1 - cc / 0.75, 0, 1) * (1 - w.fog);
+    if (starVis > 0.02) {
+      ctx.fillStyle = '#fff';
+      for (const s of land.stars) {
+        ctx.globalAlpha = starVis * (REDUCE ? 0.8 : 0.55 + 0.45 * Math.sin(t * s.sp + s.ph));
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, TAU);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // the sun, when there's any to see
+    if (data && data.sunrise && data.sunset && L.light > 0) {
+      const rise = minutesOf(data.sunrise);
+      const set = minutesOf(data.sunset);
+      const f = (mountainClock().min - rise) / (set - rise);
+      const glow = L.light * (1 - Math.pow(cc, 1.2)) * (1 - w.fog);
+      if (f > -0.05 && f < 1.05 && glow > 0.02) {
+        const sx = W * (0.12 + 0.76 * f);
+        const sy = H * (0.62 - Math.sin(Math.PI * clamp(f, 0, 1)) * 0.5);
+        const g = ctx.createRadialGradient(sx, sy, 0, sx, sy, 90);
+        g.addColorStop(0, `rgba(255,250,230,${0.95 * glow})`);
+        g.addColorStop(0.15, `rgba(255,236,190,${0.6 * glow})`);
+        g.addColorStop(1, 'rgba(255,220,160,0)');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(sx, sy, 90, 0, TAU);
+        ctx.fill();
+      }
+    }
+
+    // far ridge, hazy
+    let far = mix([26, 32, 50], [104, 128, 158], L.light);
+    far = mix(far, [150, 110, 140], L.tw * 0.35);
+    far = mix(far, hor, 0.35 + w.fog * 0.6);
+    fillRidge(land.far, rgb(far));
+
+    // clouds
+    for (const cl of clouds) {
+      ctx.globalAlpha = cl.alpha;
+      ctx.drawImage(cl.sprite, cl.x, cl.y, cl.w, cl.h);
+    }
+    ctx.globalAlpha = 1;
+    if (cc > 0.8) {
+      const deck = ctx.createLinearGradient(0, 0, 0, H * 0.45);
+      deck.addColorStop(0, rgba(cloudColor(), 0.55 * (cc - 0.8) / 0.2));
+      deck.addColorStop(1, rgba(cloudColor(), 0));
+      ctx.fillStyle = deck;
+      ctx.fillRect(0, 0, W, H * 0.45);
+    }
+
+    // lightning lights up the sky behind the mountain
+    const flash = flashAmount(now);
+    if (flash > 0) {
+      ctx.fillStyle = `rgba(230,235,255,${0.45 * flash})`;
+      ctx.fillRect(0, 0, W, H);
+      if (bolt) {
+        ctx.strokeStyle = `rgba(255,255,255,${flash})`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        bolt.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+        ctx.stroke();
+      }
+    }
+
+    // the mountain
+    let near = mix([14, 18, 27], [52, 68, 84], L.light);
+    near = mix(near, mix([40, 44, 52], [196, 202, 208], L.light), w.fog * 0.6);
+    fillRidge(land.near, rgb(near));
+    let cover = data ? clamp(data.snowDepth * 2.5, 0, 1) : 0;
+    if (data && data.temp < -4) cover = Math.max(cover, 0.25);
+    if (w.snow > 0) cover = Math.max(cover, 0.35);
+    if (cover > 0) {
+      const minY = Math.min(...land.near);
+      const snowLine = minY + (H * 0.86 - minY) * (0.25 + 0.5 * cover);
+      const depth = 10 + cover * 70;
+      ctx.fillStyle = rgb(mix(mix([60, 66, 80], [236, 240, 245], L.light), [196, 202, 208], w.fog * 0.5));
+      ctx.beginPath();
+      for (let i = 0; i < NPTS; i++) ctx.lineTo(i * STEP_X, land.near[i]);
+      for (let i = NPTS - 1; i >= 0; i--) {
+        const y = land.near[i];
+        const thick = clamp(snowLine - y, 0, depth) * (0.75 + 0.25 * land.capNoise[i]);
+        ctx.lineTo(i * STEP_X, y + Math.max(0, thick));
+      }
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // fog
+    if (w.fog > 0) {
+      const fogC = mix([40, 44, 52], [196, 202, 208], L.light);
+      ctx.fillStyle = rgba(fogC, w.fog * 0.55);
+      ctx.fillRect(0, 0, W, H);
+      for (let i = 0; i < 3; i++) {
+        const bx = ((t * (8 + i * 5) * (REDUCE ? 0.3 : 1) + i * 300) % (W + 600)) - 300;
+        const by = H * (0.45 + i * 0.12);
+        const band = ctx.createRadialGradient(bx, by, 0, bx, by, 320);
+        band.addColorStop(0, rgba(fogC, w.fog * 0.35));
+        band.addColorStop(1, rgba(fogC, 0));
+        ctx.fillStyle = band;
+        ctx.fillRect(bx - 320, by - 320, 640, 640);
+      }
+    }
+
+    // trees in front, leaning with the wind
+    const treeC = rgb(mix([8, 10, 14], [30, 42, 36], L.light));
+    ctx.fillStyle = treeC;
+    const lean = clamp(drift * 0.035, -9, 9);
+    const base = H - LEDGE;
+    for (const tr of land.trees) {
+      const sway = REDUCE ? 0 : Math.sin(t * 2 + tr.ph) * gustPulse * 2.5;
+      const tip = (lean + sway) * (tr.h / 68);
+      ctx.beginPath();
+      for (let k = 0; k < 3; k++) {
+        const ty = base - tr.h * (k * 0.28);
+        const tw = tr.w * (1 - k * 0.25);
+        ctx.moveTo(tr.x - tw / 2 + tip * k * 0.2, ty);
+        ctx.lineTo(tr.x + tip * (0.45 + k * 0.28), ty - tr.h * 0.5);
+        ctx.lineTo(tr.x + tw / 2 + tip * k * 0.2, ty);
+      }
+      ctx.fill();
+    }
+
+    // precipitation
+    if (rainP.length) {
+      ctx.strokeStyle = rgba(mix([150, 165, 185], [200, 215, 235], L.light), 0.45);
+      ctx.lineWidth = 1.1;
+      ctx.beginPath();
+      for (const p of rainP) {
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(p.x - drift * 0.025, p.y - p.vy * 0.025);
+      }
+      ctx.stroke();
+    }
+    if (snowP.length) {
+      ctx.fillStyle = rgba(mix([200, 206, 220], [255, 255, 255], L.light), 0.9);
+      ctx.beginPath();
+      for (const p of snowP) {
+        ctx.moveTo(p.x + p.r, p.y);
+        ctx.arc(p.x, p.y, p.r, 0, TAU);
+      }
+      ctx.fill();
+    }
+
+    // the outside ledge, and whatever snow has piled up on it
+    ctx.fillStyle = rgb(mix([22, 22, 24], [92, 88, 82], 0.1 + L.light * 0.8));
+    ctx.fillRect(0, H - LEDGE, W, LEDGE);
+    if (ledgeSnow > 0.5) {
+      ctx.fillStyle = rgb(mix([190, 196, 210], [246, 248, 252], L.light));
+      ctx.beginPath();
+      ctx.moveTo(0, H - LEDGE);
+      for (let x = 0; x <= W; x += 24) ctx.lineTo(x, H - LEDGE - ledgeSnow * (0.85 + 0.15 * Math.sin(x * 0.05)));
+      ctx.lineTo(W, H - LEDGE);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    drawThermometer(L);
+
+    // the glass itself
+    if (data && data.temp < 0) {
+      ctx.globalAlpha = clamp(-data.temp / 12, 0.2, 0.85);
+      ctx.drawImage(frost, 0, 0, W, H);
+    }
+    const ca = condAlpha();
+    if (ca > 0) {
+      ctx.globalAlpha = ca;
+      ctx.drawImage(cond, 0, 0, W, H);
+    }
+    ctx.globalAlpha = 1;
+    for (const b of beads) {
+      if (b.run) {
+        ctx.strokeStyle = 'rgba(200,220,235,0.12)';
+        ctx.lineWidth = b.r * 0.8;
+        ctx.beginPath();
+        ctx.moveTo(b.x, b.y0);
+        ctx.lineTo(b.x, b.y - b.r);
+        ctx.stroke();
+      }
+      ctx.fillStyle = 'rgba(210,225,240,0.22)';
+      ctx.strokeStyle = 'rgba(0,0,0,0.18)';
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.r, 0, TAU);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,0.35)';
+      ctx.beginPath();
+      ctx.arc(b.x - b.r * 0.3, b.y - b.r * 0.35, b.r * 0.3, 0, TAU);
+      ctx.fill();
+    }
+  }
+
+  // ---------- readout ----------
+  const readingsEl = $('#readings');
+  function row(label, value, note) {
+    const wrap = document.createElement('div');
+    const dt = document.createElement('dt');
+    dt.textContent = label;
+    const dd = document.createElement('dd');
+    dd.textContent = value;
+    if (note) {
+      const small = document.createElement('small');
+      small.textContent = note;
+      dd.appendChild(small);
+    }
+    wrap.append(dt, dd);
+    return wrap;
+  }
+  function ago(ms) {
+    const min = Math.floor(ms / 60000);
+    if (min < 1) return 'just now';
+    if (min < 60) return min + ' min ago';
+    const hr = Math.floor(min / 60);
+    return hr < 48 ? hr + ' hr ago' : Math.floor(hr / 24) + ' days ago';
+  }
+  function renderReadings() {
+    readingsEl.textContent = '';
+    if (!data) {
+      readingsEl.append(row('temperature', '--'), row('sky', '--'), row('wind', '--'));
+      $('#updated').textContent = status.failed ? 'no data' : 'fetching...';
+      return;
+    }
+    const clock = mountainClock();
+    readingsEl.append(
+      row('temperature', fmtTemp(data.temp), 'feels like ' + fmtTemp(data.feels)),
+      row('sky', CODE_TEXT[data.code] ?? 'weather', Math.round(data.cloud) + '% cloud'),
+      row('wind', fmtWind(data.wind), `from the ${compass(data.windDir)}, gusts ${fmtWind(data.gusts)}`),
+      row('precipitation', fmtPrecip(data.precip), 'last 15 min'),
+      row('visibility', fmtDist(data.visibility)),
+      row('snow on the ground', fmtDepth(data.snowDepth)),
+      row('sunrise / sunset', `${fmtIsoTime(data.sunrise)} / ${fmtIsoTime(data.sunset)}`),
+      row('local time there', fmtClock(clock.h, clock.m)),
+    );
+    $('#updated').textContent = 'updated ' + ago(Date.now() - data.fetchedAt) + (status.cached ? ' (cached)' : '');
+  }
+  function renderWhere() {
+    let text = mountain.name;
+    if (data && data.elevation != null) {
+      text += unit === 'f'
+        ? ` · ~${Math.round(data.elevation * 3.28084).toLocaleString('en-US')} ft`
+        : ` · ~${Math.round(data.elevation).toLocaleString('en-US')} m`;
+    }
+    $('#where').textContent = `${text} · ${mountain.tagline}`;
+  }
+  function renderText() {
+    setBase(sentence());
+    renderReadings();
+    renderWhere();
+    canvas.setAttribute('aria-label', data
+      ? `the view out the window: ${CODE_TEXT[data.code] ?? 'weather'} and ${fmtTemp(data.temp)} at ${mountain.name}`
+      : `the view out the window: fog. no data for ${mountain.name}.`);
+  }
+
+  let ledgeSeeded = false;
+  function apply(d, st) {
+    data = d;
+    status = st;
+    weather = d ? classify(d) : NO_WEATHER;
+    if (d && !ledgeSeeded) {
+      ledgeSnow = d.snowDepth > 0 ? clamp(d.snowDepth * 60, 2, 22) : 0;
+      ledgeSeeded = true;
+    }
+    syncParticles();
+    layoutClouds(false);
+    // the mug steams more when it's cold out
+    document.documentElement.style.setProperty('--steam', data ? clamp((18 - data.temp) / 28, 0.15, 1).toFixed(2) : '0.3');
+    canvas.style.touchAction = condAlpha() > 0 ? 'none' : 'pan-y';
+    renderText();
+  }
+
+  // ---------- controls ----------
+  const mountainsEl = $('#mountains');
+  for (const m of WINDOW_VIEW.mountains) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'pill';
+    b.dataset.id = m.id;
+    b.textContent = m.name;
+    mountainsEl.appendChild(b);
+  }
+  function markChoices() {
+    for (const b of mountainsEl.children) b.setAttribute('aria-pressed', String(b.dataset.id === mountain.id));
+    for (const b of document.querySelectorAll('[data-unit]')) b.setAttribute('aria-pressed', String(b.dataset.unit === unit));
+  }
+  function face(m) {
+    mountain = m;
+    store(KEY.mountain, m.id);
+    land = buildLand(m);
+    beads = [];
+    fogTheGlass();
+    ledgeSnow = 0;
+    ledgeSeeded = false;
+    const cached = readCache(m.id);
+    apply(cached, { cached: Boolean(cached), failed: false });
+    layoutClouds(true);
+    if (!cached) setBase('looking out the window...');
+    markChoices();
+    load();
+  }
+  mountainsEl.addEventListener('click', e => {
+    const b = e.target.closest('[data-id]');
+    if (b && b.dataset.id !== mountain.id) face(findMountain(b.dataset.id));
+  });
+  for (const b of document.querySelectorAll('[data-unit]')) {
+    b.addEventListener('click', () => {
+      unit = b.dataset.unit;
+      store(KEY.unit, unit);
+      markChoices();
+      renderText();
+    });
+  }
+
+  const MUG_LINES = [
+    "coffee. it's been sitting here since you arrived.",
+    "the mug steams more when it's cold outside. it isn't connected to anything. it just knows.",
+    "it's decaf. nobody knows why.",
+  ];
+  let mugIdx = 0;
+  $('#mug').addEventListener('click', () => sayFor(MUG_LINES[mugIdx++ % MUG_LINES.length]));
+
+  // ---------- wiping the window ----------
+  let wiping = false;
+  let lastWipe = null;
+  let wiped = 0;
+  let saidWipe = false;
+  let saidName = false;
+  let saidClear = 0;
+  function toView(e) {
+    const r = canvas.getBoundingClientRect();
+    return { x: ((e.clientX - r.left) / r.width) * W, y: ((e.clientY - r.top) / r.height) * H };
+  }
+  function wipeTo(p) {
+    cg.globalCompositeOperation = 'destination-out';
+    cg.lineCap = 'round';
+    cg.lineJoin = 'round';
+    for (const [width, alpha] of [[52, 0.35], [36, 0.9]]) {
+      cg.strokeStyle = `rgba(0,0,0,${alpha})`;
+      cg.lineWidth = width;
+      cg.beginPath();
+      cg.moveTo(lastWipe.x, lastWipe.y);
+      cg.lineTo(p.x + 0.01, p.y);
+      cg.stroke();
+    }
+    wiped += Math.hypot(p.x - lastWipe.x, p.y - lastWipe.y);
+    lastWipe = p;
+    if (!saidWipe && wiped > 60) {
+      saidWipe = true;
+      sayFor('you wiped the window. it will fog up again. that is how windows work.');
+    } else if (!saidName && wiped > 3500) {
+      saidName = true;
+      sayFor('people always write their names. it is fine.');
+    }
+  }
+  canvas.addEventListener('pointerdown', e => {
+    if (condAlpha() === 0) {
+      if (Date.now() - saidClear > 6000) {
+        saidClear = Date.now();
+        sayFor('the glass is clear. there is nothing to wipe. you are just touching the window.', 5000);
+      }
+      return;
+    }
+    wiping = true;
+    lastWipe = toView(e);
+    try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* synthetic pointer */ }
+    wipeTo({ x: lastWipe.x + 0.5, y: lastWipe.y });
+  });
+  canvas.addEventListener('pointermove', e => { if (wiping) wipeTo(toView(e)); });
+  const stopWiping = () => { wiping = false; };
+  canvas.addEventListener('pointerup', stopWiping);
+  canvas.addEventListener('pointercancel', stopWiping);
+
+  // ---------- coming back from another tab ----------
+  function changeLine(before, beforeW, after, afterW) {
+    const conv = c => (unit === 'f' ? toF(c) : c);
+    const diff = Math.round(conv(after.temp) - conv(before.temp));
+    const wet = k => (k === 'snow' ? 'snowing' : k === 'rain' || k === 'drizzle' || k === 'thunder' ? 'raining' : null);
+    const was = wet(beforeW.kind);
+    const now = wet(afterW.kind);
+    const parts = [];
+    if (now && now !== was) parts.push('it started ' + now);
+    else if (was && !now) parts.push('it stopped ' + was);
+    if (diff !== 0) parts.push(`it got ${Math.abs(diff)} degree${Math.abs(diff) === 1 ? '' : 's'} ${diff < 0 ? 'colder' : 'warmer'}`);
+    if (!parts.length) return 'while you were gone nothing changed. the mountain is patient.';
+    return `while you were gone ${parts.join(' and ')}.`;
+  }
+  addEventListener('cizole:return', async e => {
+    const away = e.detail?.awayMs ?? 0;
+    if (away < 60000 || !data) return;
+    const before = data;
+    const beforeW = weather;
+    const beforeId = mountain.id;
+    const after = await load();
+    if (after && mountain.id === beforeId) sayFor(changeLine(before, beforeW, after, weather), 9000);
+  });
+
+  // ---------- go ----------
+  setInterval(() => { if (!document.hidden) load(); }, REFRESH_MS);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && data && Date.now() - data.fetchedAt > REFRESH_MS) load();
+  });
+  setInterval(() => {
+    paintClouds(); // the light changes slowly; the clouds follow
+    renderReadings();
+  }, 20000);
+
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    update(dt, now);
+    render(now);
+    requestAnimationFrame(frame);
+  }
+  face(mountain);
+  requestAnimationFrame(frame);
+})();
+</script>
+<script src="../assets/away.js"></script>
+</body>
+</html>

@@ -1,0 +1,1336 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>junk drawer · cizole</title>
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/site.css">
+<style>
+  .page { max-width: 940px; margin: 0 auto; padding: 56px 16px 32px; }
+
+  /* ---------- the drawer, pulled out from under the counter ---------- */
+  .scene {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 900 / 660;
+    overflow: hidden;
+    border-radius: 10px;
+    background: #15130f;
+  }
+  .counter {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    z-index: 3;
+    height: 13.64%;
+    border-bottom: 3px solid #25282a;
+    background:
+      radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.06) 0 1px, transparent 1.5px) 0 0 / 9px 9px,
+      radial-gradient(circle at 70% 60%, rgba(0, 0, 0, 0.18) 0 1px, transparent 1.5px) 0 0 / 13px 13px,
+      linear-gradient(#5d6165, #4a4e52 70%, #34373a);
+    box-shadow: 0 8px 14px rgba(0, 0, 0, 0.55);
+  }
+  .slide {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 11.52%;
+    z-index: 1;
+    height: 86.36%;
+    perspective: 1400px;
+    transition: transform 1.1s cubic-bezier(0.5, 0, 0.3, 1);
+  }
+  .scene.closing .slide { transform: translateY(-78%); }
+  .tilter {
+    width: 100%;
+    height: 100%;
+    transform: rotateX(calc(var(--ty, 0) * -4deg)) rotateY(calc(var(--tx, 0) * 4deg));
+  }
+  .scene.shaking .tilter { animation: shake 0.45s; }
+  .scene.jammed .tilter { animation: jam 0.45s ease-out; }
+  @keyframes shake {
+    10%, 50%, 90% { translate: -7px 2px; }
+    30%, 70% { translate: 7px -2px; }
+  }
+  @keyframes jam {
+    15% { translate: 0 -10px; }
+    35% { translate: 0 5px; }
+    55% { translate: 0 -4px; }
+    75% { translate: 0 2px; }
+  }
+  #drawer {
+    display: block;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+  }
+
+  /* the thing that is always in the way */
+  .poke {
+    display: none;
+    position: absolute;
+    left: 44%;
+    top: 7%;
+    z-index: 4;
+    width: 27%;
+    height: 3.4%;
+    padding: 0;
+    border: 0;
+    background: none;
+    transform: rotate(21deg);
+    transform-origin: 0 50%;
+    cursor: pointer;
+  }
+  .scene.jammed .poke { display: block; }
+  .poke:focus-visible { outline: 2px solid var(--acid); outline-offset: 3px; }
+  .poke-handle {
+    position: absolute;
+    left: 0;
+    top: 12%;
+    width: 64%;
+    height: 76%;
+    border-radius: 6px;
+    background: linear-gradient(#b8824f, #8a5a32);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.55);
+  }
+  .poke-head {
+    position: absolute;
+    right: 0;
+    top: -70%;
+    width: 38%;
+    height: 240%;
+    border-radius: 6px 45% 45% 6px;
+    background: linear-gradient(#44484e, #26282c);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.55);
+  }
+
+  /* ---------- controls ---------- */
+  .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 14px; }
+  .controls button {
+    padding: 7px 14px;
+    border: 1px solid #3a372f;
+    border-radius: 999px;
+    background: #1a1916;
+    color: var(--fg);
+    font: 13px var(--font);
+    cursor: pointer;
+  }
+  .controls button:hover { border-color: var(--acid); color: var(--acid); }
+  .controls button:disabled { opacity: 0.5; cursor: default; }
+  .controls button[hidden] { display: none; }
+  .hint { color: var(--dim); font-size: 12px; }
+  .caption { min-height: 1.5em; margin: 12px 0 0; font-size: 15px; }
+
+  /* ---------- hover tag + inspect card ---------- */
+  .tag {
+    position: fixed;
+    z-index: 50;
+    max-width: 260px;
+    padding: 5px 9px;
+    border: 1px solid var(--faint);
+    border-radius: 6px;
+    background: rgba(14, 13, 11, 0.92);
+    font-size: 12px;
+    pointer-events: none;
+  }
+  .tag[hidden] { display: none; }
+  .card-wrap {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: grid;
+    place-items: center;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.55);
+  }
+  .card-wrap[hidden] { display: none; }
+  .card {
+    width: min(420px, 100%);
+    padding: 22px 24px;
+    border: 1px solid #3a372f;
+    border-radius: 12px;
+    background: #f1ead9;
+    color: #1b1b1b;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+    transform: rotate(-1deg);
+  }
+  .card h2 { margin: 0 0 10px; font-size: 18px; }
+  .card p { margin: 0 0 18px; font-size: 14px; line-height: 1.55; }
+  .card button {
+    padding: 7px 14px;
+    border: 1px solid #1b1b1b;
+    border-radius: 999px;
+    background: none;
+    color: #1b1b1b;
+    font: 13px var(--font);
+    cursor: pointer;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .slide { transition-duration: 0.01s; }
+    .scene.shaking .tilter, .scene.jammed .tilter { animation: none; }
+  }
+</style>
+</head>
+<body>
+<a class="lobby-link" href="../">&larr; lobby</a>
+
+<main class="page">
+  <div class="scene" id="scene">
+    <div class="counter" aria-hidden="true"></div>
+    <div class="slide">
+      <div class="tilter" id="tilter">
+        <canvas id="drawer" width="900" height="570" aria-label="a kitchen junk drawer seen from above, full of things you can drag and throw"></canvas>
+      </div>
+    </div>
+    <button class="poke" id="poke" type="button" aria-label="a spatula, jammed in the drawer"><span class="poke-handle"></span><span class="poke-head"></span></button>
+  </div>
+  <div class="controls">
+    <button type="button" id="shake">shake the drawer</button>
+    <button type="button" id="close">close the drawer</button>
+    <button type="button" id="tilt" hidden>enable tilt</button>
+    <span class="hint" id="hint"></span>
+  </div>
+  <p class="caption" id="caption" role="status"></p>
+</main>
+
+<div class="tag" id="tag" hidden></div>
+<div class="card-wrap" id="card" hidden>
+  <div class="card" role="dialog" aria-modal="true" aria-labelledby="card-title">
+    <h2 id="card-title"></h2>
+    <p id="card-desc"></p>
+    <button type="button" id="card-close">put it back</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/matter-js@0.20.0/build/matter.min.js" integrity="sha384-ZRKYEXtLBVeqs9z1WxyeKutCqnkqolS/r1EUWuoUpG4ZKbnRAIXnHhHdnNuiB6CL" crossorigin="anonymous"></script>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const captionEl = $('caption');
+  const say = text => { captionEl.textContent = text; };
+  if (typeof Matter === 'undefined') {
+    say("the drawer is stuck. (the physics didn't load. try again later.)");
+    return;
+  }
+  const { Engine, Bodies, Body, Composite, Constraint, Query, Sleeping } = Matter;
+
+  const W = 900;
+  const H = 570;
+  const IN = { x0: 30, y0: 24, x1: 870, y1: 500 }; // the inside of the drawer
+  const TRAY = { x0: 54, x1: 396, y0: 24, y1: 196, rim: 8, dividers: [168, 282] };
+  const CAT = { WALL: 1, ITEM: 2, PAPER: 4 };
+  const ITEM_FILTER = { group: 0, category: CAT.ITEM, mask: CAT.WALL | CAT.ITEM };
+  const PAPER_FILTER = { group: 0, category: CAT.PAPER, mask: CAT.WALL | CAT.PAPER };
+  const TAU = Math.PI * 2;
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const coarse = matchMedia('(pointer: coarse)').matches;
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+  function load(key, fallback) {
+    try { const v = localStorage.getItem(key); return v === null ? fallback : v; } catch (err) { return fallback; }
+  }
+  function save(key, value) {
+    try { localStorage.setItem(key, value); } catch (err) { /* private mode: the drawer forgets */ }
+  }
+
+  const scene = $('scene');
+  const tilter = $('tilter');
+  const canvas = $('drawer');
+  const g = canvas.getContext('2d');
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+
+  // ---------- physics ----------
+  const engine = Engine.create({ enableSleeping: true });
+  engine.gravity.x = 0;
+  engine.gravity.y = 0; // seen from above: things only slide when the drawer tilts
+  const world = engine.world;
+
+  function staticRect(x, y, w, h) {
+    return Bodies.rectangle(x, y, w, h, {
+      isStatic: true,
+      friction: 0.2,
+      collisionFilter: { group: 0, category: CAT.WALL, mask: CAT.ITEM | CAT.PAPER },
+    });
+  }
+  const T = 200; // thick walls so thrown things can't tunnel out
+  const cx = (IN.x0 + IN.x1) / 2;
+  const cy = (IN.y0 + IN.y1) / 2;
+  Composite.add(world, [
+    staticRect(cx, IN.y0 - T / 2, IN.x1 - IN.x0 + 2 * T, T),
+    staticRect(cx, IN.y1 + T / 2, IN.x1 - IN.x0 + 2 * T, T),
+    staticRect(IN.x0 - T / 2, cy, T, IN.y1 - IN.y0 + 2 * T),
+    staticRect(IN.x1 + T / 2, cy, T, IN.y1 - IN.y0 + 2 * T),
+  ]);
+  // the divider tray: three slots against the back, open toward the front
+  const TRAY_WALLS = [
+    { x: TRAY.x0 + TRAY.rim / 2, w: TRAY.rim },
+    { x: TRAY.dividers[0], w: 6 },
+    { x: TRAY.dividers[1], w: 6 },
+    { x: TRAY.x1 - TRAY.rim / 2, w: TRAY.rim },
+  ];
+  for (const t of TRAY_WALLS) Composite.add(world, staticRect(t.x, (TRAY.y0 + TRAY.y1) / 2, t.w, TRAY.y1 - TRAY.y0));
+
+  function mat(extra) {
+    return { frictionAir: 0.09, friction: 0.3, restitution: 0.15, density: 0.002, ...extra };
+  }
+  function setFilter(body, filter) {
+    body.collisionFilter = filter;
+    for (const part of body.parts) part.collisionFilter = filter;
+  }
+  const box = (w, h, r, extra) => () => ({
+    body: Bodies.rectangle(0, 0, w, h, { ...mat(extra), chamfer: r ? { radius: r } : null }),
+  });
+  const disc = (r, extra) => () => ({ body: Bodies.circle(0, 0, r, mat(extra)) });
+  // several shapes glued together; origin remembers where (0,0) of the drawing is
+  function compound(defs, extra) {
+    return () => {
+      const parts = defs.map(p => p.r
+        ? Bodies.circle(p.x, p.y, p.r)
+        : Bodies.rectangle(p.x, p.y, p.w, p.h, { chamfer: p.c ? { radius: p.c } : null }));
+      const body = Body.create({ parts, ...mat(extra) });
+      return { body, origin: { x: -body.position.x, y: -body.position.y } };
+    };
+  }
+  function buildCable() {
+    const group = Body.nextGroup(true);
+    const n = 13;
+    const seg = 15;
+    const bodies = [];
+    const constraints = [];
+    for (let i = 0; i < n; i++) {
+      const end = i === 0 || i === n - 1;
+      bodies.push(Bodies.rectangle(i * seg, 0, end ? 20 : seg, end ? 11 : 6, {
+        ...mat({ frictionAir: 0.14, density: 0.0015 }),
+        chamfer: { radius: end ? 2 : 3 },
+        collisionFilter: { group, category: CAT.ITEM, mask: CAT.WALL | CAT.ITEM },
+      }));
+    }
+    for (let i = 1; i < n; i++) {
+      constraints.push(Constraint.create({
+        bodyA: bodies[i - 1], bodyB: bodies[i],
+        pointA: { x: seg / 2, y: 0 }, pointB: { x: -seg / 2, y: 0 },
+        length: 1, stiffness: 0.8, damping: 0.05,
+      }));
+    }
+    return { body: bodies[0], bodies, constraints, cable: true };
+  }
+
+  // ---------- drawing helpers ----------
+  function rr(x, y, w, h, r) {
+    g.beginPath();
+    g.moveTo(x + r, y);
+    g.arcTo(x + w, y, x + w, y + h, r);
+    g.arcTo(x + w, y + h, x, y + h, r);
+    g.arcTo(x, y + h, x, y, r);
+    g.arcTo(x, y, x + w, y, r);
+    g.closePath();
+  }
+  function circle(x, y, r) {
+    g.beginPath();
+    g.arc(x, y, r, 0, TAU);
+  }
+  const fill = color => { g.fillStyle = color; g.fill(); };
+  const stroke = (color, width) => { g.strokeStyle = color; g.lineWidth = width; g.stroke(); };
+  function text(str, x, y, size, color, weight = 400, align = 'left') {
+    g.font = `${weight} ${size}px "Space Mono", monospace`;
+    g.fillStyle = color;
+    g.textAlign = align;
+    g.textBaseline = 'middle';
+    g.fillText(str, x, y);
+  }
+  function bars(x, y, widths, gap, color) {
+    g.fillStyle = color;
+    widths.forEach((w, i) => g.fillRect(x, y + i * gap, w, 2));
+  }
+
+  const FORTUNES = [
+    'you will open a drawer.',
+    'the thing you are looking for is in a different drawer.',
+    'you already have enough twist ties.',
+    'someone will ask where the scissors are. nobody will know.',
+    'good things come to those who close the drawer. you cannot close the drawer.',
+  ];
+
+  // ---------- everything in the drawer ----------
+  const DEFS = {
+    aa: {
+      name: 'a double-a battery',
+      tag: 'battery. dead. kept anyway.',
+      desc: 'a double-a battery. it was tested once, by licking it. the results were inconclusive. it stays.',
+      build: box(52, 16, 5),
+      draw() {
+        rr(-26, -8, 52, 16, 4); fill('#26282b');
+        rr(6, -8, 20, 16, 4); fill('#c9a24a');
+        g.fillStyle = '#aab0b6'; g.fillRect(25, -3, 3, 6);
+        g.fillStyle = 'rgba(255, 255, 255, 0.16)'; g.fillRect(-23, -6, 46, 3);
+      },
+    },
+    aaa: {
+      name: 'a triple-a battery',
+      tag: 'battery. triple-a. fits nothing we own.',
+      desc: 'a triple-a battery. nothing in this house takes triple-a. it arrived anyway. it will outlive us all.',
+      build: box(44, 12, 4),
+      draw() {
+        rr(-22, -6, 44, 12, 4); fill('#1d3f7a');
+        rr(8, -6, 14, 12, 4); fill('#c0c6cc');
+        g.fillStyle = 'rgba(255, 255, 255, 0.18)'; g.fillRect(-19, -4, 36, 2);
+      },
+    },
+    nine: {
+      name: 'a 9-volt battery',
+      tag: '9-volt. do not lick. (someone did.)',
+      desc: 'a 9-volt battery. it tingles. we know because someone checked. that someone will not be named.',
+      build: box(30, 46, 3),
+      draw() {
+        rr(-15, -23, 30, 46, 3); fill('#2a2d33');
+        rr(-15, -23, 30, 13, 3); fill('#c8a02a');
+        circle(-6, -18, 3.5); fill('#c0c4c8');
+        circle(6, -18, 3.5); fill('#c0c4c8');
+        circle(6, -18, 1.6); fill('#6f747a');
+        text('9V', 0, 6, 10, '#ecebe4', 700, 'center');
+      },
+    },
+    key: {
+      name: 'a key',
+      tag: 'keys. nobody knows to what.',
+      desc: 'a key to a door that may no longer exist. throwing it away feels like a mistake. keeping it also feels like a mistake.',
+      build: compound([{ x: -15, y: 0, r: 11 }, { x: 11, y: 0, w: 34, h: 8, c: 2 }], { density: 0.004 }),
+      draw() {
+        circle(-15, 0, 11); fill('#c9a24a');
+        circle(-18, 0, 3.5); fill('#6b5a36');
+        rr(-6, -4, 34, 8, 2); fill('#c9a24a');
+        g.fillStyle = '#c9a24a';
+        for (const x of [12, 18, 24]) g.fillRect(x, 3, 3, 4);
+        g.fillStyle = 'rgba(255, 255, 255, 0.25)'; g.fillRect(-4, -3, 30, 1.5);
+      },
+    },
+    band: {
+      name: 'a rubber band',
+      tag: "rubber band. from the newspaper. we don't get the newspaper.",
+      desc: 'a rubber band. it came wrapped around a newspaper we do not subscribe to. it has been stretched around three other things since. it is tired.',
+      build: () => ({ body: Bodies.circle(0, 0, 12, mat({ density: 0.001 })), state: { color: pick(['#c0563a', '#d9a53a', '#6b8f3a']) } }),
+      draw(it) {
+        g.beginPath(); g.ellipse(0, 0, 10, 7.5, 0, 0, TAU);
+        stroke(it.state.color, 3);
+      },
+    },
+    tie: {
+      name: 'a twist tie',
+      tag: 'twist tie. there are always more twist ties.',
+      desc: 'a twist tie. nobody buys twist ties. there are forty-one of them in this house. this is one of them.',
+      build: box(60, 4, 2, { density: 0.001 }),
+      draw() { rr(-30, -2, 60, 4, 2); fill('#3d8a4c'); },
+    },
+    menu: {
+      name: 'a takeout menu',
+      paper: true,
+      z: 1,
+      tag: 'takeout menu. the place closed in 2019.',
+      desc: 'the menu for lucky garden. they closed years ago. the number still rings. nobody answers. we keep the menu in case they come back.',
+      build: box(130, 92, 2, { frictionAir: 0.16, density: 0.0006 }),
+      draw() {
+        rr(-65, -46, 130, 92, 2); fill('#f1ead9');
+        g.fillStyle = 'rgba(0, 0, 0, 0.12)'; g.fillRect(-22, -46, 1, 92); g.fillRect(21, -46, 1, 92);
+        text('LUCKY GARDEN', -58, -34, 9, '#b8322a', 700);
+        text('open late', -58, -24, 7, '#6b6457');
+        bars(-58, -12, [30, 26, 32, 22, 28], 7, 'rgba(0, 0, 0, 0.22)');
+        bars(-15, -34, [30, 24, 32, 20, 30, 26, 18, 28, 24, 30], 7, 'rgba(0, 0, 0, 0.2)');
+        bars(28, -34, [28, 30, 22, 26, 30, 18, 26], 7, 'rgba(0, 0, 0, 0.2)');
+        circle(38, 22, 13); stroke('rgba(120, 80, 40, 0.28)', 2.5); // somebody's coffee
+      },
+    },
+    manual: {
+      name: 'a manual',
+      paper: true,
+      z: 1.1,
+      tag: "manual for a bread machine. we don't own a bread machine.",
+      desc: "the owner's manual for a bread machine. there has never been a bread machine here. the manual has outlasted three toasters.",
+      build: box(106, 78, 2, { frictionAir: 0.16, density: 0.0007 }),
+      draw() {
+        rr(-53, -39, 106, 78, 2); fill('#e7ecef');
+        g.fillStyle = '#2f5fa7'; g.fillRect(-53, -39, 106, 14);
+        text('BREAD MACHINE', -47, -32, 8, '#ecebe4', 700);
+        text("owner's manual", -47, -16, 7, '#3a3d42');
+        rr(-44, -6, 34, 34, 3); stroke('#3a3d42', 1.4);
+        rr(-38, 0, 22, 14, 2); stroke('#3a3d42', 1);
+        bars(0, -6, [44, 38, 42, 30, 40, 36], 6, 'rgba(0, 0, 0, 0.18)');
+        text('model bm-2000', 0, 32, 6, '#6b7178');
+      },
+    },
+    soy: {
+      name: 'a soy sauce packet',
+      tag: 'soy sauce. an emergency supply.',
+      desc: 'a soy sauce packet. part of an emergency supply that has never been used and never will be. it is from lucky garden. it is all we have left.',
+      build: box(38, 24, 3),
+      draw() {
+        rr(-19, -12, 38, 24, 3); fill('rgba(239, 233, 220, 0.92)');
+        rr(-14, -8, 28, 16, 5); fill('#3b1d0f');
+        text('soy', 0, 0, 7, '#efe9dc', 700, 'center');
+      },
+    },
+    tape: {
+      name: 'a tape measure',
+      tag: "tape measure. the tape doesn't go back in all the way.",
+      desc: 'a tape measure. the last three inches of tape stay out no matter what. it measures things fine. it just never fully comes home.',
+      build: box(46, 46, 12, { density: 0.004 }),
+      draw() {
+        rr(-23, -23, 46, 46, 12); fill('#e8c21e');
+        circle(0, 0, 10); fill('#26282b');
+        circle(0, 0, 4); fill('#e8c21e');
+        rr(18, -6, 12, 12, 2); fill('#b9bec6');
+        g.fillStyle = '#e9e6dc'; g.fillRect(28, -4, 8, 8);
+      },
+    },
+    pen: {
+      name: 'a pen',
+      tag: "pen. doesn't work. it was tested. it was put back.",
+      desc: 'a pen. it was tested on the corner of the takeout menu, did not work, and was returned to the drawer. this has happened four times.',
+      build: box(94, 9, 4),
+      draw() {
+        rr(-47, -4.5, 72, 9, 4); fill('#1f3f8a');
+        g.beginPath(); g.moveTo(-47, -3.5); g.lineTo(-47, 3.5); g.lineTo(-40, 0); g.closePath(); fill('#c9ccd0');
+        rr(22, -5, 25, 10, 4); fill('#1a1b1e');
+        g.fillStyle = '#9aa1a8'; g.fillRect(26, -7, 17, 3);
+      },
+    },
+    cable: {
+      name: 'a cable',
+      z: 2.6,
+      tag: 'a cable. it charges something. nobody knows what.',
+      desc: 'a cable with a connector nobody recognizes on one end and a different connector nobody recognizes on the other. it charges something. that something is not in this house.',
+      build: buildCable,
+    },
+    candle: {
+      name: 'a birthday candle',
+      tag: 'birthday candle. used. once. for someone.',
+      desc: 'a birthday candle, burned down about a quarter of the way. it was for someone. nobody remembers who. it is being saved for the next someone.',
+      build: box(46, 8, 3, { density: 0.001 }),
+      draw() {
+        rr(-23, -4, 40, 8, 2); fill('#f4efe6');
+        g.save(); rr(-23, -4, 40, 8, 2); g.clip();
+        g.strokeStyle = '#ff6fb5'; g.lineWidth = 2;
+        for (let x = -24; x < 20; x += 7) { g.beginPath(); g.moveTo(x, 5); g.lineTo(x + 6, -5); g.stroke(); }
+        g.restore();
+        g.fillStyle = '#2a2a2a'; g.fillRect(17, -1, 6, 2);
+        circle(17, 0, 2.2); fill('#e8e0cf');
+      },
+    },
+    driver: {
+      name: 'a screwdriver',
+      tag: 'screwdriver. phillips. the one you need is the other one.',
+      desc: 'a phillips screwdriver. whatever you are fixing uses the other kind of screw. this is a law.',
+      build: compound([{ x: -20, y: 0, w: 38, h: 16, c: 6 }, { x: 19, y: 0, w: 40, h: 5 }], { density: 0.004 }),
+      draw() {
+        rr(-39, -8, 38, 16, 6); fill('#c0392b');
+        g.fillStyle = 'rgba(0, 0, 0, 0.22)';
+        for (const x of [-32, -25, -18, -11]) g.fillRect(x, -6, 2, 12);
+        g.fillStyle = '#9aa1a8'; g.fillRect(-2, -4, 6, 8);
+        g.fillStyle = '#c8cbd0'; g.fillRect(4, -2, 34, 4);
+        g.fillStyle = '#6f747a'; g.fillRect(36, -2.5, 3, 5);
+      },
+    },
+    usb: {
+      name: 'a usb stick',
+      tag: "usb stick labeled 'backup?'. the question mark is doing a lot of work.",
+      desc: "a usb stick labeled 'backup?'. it holds 2 gigabytes of something. nobody has checked what. nobody is ready to check what.",
+      build: box(46, 16, 3),
+      draw() {
+        rr(-23, -8, 34, 16, 3); fill('#ecebe4');
+        rr(11, -5, 12, 10, 1); fill('#b9bec6');
+        g.fillStyle = '#5a5f64'; g.fillRect(14, -2, 2, 2); g.fillRect(18, -2, 2, 2);
+        text('backup?', -20, 0.5, 7, '#2b2b2b', 700);
+      },
+    },
+    cookie: {
+      name: 'a fortune cookie',
+      tag: 'fortune cookie. unopened. saving it for when things are bad.',
+      tagOpen: 'fortune cookie. opened. things were not bad enough. oh well.',
+      desc(it) {
+        return `you open it. the fortune says: "${it.state.fortune}" you put it back. it is still a cookie, technically.`;
+      },
+      build: disc(17),
+      draw(it) {
+        if (!it.state.opened) {
+          g.beginPath(); g.ellipse(0, 0, 17, 12, 0, 0, TAU); fill('#d9a54a');
+          g.beginPath(); g.moveTo(-15, 2); g.quadraticCurveTo(0, -10, 15, 2); stroke('#b8842f', 2);
+        } else {
+          g.beginPath(); g.ellipse(-7, 2, 9, 10, 0.4, 0, TAU); fill('#d9a54a');
+          g.beginPath(); g.ellipse(8, -2, 9, 10, -0.4, 0, TAU); fill('#cf9a40');
+          g.fillStyle = '#fbf8f0'; g.fillRect(-16, -2, 32, 5);
+        }
+      },
+    },
+    coin: {
+      name: 'a coin',
+      tag: 'a coin. not enough for anything.',
+      desc: 'a coin. there are twenty-three cents in this drawer in total. we have counted more than once. it has not changed.',
+      build() {
+        const r = pick([9, 10, 11]);
+        return { body: Bodies.circle(0, 0, r, mat({ density: 0.006, restitution: 0.3 })), state: { r, copper: Math.random() < 0.4 } };
+      },
+      draw(it) {
+        const { r, copper } = it.state;
+        circle(0, 0, r); fill(copper ? '#b87333' : '#c9c6bd');
+        circle(0, 0, r - 2.5); stroke('rgba(0, 0, 0, 0.18)', 1);
+      },
+    },
+    opener: {
+      name: 'a bottle opener',
+      tag: 'bottle opener. from a vacation. which vacation.',
+      desc: 'a bottle opener from a vacation. the name of the place has worn off. it was fun, probably.',
+      build: box(66, 16, 7, { density: 0.004 }),
+      draw() {
+        rr(-33, -8, 66, 16, 7); fill('#9aa1a8');
+        g.beginPath(); g.ellipse(-20, 0, 7, 5, 0, 0, TAU); fill('rgba(0, 0, 0, 0.45)');
+        g.fillStyle = 'rgba(255, 255, 255, 0.25)'; g.fillRect(-8, -5, 36, 2);
+      },
+    },
+    clip: {
+      name: 'a paper clip',
+      tag: 'paper clip. bent into a shape. the shape means nothing.',
+      desc: 'a paper clip, unbent and rebent during a phone call that went on too long. the shape is not a letter. it is not anything.',
+      build: box(28, 10, 4, { density: 0.001 }),
+      draw() {
+        rr(-14, -5, 28, 10, 5); stroke('#aab4bd', 1.8);
+        rr(-9, -2.5, 20, 5, 2.5); stroke('#aab4bd', 1.8);
+      },
+    },
+    matches: {
+      name: 'a matchbook',
+      tag: 'matches. from a restaurant. three left.',
+      desc: 'a matchbook from a restaurant that is not lucky garden. three matches left. they are being saved for a power outage that keeps not happening.',
+      build: box(38, 26, 2),
+      draw() {
+        rr(-19, -13, 38, 26, 2); fill('#b8322a');
+        g.fillStyle = '#4a3a30'; g.fillRect(-19, 7, 38, 5);
+        text('MATCHES', 0, -3, 6, '#f1ead9', 700, 'center');
+      },
+    },
+    tack: {
+      name: 'a thumbtack',
+      tag: 'thumbtack. mind your fingers.',
+      desc: 'a thumbtack. it is point-up. it is always point-up.',
+      build: disc(6),
+      draw() {
+        circle(0, 0, 6); fill('#2f5fa7');
+        circle(-2, -2, 2); fill('rgba(255, 255, 255, 0.5)');
+      },
+    },
+    hex: {
+      name: 'a hex key',
+      tag: 'hex key. from furniture that is gone now.',
+      desc: 'a hex key that came with a bookshelf. the bookshelf was given away years ago. the hex key stayed. it did not want to go.',
+      build: compound([{ x: 0, y: 0, w: 46, h: 6 }, { x: 20, y: -12, w: 6, h: 24 }], { density: 0.005 }),
+      draw() {
+        g.fillStyle = '#2b2d31';
+        g.fillRect(-23, -3, 46, 6);
+        g.fillRect(17, -24, 6, 24);
+        g.fillStyle = 'rgba(255, 255, 255, 0.15)';
+        g.fillRect(-21, -2, 40, 1.5);
+      },
+    },
+    button: {
+      name: 'a spare button',
+      tag: 'a spare button. from a shirt. which shirt.',
+      desc: 'a spare button that came in a tiny bag attached to a shirt. the bag is gone. the shirt is gone. the button remains, waiting.',
+      build: disc(8, { density: 0.001 }),
+      draw() {
+        circle(0, 0, 8); fill('#e3dccb');
+        circle(0, 0, 6); stroke('rgba(0, 0, 0, 0.15)', 1);
+        g.fillStyle = '#9a917e';
+        for (const [x, y] of [[-2.5, -2.5], [2.5, -2.5], [-2.5, 2.5], [2.5, 2.5]]) { circle(x, y, 1.2); g.fill(); }
+      },
+    },
+    mint: {
+      name: 'a restaurant mint',
+      tag: 'restaurant mint. fused to its wrapper.',
+      desc: 'a restaurant mint. it has been in this drawer long enough to become one with its wrapper. they are a single object now.',
+      build: box(30, 22, 3, { density: 0.001 }),
+      draw() {
+        rr(-15, -11, 30, 22, 3); fill('#f5f5f2');
+        circle(0, 0, 8); fill('#ffffff');
+        g.strokeStyle = '#d63a3a'; g.lineWidth = 2;
+        for (let i = 0; i < 4; i++) { g.beginPath(); g.arc(0, 0, 6, i * 1.57, i * 1.57 + 0.8); g.stroke(); }
+      },
+    },
+    brick: {
+      name: 'a plastic brick',
+      tag: 'a plastic building brick. step on it at your own risk.',
+      desc: 'a small plastic building brick. it belongs to a set that no longer exists. it is here so that one day, barefoot, you will find it.',
+      build: box(32, 16, 2),
+      draw() {
+        rr(-16, -8, 32, 16, 2); fill('#c0392b');
+        for (const x of [-12, -4, 4, 12]) for (const y of [-4, 4]) { circle(x, y, 2.8); fill('#d4503f'); stroke('rgba(0, 0, 0, 0.2)', 0.8); }
+      },
+    },
+    magnet: {
+      name: 'a fridge magnet',
+      tag: 'fridge magnet. fell off the fridge. lives here now.',
+      desc: 'a fridge magnet from somewhere cold. it fell off the fridge and nobody put it back. it seems happier here. it is hard to tell with magnets.',
+      build: box(42, 30, 4),
+      draw() {
+        rr(-21, -15, 42, 30, 4); fill('#f4efe6');
+        g.fillStyle = '#8fc3e0'; g.fillRect(-17, -11, 34, 16);
+        g.beginPath(); g.moveTo(-17, 5); g.lineTo(-6, -8); g.lineTo(3, 2); g.lineTo(9, -4); g.lineTo(17, 5); g.closePath(); fill('#6f8894');
+        g.beginPath(); g.moveTo(-9, -4.5); g.lineTo(-6, -8); g.lineTo(-3, -4.5); g.closePath(); fill('#ffffff');
+        text('GREETINGS', 0, 10, 5, '#b8322a', 700, 'center');
+      },
+    },
+    rarekey: {
+      name: 'the key to this drawer',
+      z: 0,
+      tag: 'the key to this drawer.',
+      desc: 'the key to this drawer. the drawer does not have a lock. it never did. keep it anyway. it has been waiting a long time for someone to find it.',
+      build: compound([{ x: -18, y: 0, r: 12 }, { x: 9, y: 0, w: 34, h: 7 }, { x: 22, y: 6, w: 8, h: 10 }], { density: 0.004 }),
+      draw(it, now) {
+        circle(-18, 0, 12); fill('#e4b83a');
+        circle(-18, 0, 6); fill('#8a6a24');
+        g.fillStyle = '#e4b83a'; g.fillRect(-8, -3.5, 34, 7); g.fillRect(18, 1, 8, 10);
+        const shimmer = 0.25 + 0.25 * Math.sin(now / 400);
+        g.fillStyle = `rgba(255, 255, 255, ${shimmer.toFixed(2)})`; g.fillRect(-6, -2.5, 28, 2);
+      },
+    },
+  };
+
+  const STOCK = [
+    ['coin', 4, 'a'], ['aa', 2, 'b'], ['aaa', 1, 'b'], ['band', 2, 'c'], ['tie', 2, 'c'], ['clip', 1, 'c'],
+    ['cable', 1, 'main'], ['menu', 1, 'main'], ['manual', 1, 'main'],
+    ['nine', 1, 'main'], ['key', 2, 'main'], ['soy', 2, 'main'], ['tape', 1, 'main'], ['pen', 2, 'main'],
+    ['candle', 2, 'main'], ['driver', 1, 'main'], ['usb', 1, 'main'], ['cookie', 1, 'main'], ['opener', 1, 'main'],
+    ['matches', 1, 'main'], ['tack', 1, 'main'], ['hex', 1, 'main'], ['button', 1, 'main'], ['mint', 1, 'main'],
+    ['brick', 1, 'main'], ['magnet', 1, 'main'],
+  ];
+  const SLOTS = {
+    a: { x0: TRAY.x0 + TRAY.rim, x1: TRAY.dividers[0] - 3 },
+    b: { x0: TRAY.dividers[0] + 3, x1: TRAY.dividers[1] - 3 },
+    c: { x0: TRAY.dividers[1] + 3, x1: TRAY.x1 - TRAY.rim },
+  };
+
+  const items = [];
+  let allBodies = [];
+  let zTop = 10;
+
+  function makeItem(kind) {
+    const def = DEFS[kind];
+    const made = def.build();
+    const it = {
+      kind,
+      def,
+      body: made.body,
+      bodies: made.bodies || [made.body],
+      constraints: made.constraints || [],
+      origin: made.origin || { x: 0, y: 0 },
+      state: made.state || {},
+      z: def.z ?? 2 + Math.random() * 0.5,
+    };
+    if (!made.cable) setFilter(it.body, { ...(def.paper ? PAPER_FILTER : ITEM_FILTER) });
+    for (const b of it.bodies) b.plugin.item = it;
+    return it;
+  }
+
+  // ---------- placing things without piling them on top of each other ----------
+  const overlaps = (a, b) => a.min.x < b.max.x && a.max.x > b.min.x && a.min.y < b.max.y && a.max.y > b.min.y;
+  const inside = (bd, r) => bd.min.x >= r.x0 && bd.max.x <= r.x1 && bd.min.y >= r.y0 && bd.max.y <= r.y1;
+  const TRAY_BOX = { min: { x: TRAY.x0 - 4, y: 0 }, max: { x: TRAY.x1 + 4, y: TRAY.y1 + 6 } };
+  const placed = { item: [], paper: [] };
+
+  function randomSpot(zone) {
+    if (zone !== 'main') {
+      const s = SLOTS[zone];
+      return { x: rand(s.x0 + 14, s.x1 - 14), y: rand(TRAY.y0 + 18, TRAY.y1 - 18), angle: rand(-0.35, 0.35) };
+    }
+    return { x: rand(IN.x0 + 20, IN.x1 - 20), y: rand(IN.y0 + 20, IN.y1 - 20), angle: rand(0, TAU) };
+  }
+  function place(it, zone, layer, opts = {}) {
+    const bounds = zone === 'main' ? { x0: IN.x0 + 2, x1: IN.x1 - 2, y0: IN.y0 + 2, y1: IN.y1 - 2 } : { ...SLOTS[zone], y0: TRAY.y0 + 2, y1: TRAY.y1 };
+    for (let tries = 0; tries < 80; tries++) {
+      const s = opts.at || randomSpot(zone);
+      Body.setPosition(it.body, { x: s.x, y: s.y });
+      Body.setAngle(it.body, s.angle);
+      const bd = it.body.bounds;
+      if (!inside(bd, bounds)) { if (opts.at) break; continue; }
+      if (zone === 'main' && overlaps(bd, TRAY_BOX)) continue;
+      if (!opts.ignoreOverlap && placed[layer].some(o => overlaps(bd, o))) continue;
+      break;
+    }
+    placed[layer].push({ min: { ...it.body.bounds.min }, max: { ...it.body.bounds.max } });
+  }
+  function placeCable(it) {
+    const seg = 15;
+    for (let tries = 0; tries < 80; tries++) {
+      let x = rand(IN.x0 + 40, IN.x1 - 240);
+      let y = rand(TRAY.y1 + 40, IN.y1 - 40);
+      let a = rand(-0.6, 0.6);
+      let ok = true;
+      for (const b of it.bodies) {
+        Body.setPosition(b, { x, y });
+        Body.setAngle(b, a);
+        if (!inside(b.bounds, { x0: IN.x0 + 4, x1: IN.x1 - 4, y0: TRAY.y1 + 10, y1: IN.y1 - 4 })) ok = false;
+        x += Math.cos(a) * seg;
+        y += Math.sin(a) * seg;
+        a += rand(-0.3, 0.3);
+      }
+      if (ok) break;
+    }
+    for (const b of it.bodies) placed.item.push({ min: { ...b.bounds.min }, max: { ...b.bounds.max } });
+  }
+
+  function addToWorld(it) {
+    items.push(it);
+    Composite.add(world, it.bodies);
+    if (it.constraints.length) Composite.add(world, it.constraints);
+    allBodies = items.flatMap(i => i.bodies);
+  }
+
+  // ---------- visits, and the rare thing ----------
+  const visits = (parseInt(load('cizole.junk-drawer.visits', '0'), 10) || 0) + 1;
+  save('cizole.junk-drawer.visits', String(visits));
+  const rare = /[?&]rare\b/.test(location.search) || Math.random() < 0.1;
+
+  for (const [kind, count, zone] of STOCK) {
+    for (let i = 0; i < count; i++) {
+      const it = makeItem(kind);
+      if (kind === 'cable') placeCable(it);
+      else place(it, zone, it.def.paper ? 'paper' : 'item');
+      addToWorld(it);
+      // the rare one is buried under the takeout menu
+      if (kind === 'menu' && rare) {
+        const key = makeItem('rarekey');
+        place(key, 'main', 'item', { at: { x: it.body.position.x, y: it.body.position.y, angle: rand(0, TAU) }, ignoreOverlap: true });
+        addToWorld(key);
+      }
+    }
+  }
+
+  // ---------- the drawer itself, drawn once ----------
+  const bg = document.createElement('canvas');
+  bg.width = W * dpr;
+  bg.height = H * dpr;
+  (() => {
+    const b = bg.getContext('2d');
+    b.scale(dpr, dpr);
+    b.fillStyle = '#15130f';
+    b.fillRect(0, 0, W, H);
+    // wood box
+    b.fillStyle = '#6b4a2f';
+    b.fillRect(8, 0, W - 16, IN.y1 + 44);
+    b.strokeStyle = 'rgba(0, 0, 0, 0.09)';
+    b.lineWidth = 1;
+    for (let i = 0; i < 70; i++) {
+      const y = Math.random() * (IN.y1 + 44);
+      b.beginPath();
+      b.moveTo(8, y);
+      b.bezierCurveTo(300, y + rand(-6, 6), 600, y + rand(-6, 6), W - 8, y + rand(-4, 4));
+      b.stroke();
+    }
+    // liner
+    b.fillStyle = '#e6dcc6';
+    b.fillRect(IN.x0, IN.y0, IN.x1 - IN.x0, IN.y1 - IN.y0);
+    b.strokeStyle = 'rgba(0, 0, 0, 0.035)';
+    for (let x = IN.x0 - (IN.y1 - IN.y0); x < IN.x1; x += 18) {
+      b.beginPath(); b.moveTo(x, IN.y1); b.lineTo(x + (IN.y1 - IN.y0), IN.y0); b.stroke();
+      b.beginPath(); b.moveTo(x, IN.y0); b.lineTo(x + (IN.y1 - IN.y0), IN.y1); b.stroke();
+    }
+    b.fillStyle = 'rgba(120, 90, 50, 0.35)';
+    for (let i = 0; i < 90; i++) {
+      b.beginPath();
+      b.arc(rand(IN.x0 + 4, IN.x1 - 4), rand(IN.y0 + 4, IN.y1 - 4), rand(0.6, 1.6), 0, TAU);
+      b.fill();
+    }
+    // tray
+    b.fillStyle = '#d6d1c4';
+    b.fillRect(TRAY.x0, TRAY.y0, TRAY.x1 - TRAY.x0, TRAY.y1 - TRAY.y0);
+    const trayShade = b.createLinearGradient(0, TRAY.y1 - 24, 0, TRAY.y1);
+    trayShade.addColorStop(0, 'rgba(0, 0, 0, 0)');
+    trayShade.addColorStop(1, 'rgba(0, 0, 0, 0.08)');
+    b.fillStyle = trayShade;
+    b.fillRect(TRAY.x0, TRAY.y1 - 24, TRAY.x1 - TRAY.x0, 24);
+    for (const t of TRAY_WALLS) {
+      b.fillStyle = 'rgba(0, 0, 0, 0.18)';
+      b.fillRect(t.x - t.w / 2 + 2, TRAY.y0, t.w, TRAY.y1 - TRAY.y0 + 3);
+      b.fillStyle = '#f0ede6';
+      b.fillRect(t.x - t.w / 2, TRAY.y0, t.w, TRAY.y1 - TRAY.y0);
+    }
+    // shadows where the walls meet the liner
+    const edge = (x, y, w, h, x0, y0, x1, y1) => {
+      const grad = b.createLinearGradient(x0, y0, x1, y1);
+      grad.addColorStop(0, 'rgba(0, 0, 0, 0.3)');
+      grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      b.fillStyle = grad;
+      b.fillRect(x, y, w, h);
+    };
+    edge(IN.x0, IN.y0, IN.x1 - IN.x0, 18, 0, IN.y0, 0, IN.y0 + 18);
+    edge(IN.x0, IN.y0, 14, IN.y1 - IN.y0, IN.x0, 0, IN.x0 + 14, 0);
+    edge(IN.x1 - 14, IN.y0, 14, IN.y1 - IN.y0, IN.x1, 0, IN.x1 - 14, 0);
+    // front board and handle
+    b.fillStyle = '#7a5436';
+    b.fillRect(8, IN.y1, W - 16, 44);
+    b.fillStyle = 'rgba(255, 255, 255, 0.08)';
+    b.fillRect(8, IN.y1, W - 16, 3);
+    b.fillStyle = '#9aa1a8';
+    b.fillRect(400, IN.y1 + 40, 6, 12);
+    b.fillRect(494, IN.y1 + 40, 6, 12);
+    b.fillStyle = '#b9bec6';
+    b.fillRect(392, IN.y1 + 50, 116, 9);
+    b.fillStyle = 'rgba(255, 255, 255, 0.35)';
+    b.fillRect(394, IN.y1 + 51, 112, 2);
+  })();
+
+  function drawCable(it) {
+    const pts = it.bodies.map(b => b.position);
+    g.lineCap = 'round';
+    g.lineJoin = 'round';
+    g.beginPath();
+    g.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length - 1; i++) {
+      const mx = (pts[i].x + pts[i + 1].x) / 2;
+      const my = (pts[i].y + pts[i + 1].y) / 2;
+      g.quadraticCurveTo(pts[i].x, pts[i].y, mx, my);
+    }
+    g.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
+    stroke('#e9e6dc', 5);
+    for (const [end, color] of [[it.bodies[0], '#3a3d42'], [it.bodies[it.bodies.length - 1], '#5a5f64']]) {
+      g.save();
+      g.translate(end.position.x, end.position.y);
+      g.rotate(end.angle);
+      rr(-10, -5.5, 20, 11, 2); fill(color);
+      g.fillStyle = '#b9bec6'; g.fillRect(end === it.bodies[0] ? -14 : 10, -3, 4, 6);
+      g.restore();
+    }
+  }
+
+  function draw(now) {
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.drawImage(bg, 0, 0, W, H);
+    const order = items.slice().sort((a, b) => a.z - b.z);
+    for (const it of order) {
+      g.save();
+      g.shadowColor = 'rgba(0, 0, 0, 0.35)';
+      g.shadowBlur = it === (drag && drag.it) ? 10 : 3;
+      g.shadowOffsetX = 1.5;
+      g.shadowOffsetY = it === (drag && drag.it) ? 6 : 2;
+      if (it.kind === 'cable') {
+        drawCable(it);
+      } else {
+        g.translate(it.body.position.x, it.body.position.y);
+        g.rotate(it.body.angle);
+        g.translate(it.origin.x, it.origin.y);
+        it.def.draw(it, now);
+      }
+      g.restore();
+    }
+  }
+
+  // ---------- captions ----------
+  const hint = $('hint');
+  hint.textContent = coarse
+    ? 'drag things. double-tap to inspect.'
+    : 'drag and throw things. double-click to inspect. arrow keys tilt the drawer.';
+  say(visits === 1
+    ? "the junk drawer. somewhat organized. that won't last."
+    : pick(['the junk drawer. nothing has changed. everything has moved.', "back in the junk drawer. it's worse. it's always worse."]));
+
+  function tagOf(it) {
+    if (it.kind === 'cookie' && it.state.opened) return it.def.tagOpen;
+    return it.def.tag;
+  }
+  let foundSaid = false;
+  function discovered(it) {
+    if (it.kind !== 'rarekey' || foundSaid) return;
+    foundSaid = true;
+    save('cizole.junk-drawer.found-key', '1');
+    say('you found the key to this drawer. the drawer does not have a lock.');
+  }
+
+  // ---------- hands ----------
+  const tagEl = $('tag');
+  function showTag(textValue, x, y) {
+    tagEl.textContent = textValue;
+    tagEl.hidden = false;
+    const w = tagEl.offsetWidth;
+    tagEl.style.left = Math.min(x + 14, window.innerWidth - w - 8) + 'px';
+    tagEl.style.top = (y + 16) + 'px';
+  }
+  function hideTag() { tagEl.hidden = true; }
+  let tagTimer;
+
+  function toWorld(e) {
+    const r = canvas.getBoundingClientRect();
+    return { x: ((e.clientX - r.left) / r.width) * W, y: ((e.clientY - r.top) / r.height) * H };
+  }
+  function pickAt(p) {
+    let best = null;
+    for (const b of Query.point(allBodies, p)) {
+      const it = b.plugin.item;
+      if (!best || it.z > best.it.z) best = { it, body: b };
+    }
+    if (best) return best;
+    // small things are hard to hit: accept a near miss
+    let near = null;
+    let nd = 12;
+    for (const b of allBodies) {
+      const d = Math.hypot(b.position.x - p.x, b.position.y - p.y);
+      if (d < nd) { nd = d; near = { it: b.plugin.item, body: b }; }
+    }
+    return near;
+  }
+
+  let state = 'open';
+  let drag = null;
+  let press = null;
+  let lastTap = null;
+
+  function startDrag(hit, p) {
+    const body = hit.body;
+    const c = Constraint.create({
+      pointA: { x: p.x, y: p.y },
+      bodyB: body,
+      pointB: { x: p.x - body.position.x, y: p.y - body.position.y },
+      length: 0.01,
+      stiffness: 0.35,
+      damping: 0.1,
+    });
+    Composite.add(world, c);
+    Sleeping.set(body, false);
+    hit.it.z = ++zTop;
+    // held things aren't dragging along the bottom of the drawer
+    drag = { it: hit.it, body, c, frictionAir: body.frictionAir };
+    body.frictionAir = 0.02;
+    canvas.style.cursor = 'grabbing';
+  }
+  function endDrag() {
+    if (!drag) return;
+    Composite.remove(world, drag.c);
+    drag.body.frictionAir = drag.frictionAir;
+    drag = null;
+    canvas.style.cursor = 'grab';
+  }
+
+  canvas.addEventListener('pointerdown', e => {
+    if (state !== 'open') return;
+    const p = toWorld(e);
+    const hit = pickAt(p);
+    press = { x: e.clientX, y: e.clientY, t: performance.now(), hit, moved: false, type: e.pointerType };
+    if (!hit) return;
+    e.preventDefault();
+    try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* not a live pointer */ }
+    startDrag(hit, p);
+    hideTag();
+  });
+  canvas.addEventListener('pointermove', e => {
+    const p = toWorld(e);
+    if (press && Math.hypot(e.clientX - press.x, e.clientY - press.y) > 6) press.moved = true;
+    if (drag) {
+      drag.c.pointA = p;
+      return;
+    }
+    if (e.pointerType === 'touch' || state !== 'open') return;
+    const hit = pickAt(p);
+    if (hit) {
+      showTag(tagOf(hit.it), e.clientX, e.clientY);
+      canvas.style.cursor = 'grab';
+      discovered(hit.it);
+    } else {
+      hideTag();
+      canvas.style.cursor = 'default';
+    }
+  });
+  function release(e) {
+    endDrag();
+    if (!press) return;
+    const tap = !press.moved && performance.now() - press.t < 350 && press.hit;
+    if (tap && press.type === 'touch') {
+      const now = performance.now();
+      if (lastTap && lastTap.it === press.hit.it && now - lastTap.t < 380) {
+        lastTap = null;
+        inspect(press.hit.it);
+      } else {
+        lastTap = { it: press.hit.it, t: now };
+        showTag(tagOf(press.hit.it), e.clientX, e.clientY);
+        discovered(press.hit.it);
+        clearTimeout(tagTimer);
+        tagTimer = setTimeout(hideTag, 2200);
+      }
+    }
+    press = null;
+  }
+  canvas.addEventListener('pointerup', release);
+  canvas.addEventListener('pointercancel', release);
+  canvas.addEventListener('pointerleave', e => { if (e.pointerType !== 'touch' && !drag) hideTag(); });
+  canvas.addEventListener('dblclick', e => {
+    const hit = pickAt(toWorld(e));
+    if (hit) inspect(hit.it);
+  });
+
+  // ---------- inspecting ----------
+  const card = $('card');
+  function inspect(it) {
+    endDrag();
+    hideTag();
+    if (it.kind === 'cookie' && !it.state.opened) {
+      it.state.opened = true;
+      it.state.fortune = pick(FORTUNES);
+    }
+    $('card-title').textContent = it.def.name + '.';
+    $('card-desc').textContent = typeof it.def.desc === 'function' ? it.def.desc(it) : it.def.desc;
+    card.hidden = false;
+    $('card-close').focus();
+    discovered(it);
+  }
+  function closeCard() { card.hidden = true; }
+  $('card-close').addEventListener('click', closeCard);
+  card.addEventListener('click', e => { if (e.target === card) closeCard(); });
+
+  // ---------- shaking ----------
+  function jostle(power) {
+    for (const b of allBodies) {
+      Sleeping.set(b, false);
+      Body.setVelocity(b, { x: b.velocity.x + rand(-1, 1) * 9 * power, y: b.velocity.y + rand(-1, 1) * 9 * power });
+      Body.setAngularVelocity(b, b.angularVelocity + rand(-0.25, 0.25) * power);
+    }
+  }
+  function organization() {
+    const inTray = items.filter(it => {
+      const p = it.body.position;
+      return p.x > TRAY.x0 && p.x < TRAY.x1 && p.y < TRAY.y1;
+    }).length;
+    return Math.round((inTray / items.length) * 100);
+  }
+  let shakes = 0;
+  function shakeFx() {
+    if (reduceMotion) return;
+    scene.classList.remove('shaking');
+    void scene.offsetWidth;
+    scene.classList.add('shaking');
+    setTimeout(() => scene.classList.remove('shaking'), 460);
+  }
+  $('shake').addEventListener('click', () => {
+    if (state !== 'open') { say('you shake a closed drawer. it rattles. that is all.'); return; }
+    shakes++;
+    jostle(1);
+    shakeFx();
+    setTimeout(() => {
+      const pct = organization();
+      if (shakes === 1) say(`everything moved. nothing improved. organization: ${pct}%.`);
+      else if (shakes === 5) say('the drawer is now fully disorganized. it was always going to be.');
+      else say(pick([
+        `organization: ${pct}%.`,
+        'a coin is somewhere else now.',
+        'you shook the drawer. the drawer does not feel better.',
+        'nothing fell out. nothing ever falls out.',
+      ]));
+    }, 900);
+  });
+
+  // ---------- closing (you can't) ----------
+  const closeBtn = $('close');
+  closeBtn.addEventListener('click', () => {
+    if (state === 'open') {
+      endDrag();
+      hideTag();
+      state = 'closing';
+      closeBtn.disabled = true;
+      scene.classList.add('closing');
+      say('closing the drawer.');
+      setTimeout(() => {
+        state = 'jammed';
+        scene.classList.add('jammed');
+        closeBtn.disabled = false;
+        closeBtn.textContent = 'open the drawer';
+        say("the drawer doesn't close. something is in the way. it's always something.");
+      }, reduceMotion ? 50 : 1150);
+    } else if (state === 'jammed') {
+      scene.classList.remove('closing', 'jammed');
+      state = 'open';
+      closeBtn.textContent = 'close the drawer';
+      say(pick(['open again. everything is exactly as bad as before.', 'the drawer is open. nothing escaped.']));
+    }
+  });
+  $('poke').addEventListener('click', () => {
+    say('a spatula. it has always been too long for this drawer. it always will be.');
+  });
+
+  // ---------- tilting ----------
+  const tilt = { x: 0, y: 0, tx: 0, ty: 0 };
+  const keysDown = new Set();
+  const ARROWS = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
+  let tiltSaid = false;
+  addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !card.hidden) { closeCard(); return; }
+    if (!ARROWS.includes(e.key) || !card.hidden || e.altKey || e.ctrlKey || e.metaKey) return;
+    e.preventDefault();
+    keysDown.add(e.key);
+    if (!tiltSaid && state === 'open') {
+      tiltSaid = true;
+      say('you tilt the drawer. everything slides toward the lowest point. like everything does.');
+    }
+  });
+  addEventListener('keyup', e => { keysDown.delete(e.key); });
+  addEventListener('blur', () => keysDown.clear());
+
+  function wakeAll() {
+    for (const b of allBodies) Sleeping.set(b, false);
+  }
+  const deadZone = v => (Math.abs(v) < 0.12 ? 0 : v);
+  function updateTilt() {
+    let tx = tilt.tx;
+    let ty = tilt.ty;
+    if (keysDown.size) {
+      tx = (keysDown.has('ArrowRight') ? 1 : 0) - (keysDown.has('ArrowLeft') ? 1 : 0);
+      ty = (keysDown.has('ArrowDown') ? 1 : 0) - (keysDown.has('ArrowUp') ? 1 : 0);
+    }
+    if (state !== 'open') { tx = 0; ty = 0; }
+    tilt.x += (tx - tilt.x) * 0.12;
+    tilt.y += (ty - tilt.y) * 0.12;
+    const gx = deadZone(tilt.x) * 0.9;
+    const gy = deadZone(tilt.y) * 0.9;
+    if (Math.abs(gx - engine.gravity.x) > 0.01 || Math.abs(gy - engine.gravity.y) > 0.01) {
+      engine.gravity.x = gx;
+      engine.gravity.y = gy;
+      wakeAll();
+    }
+    if (!reduceMotion) {
+      tilter.style.setProperty('--tx', tilt.x.toFixed(3));
+      tilter.style.setProperty('--ty', tilt.y.toFixed(3));
+    }
+  }
+
+  // phone tilt: needs a tap first (and permission on iphones)
+  const tiltBtn = $('tilt');
+  const needsPermission = typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function';
+  let tiltOn = false;
+  let gotSensor = false;
+  let base = null;
+  let lastJolt = 0;
+  if ('DeviceOrientationEvent' in window && (needsPermission || coarse)) {
+    tiltBtn.hidden = false;
+    hint.textContent = 'drag things. double-tap to inspect. enable tilt and tip your phone.';
+  }
+  function onOrient(e) {
+    if (e.beta == null || e.gamma == null) return;
+    gotSensor = true;
+    if (!base) base = { beta: e.beta, gamma: e.gamma };
+    const gx = clamp((e.gamma - base.gamma) / 25, -1, 1);
+    const gy = clamp((e.beta - base.beta) / 25, -1, 1);
+    const angle = (screen.orientation && screen.orientation.angle) || window.orientation || 0;
+    const a = (-angle * Math.PI) / 180;
+    tilt.tx = gx * Math.cos(a) - gy * Math.sin(a);
+    tilt.ty = gx * Math.sin(a) + gy * Math.cos(a);
+  }
+  function onMotion(e) {
+    const acc = e.acceleration && e.acceleration.x != null ? e.acceleration : null;
+    if (!acc) return;
+    const mag = Math.hypot(acc.x || 0, acc.y || 0, acc.z || 0);
+    const now = performance.now();
+    if (mag > 14 && now - lastJolt > 400 && state === 'open') {
+      lastJolt = now;
+      jostle(Math.min(1.4, mag / 18));
+      shakeFx();
+    }
+  }
+  tiltBtn.addEventListener('click', async () => {
+    if (tiltOn) {
+      base = null;
+      say('recalibrated. level is whatever you say it is.');
+      return;
+    }
+    try {
+      if (needsPermission) {
+        const answer = await DeviceOrientationEvent.requestPermission();
+        if (answer !== 'granted') { say('tilt denied. the drawer respects your decision.'); return; }
+        if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+          try { await DeviceMotionEvent.requestPermission(); } catch (err) { /* shaking stays off */ }
+        }
+      }
+    } catch (err) {
+      say('tilt permission failed. the drawer is level. emotionally too.');
+      return;
+    }
+    addEventListener('deviceorientation', onOrient);
+    addEventListener('devicemotion', onMotion);
+    tiltOn = true;
+    base = null;
+    tiltBtn.textContent = 'recalibrate tilt';
+    say("tilt on. calibrated to however you're holding it right now.");
+    setTimeout(() => {
+      if (!gotSensor) say('no tilt sensor found. the drawer is level. emotionally too.');
+    }, 1500);
+  });
+
+  // ---------- while you were away ----------
+  function rearrange() {
+    const movers = items.filter(it => it.kind !== 'cable' && Math.random() < 0.6);
+    for (const it of movers) {
+      const b = it.body;
+      for (let tries = 0; tries < 30; tries++) {
+        Body.setPosition(b, { x: rand(IN.x0 + 30, IN.x1 - 30), y: rand(IN.y0 + 30, IN.y1 - 30) });
+        Body.setAngle(b, rand(0, TAU));
+        if (!overlaps(b.bounds, TRAY_BOX) && inside(b.bounds, { x0: IN.x0 + 2, x1: IN.x1 - 2, y0: IN.y0 + 2, y1: IN.y1 - 2 })) break;
+      }
+      Body.setVelocity(b, { x: 0, y: 0 });
+      Body.setAngularVelocity(b, 0);
+    }
+    wakeAll();
+  }
+  addEventListener('cizole:return', e => {
+    const away = (e.detail && e.detail.awayMs) || 0;
+    if (away < 4000 || state !== 'open' || drag) return;
+    rearrange();
+    if (away > 60000) {
+      say('someone was in the drawer for a while. they did not find what they were looking for.');
+    } else if (Math.random() < 0.35) {
+      const extra = makeItem('tie');
+      place(extra, 'main', 'item', { ignoreOverlap: true });
+      addToWorld(extra);
+      say('someone was in the drawer. they took nothing. they added a twist tie.');
+    } else {
+      say('someone was in the drawer.');
+    }
+  });
+
+  // ---------- the loop ----------
+  const STEP = 1000 / 60;
+  const MAX_SPEED = 30;
+  let acc = 0;
+  let last = performance.now();
+  function limitSpeed() {
+    for (const b of allBodies) {
+      const v = b.velocity;
+      const s = Math.hypot(v.x, v.y);
+      if (s > MAX_SPEED) Body.setVelocity(b, { x: (v.x / s) * MAX_SPEED, y: (v.y / s) * MAX_SPEED });
+    }
+  }
+  function frame(now) {
+    const dt = Math.min(100, now - last);
+    last = now;
+    if (!document.hidden) {
+      updateTilt();
+      acc += dt;
+      let steps = 0;
+      while (acc >= STEP && steps < 4) {
+        Engine.update(engine, STEP);
+        limitSpeed();
+        acc -= STEP;
+        steps++;
+      }
+      if (steps === 4) acc = 0;
+      draw(now);
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+<script src="../assets/away.js"></script>
+</body>
+</html>
