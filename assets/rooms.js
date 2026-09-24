@@ -27,7 +27,8 @@
     { n: '019', slug: 'escher', name: 'escher room', blurb: 'every way is up' },
     { n: '020', slug: 'sauna', name: 'sauna', blurb: "it's never enough" },
     { n: '021', slug: 'freezer', name: 'freezer', blurb: 'the door closes. they do that.' },
-    { n: '022', slug: 'about', name: 'about', blurb: 'regrettably, a person' },
+    // new rooms go above this line. about is always 999 and always last.
+    { n: '999', slug: 'about', name: 'about', blurb: 'regrettably, a person' },
   ];
   window.CIZOLE_ROOMS = ROOMS;
 
