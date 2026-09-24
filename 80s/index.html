@@ -1,0 +1,2160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>the 80s · cizole</title>
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Press+Start+2P&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/site.css">
+<style>
+  :root {
+    --beige: #ddd3ba;
+    --beige-dk: #bdb194;
+    --pixel: "Press Start 2P", monospace;
+    --marker: "Permanent Marker", cursive;
+  }
+  .room { max-width: 1120px; margin: 0 auto; padding: 56px 16px 32px; }
+
+  /* ---------- sound toggle ---------- */
+  .sound {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    z-index: 100;
+    padding: 6px 12px;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(14, 13, 11, 0.85);
+    color: var(--dim);
+    font: 14px var(--font);
+    cursor: pointer;
+  }
+  .sound:hover, .sound.on { color: var(--acid); }
+
+  /* ---------- wall ---------- */
+  .wall {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 26px;
+    min-height: 300px;
+    padding: 26px 24px 0;
+    border-radius: 10px 10px 0 0;
+    background:
+      radial-gradient(circle at 20px 20px, rgba(255, 90, 170, 0.16) 3px, transparent 4px) 0 0 / 84px 84px,
+      radial-gradient(circle at 62px 58px, rgba(60, 220, 220, 0.13) 3px, transparent 4px) 0 0 / 84px 84px,
+      linear-gradient(135deg, transparent 46%, rgba(255, 210, 60, 0.06) 46% 54%, transparent 54%) 0 0 / 42px 42px,
+      #1d1a22;
+    overflow: hidden;
+  }
+  .poster {
+    position: relative;
+    flex: none;
+    width: 150px;
+    aspect-ratio: 2 / 3;
+    overflow: hidden;
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.5);
+  }
+  .poster.sunset {
+    transform: rotate(-2deg);
+    background: linear-gradient(#1a0b2e, #6b1f5c 42%, #f25f5c 66%, #ffb14e);
+  }
+  .sunset .sun {
+    position: absolute;
+    left: 50%;
+    top: 26%;
+    width: 64%;
+    aspect-ratio: 1;
+    transform: translateX(-50%);
+    border-radius: 50%;
+    background: linear-gradient(#ffe35c, #ff6b3d);
+    -webkit-mask-image: linear-gradient(#000 52%, transparent 52% 57%, #000 57% 66%, transparent 66% 70%, #000 70% 78%, transparent 78% 83%, #000 83%);
+    mask-image: linear-gradient(#000 52%, transparent 52% 57%, #000 57% 66%, transparent 66% 70%, #000 70% 78%, transparent 78% 83%, #000 83%);
+  }
+  .sunset .grid {
+    position: absolute;
+    left: -60%;
+    right: -60%;
+    bottom: 0;
+    height: 42%;
+    background:
+      repeating-linear-gradient(90deg, rgba(255, 70, 210, 0.85) 0 1px, transparent 1px 20px),
+      repeating-linear-gradient(0deg, rgba(255, 70, 210, 0.85) 0 1px, transparent 1px 14px),
+      #14061f;
+    transform: perspective(110px) rotateX(52deg);
+    transform-origin: 50% 100%;
+  }
+  .poster.car {
+    transform: rotate(1.5deg);
+    margin-top: 18px;
+    background: radial-gradient(ellipse at 50% 70%, #1b2440, #06070c 70%);
+  }
+  .car svg { position: absolute; left: 6%; top: 34%; width: 88%; }
+  .car .car-title {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 12px;
+    color: #7df9ff;
+    font: 700 11px var(--font);
+    letter-spacing: 0.18em;
+    text-align: center;
+    text-shadow: 0 0 6px #22d3ee;
+  }
+  .poster::before, .poster::after {
+    content: "";
+    position: absolute;
+    top: -4px;
+    width: 34px;
+    height: 12px;
+    background: rgba(232, 217, 168, 0.8);
+  }
+  .poster::before { left: -8px; transform: rotate(-30deg); }
+  .poster::after { right: -8px; transform: rotate(30deg); }
+
+  /* wall phone with a curly cord */
+  .phone-btn {
+    position: absolute;
+    top: 10px;
+    right: 26px;
+    width: 150px;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+  }
+  .phone-btn svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .phone-btn:focus-visible { outline: 2px solid var(--acid); outline-offset: 4px; }
+  .phone-btn.ringing svg { animation: ring 0.12s linear infinite; transform-origin: 70% 12%; }
+  @keyframes ring {
+    0%, 100% { rotate: 0deg; }
+    25% { rotate: 2.5deg; }
+    75% { rotate: -2.5deg; }
+  }
+
+  /* ---------- desk ---------- */
+  .desk {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    gap: 30px;
+    align-items: end;
+    padding: 26px 24px 28px;
+    border-radius: 0 0 10px 10px;
+    background:
+      repeating-linear-gradient(92deg, rgba(0, 0, 0, 0.07) 0 3px, transparent 3px 11px),
+      linear-gradient(#6d4a2f, #56391f);
+    box-shadow: inset 0 6px 0 #7d5638;
+  }
+  @media (max-width: 860px) {
+    .desk { grid-template-columns: minmax(0, 1fr); }
+  }
+
+  /* ---------- the computer ---------- */
+  .computer { display: flex; flex-direction: column; align-items: center; }
+  .monitor {
+    position: relative;
+    width: 100%;
+    max-width: 640px;
+    padding: 22px 22px 36px;
+    border-radius: 16px 16px 10px 10px;
+    background: linear-gradient(#e4dbc4, #cbc0a3);
+    box-shadow: inset 0 -6px 0 rgba(0, 0, 0, 0.08), inset 0 2px 0 rgba(255, 255, 255, 0.5), 0 18px 30px rgba(0, 0, 0, 0.45);
+  }
+  .monitor-badge {
+    position: absolute;
+    left: 24px;
+    bottom: 11px;
+    color: #8a7f66;
+    font: 700 10px var(--font);
+    letter-spacing: 0.14em;
+  }
+  .power-led {
+    position: absolute;
+    right: 28px;
+    bottom: 14px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #e0413a;
+    box-shadow: 0 0 6px #e0413a;
+  }
+  .crt {
+    --border: #6c5eb5;
+    --bg: #352879;
+    position: relative;
+    overflow: hidden;
+    border-radius: 22px / 18px;
+    background: #111;
+    box-shadow: inset 0 0 0 6px #2a2720;
+  }
+  .crt-border { padding: 6% 7%; background: var(--border); transition: background 0.15s; }
+  .crt-bg { container-type: inline-size; aspect-ratio: 1.6; background: var(--bg); transition: background 0.15s; }
+  .crt-text {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    color: #8e82e6;
+    font-family: var(--pixel);
+    font-size: calc(100cqw / 40.5);
+    line-height: 1;
+    white-space: pre;
+    text-shadow: 0 0 4px rgba(142, 130, 230, 0.65);
+  }
+  .cursor {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    vertical-align: top;
+    background: currentColor;
+    animation: blink 1s steps(1) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+  .scan {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(rgba(0, 0, 0, 0.2) 0 1px, transparent 1px 3px);
+    box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.55);
+    animation: flicker 3.7s steps(1) infinite;
+  }
+  @keyframes flicker {
+    0%, 100% { opacity: 1; }
+    47% { opacity: 0.86; }
+    48% { opacity: 1; }
+  }
+  .crt.flash .crt-border { animation: flash-border 0.35s steps(1) 2; }
+  @keyframes flash-border { 50% { background: #9a2a2a; } }
+  .kb-form { position: absolute; inset: 0; margin: 0; }
+  .kb {
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: transparent;
+    caret-color: transparent;
+    font-size: 16px;
+    opacity: 0;
+    cursor: text;
+  }
+  .crt-hint {
+    position: absolute;
+    right: 12px;
+    bottom: 8px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.55);
+    color: #cfc8ff;
+    font: 11px var(--font);
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .crt.focused .crt-hint { opacity: 0; }
+
+  .neck { width: 28%; height: 14px; background: linear-gradient(#bfb498, #a99e82); }
+  .keyboard {
+    width: 100%;
+    max-width: 680px;
+    padding: 12px 14px 14px;
+    border-radius: 8px 8px 14px 14px;
+    background: linear-gradient(#dcd3ba, #c3b89c);
+    box-shadow: 0 10px 18px rgba(0, 0, 0, 0.4);
+  }
+  .keys {
+    height: 46px;
+    background: repeating-linear-gradient(90deg, #4a4540 0 22px, transparent 22px 26px);
+    -webkit-mask-image: repeating-linear-gradient(#000 0 9px, transparent 9px 12px);
+    mask-image: repeating-linear-gradient(#000 0 9px, transparent 9px 12px);
+    opacity: 0.85;
+  }
+  .fkeys { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 10px; }
+  .key {
+    padding: 7px 10px;
+    border: 0;
+    border-radius: 4px;
+    background: #4a4540;
+    color: #efe9d8;
+    font: 700 11px var(--font);
+    letter-spacing: 0.05em;
+    box-shadow: 0 3px 0 #2c2925;
+    cursor: pointer;
+  }
+  .key:active { translate: 0 2px; box-shadow: 0 1px 0 #2c2925; }
+  .key:focus-visible { outline: 2px solid var(--acid); outline-offset: 2px; }
+  .try { flex: 1; min-width: 180px; color: #6d6450; font-size: 11px; line-height: 1.5; }
+
+  /* ---------- right side ---------- */
+  .side { display: flex; flex-direction: column; gap: 26px; }
+  .row { display: flex; gap: 22px; align-items: flex-end; }
+  @media (max-width: 520px) { .row { flex-direction: column; align-items: stretch; } }
+
+  /* boombox */
+  .boombox { position: relative; padding-top: 20px; }
+  .bb-handle {
+    position: absolute;
+    top: 0;
+    left: 20%;
+    right: 20%;
+    height: 28px;
+    border: 6px solid #2b2c30;
+    border-bottom: 0;
+    border-radius: 14px 14px 0 0;
+  }
+  .bb-body {
+    display: grid;
+    grid-template-columns: 1fr 1.3fr 1fr;
+    gap: 10px;
+    align-items: center;
+    padding: 14px 12px;
+    border-radius: 10px;
+    background: linear-gradient(#cdd0d6, #9da2aa);
+    box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.45), 0 14px 24px rgba(0, 0, 0, 0.45);
+  }
+  .speaker {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background:
+      repeating-radial-gradient(circle, #1b1c1f 0 2px, #26272b 2px 4px);
+    box-shadow: inset 0 0 0 4px #7d828a, inset 0 0 0 7px #2a2b30;
+  }
+  .cone {
+    width: 36%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, #5a5c62, #202126);
+    transition: transform 0.1s;
+  }
+  .boombox.pulse .cone { transform: scale(1.14); transition: none; }
+  .deck { display: flex; flex-direction: column; gap: 8px; }
+  .cassette {
+    position: relative;
+    aspect-ratio: 1.6;
+    border-radius: 6px;
+    background: #26272b;
+    box-shadow: inset 0 0 0 3px #4a4d54;
+    transition: transform 0.35s;
+    touch-action: none;
+  }
+  .cassette:focus-visible { outline: 2px solid var(--acid); outline-offset: 2px; }
+  .boombox.ejected .cassette { transform: translateY(-16%) rotate(-2deg); }
+  .boombox.eating .cassette { animation: shudder 0.14s linear infinite; }
+  @keyframes shudder { 50% { translate: 1px -1px; } }
+  .tape-label {
+    position: absolute;
+    left: 9%;
+    right: 9%;
+    top: 7%;
+    overflow: hidden;
+    padding: 1px 6px;
+    border-radius: 2px;
+    background: #f2ede0;
+    color: #1b1b1b;
+    font: 11px var(--marker);
+    text-align: center;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    transform: rotate(-1deg);
+  }
+  .reels {
+    position: absolute;
+    left: 12%;
+    right: 12%;
+    top: 34%;
+    height: 38%;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    border-radius: 12px;
+    background: rgba(170, 180, 190, 0.22);
+  }
+  .spool {
+    position: relative;
+    width: 26%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: repeating-conic-gradient(#e9e6dc 0 20deg, #3b2a1f 20deg 60deg);
+    box-shadow: 0 0 0 3px #3b2a1f;
+    transform: rotate(var(--rot, 0deg));
+  }
+  .boombox.playing .spool { animation: spin 1.6s linear infinite; }
+  .boombox.eating .spool { animation: spin 0.45s linear infinite; }
+  @keyframes spin { to { rotate: 360deg; } }
+  .pencil {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 7px;
+    height: 82px;
+    margin-left: -3.5px;
+    border-radius: 1px;
+    background: linear-gradient(90deg, #f7cf3a, #e0a820 60%, #c98f14);
+    transform-origin: 50% 0;
+    rotate: 150deg;
+    display: none;
+    pointer-events: none;
+  }
+  .pencil::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -9px;
+    height: 9px;
+    border-radius: 0 0 2px 2px;
+    background: #e98aa0;
+  }
+  .boombox.eaten .pencil { display: block; }
+  .spill { position: absolute; left: 18%; top: 60%; width: 64%; height: 90%; overflow: visible; pointer-events: none; }
+  .spill path {
+    fill: none;
+    stroke: #4a2e1c;
+    stroke-width: 2.4;
+    stroke-linecap: round;
+    stroke-dasharray: 100;
+    stroke-dashoffset: 100;
+    transition: stroke-dashoffset 2.6s ease-in;
+  }
+  .boombox.eating .spill path, .boombox.eaten .spill path { stroke-dashoffset: 0; }
+  .bb-buttons { display: flex; justify-content: center; gap: 6px; }
+  .bb-buttons button {
+    padding: 6px 8px;
+    border: 0;
+    border-radius: 4px;
+    background: #2b2c30;
+    color: #e9e6dc;
+    font: 700 10px var(--font);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    box-shadow: 0 3px 0 #111;
+    cursor: pointer;
+  }
+  .bb-buttons button:active { translate: 0 2px; box-shadow: 0 1px 0 #111; }
+  .bb-buttons button:focus-visible { outline: 2px solid var(--acid); outline-offset: 2px; }
+
+  /* vhs + vcr */
+  .av { flex: 1.4; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+  .vhs-stack { display: flex; flex-direction: column; gap: 3px; }
+  .vhs {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 26px;
+    padding: 0;
+    border: 0;
+    border-radius: 3px;
+    background: linear-gradient(#222328, #141518);
+    box-shadow: inset 0 0 0 2px #2e3035;
+    transform: translateX(var(--dx, 0)) rotate(var(--rz, 0deg));
+    transition: transform 0.3s;
+    cursor: pointer;
+  }
+  .vhs:focus-visible { outline: 2px solid var(--acid); outline-offset: 2px; }
+  .vhs.loading { transform: translateX(18px) rotate(0deg); }
+  .vhs .label {
+    max-width: 78%;
+    overflow: hidden;
+    padding: 0 10px;
+    border-radius: 2px;
+    background: #f2ede0;
+    color: #1b1b1b;
+    font: 13px/1.35 var(--marker);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .vhs.rewound .label { box-shadow: inset -6px 0 0 #58c26b; }
+  .vcr {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    height: 46px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 4px;
+    background: linear-gradient(#2d2e33, #1a1b1e);
+    box-shadow: 0 8px 14px rgba(0, 0, 0, 0.45);
+    cursor: pointer;
+  }
+  .vcr:focus-visible { outline: 2px solid var(--acid); outline-offset: 2px; }
+  .vcr-slot { flex: 1; height: 8px; border-radius: 2px; background: #0b0b0c; box-shadow: inset 0 1px 2px #000; }
+  .vcr-clock {
+    min-width: 9.5em;
+    color: #48ff7a;
+    font: 9px var(--pixel);
+    text-align: right;
+    text-shadow: 0 0 6px #48ff7a;
+  }
+  .vcr-clock.blink { animation: blink 1s steps(1) infinite; }
+  .sticker {
+    position: absolute;
+    left: 10px;
+    bottom: -9px;
+    padding: 1px 7px;
+    background: #ffe35c;
+    color: #1b1b1b;
+    font: 10px var(--marker);
+    transform: rotate(-3deg);
+    pointer-events: none;
+  }
+
+  /* color cube */
+  .cube-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .cube-btn { width: 120px; padding: 0; border: 0; background: none; cursor: pointer; }
+  .cube-btn:focus-visible { outline: 2px solid var(--acid); outline-offset: 2px; }
+  .cube-btn svg { display: block; width: 100%; height: auto; filter: drop-shadow(0 10px 10px rgba(0, 0, 0, 0.45)); }
+  .cube-btn.twist svg { animation: twist 0.35s ease-out; }
+  @keyframes twist {
+    30% { rotate: -9deg; }
+    70% { rotate: 5deg; }
+  }
+  .cube-note { color: #d9c7a8; font: 12px var(--marker); transform: rotate(-2deg); }
+
+  .caption { min-height: 1.5em; margin: 16px 0 0; font-size: 15px; transition: opacity 0.2s; }
+  .caption.fade { opacity: 0; }
+
+  @media (max-width: 600px) {
+    .poster { width: 96px; }
+    .poster.car { margin-top: 10px; }
+    .phone-btn { width: 104px; right: 12px; }
+    .wall { gap: 14px; padding: 20px 14px 0; min-height: 230px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .scan, .boombox.playing .spool, .boombox.eating .spool, .boombox.eating .cassette,
+    .cube-btn.twist svg, .phone-btn.ringing svg { animation: none; }
+    .boombox.pulse .cone { transform: none; }
+    .spill path { transition: none; }
+  }
+</style>
+</head>
+<body>
+<a class="lobby-link" href="../">&larr; lobby</a>
+<button class="sound" id="sound" type="button">sound: off</button>
+
+<main class="room">
+  <div class="wall">
+    <div class="poster sunset" aria-hidden="true"><div class="sun"></div><div class="grid"></div></div>
+    <div class="poster car" aria-hidden="true">
+      <svg viewBox="0 0 200 70">
+        <path d="M6 52 L20 38 L70 30 L112 12 L150 14 L190 34 L196 48 L186 54 L40 56 Z" fill="#05060a" stroke="#7df9ff" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M78 30 L112 16 L146 18 L158 30 Z" fill="#0d1a2a" stroke="#7df9ff" stroke-width="1.2"/>
+        <circle cx="52" cy="56" r="11" fill="#05060a" stroke="#ff4fd8" stroke-width="2"/>
+        <circle cx="158" cy="56" r="11" fill="#05060a" stroke="#ff4fd8" stroke-width="2"/>
+      </svg>
+      <span class="car-title">0-60: YES</span>
+    </div>
+
+    <button class="phone-btn" id="phone" type="button" aria-label="wall phone">
+      <svg viewBox="0 0 170 330" aria-hidden="true">
+        <path id="cord" d="" fill="none" stroke="#a52a22" stroke-width="1.8" stroke-linejoin="round"/>
+        <rect x="88" y="12" width="60" height="114" rx="9" fill="#c8352c"/>
+        <rect x="88" y="12" width="60" height="114" rx="9" fill="none" stroke="#8e231c" stroke-width="2"/>
+        <g fill="#f2e6d0">
+          <rect x="99" y="44" width="10" height="8" rx="2"/><rect x="113" y="44" width="10" height="8" rx="2"/><rect x="127" y="44" width="10" height="8" rx="2"/>
+          <rect x="99" y="58" width="10" height="8" rx="2"/><rect x="113" y="58" width="10" height="8" rx="2"/><rect x="127" y="58" width="10" height="8" rx="2"/>
+          <rect x="99" y="72" width="10" height="8" rx="2"/><rect x="113" y="72" width="10" height="8" rx="2"/><rect x="127" y="72" width="10" height="8" rx="2"/>
+          <rect x="99" y="86" width="10" height="8" rx="2"/><rect x="113" y="86" width="10" height="8" rx="2"/><rect x="127" y="86" width="10" height="8" rx="2"/>
+        </g>
+        <rect x="80" y="30" width="10" height="6" rx="2" fill="#8e231c"/>
+        <rect x="80" y="104" width="10" height="6" rx="2" fill="#8e231c"/>
+        <g id="handset">
+          <rect x="66" y="22" width="14" height="96" rx="7" fill="#c8352c" stroke="#8e231c" stroke-width="2"/>
+          <ellipse cx="73" cy="24" rx="12" ry="10" fill="#c8352c" stroke="#8e231c" stroke-width="2"/>
+          <ellipse cx="73" cy="116" rx="12" ry="10" fill="#c8352c" stroke="#8e231c" stroke-width="2"/>
+        </g>
+      </svg>
+    </button>
+  </div>
+
+  <div class="desk">
+    <section class="computer" aria-label="home computer">
+      <div class="monitor">
+        <div class="crt" id="crt">
+          <div class="crt-border"><div class="crt-bg"><pre class="crt-text" id="screen"></pre></div></div>
+          <div class="scan" aria-hidden="true"></div>
+          <form class="kb-form" id="kb-form" autocomplete="off">
+            <input class="kb" id="kb" type="text" maxlength="80" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" enterkeyhint="enter" aria-label="type into the computer. press enter to submit.">
+          </form>
+          <span class="crt-hint">click to type</span>
+        </div>
+        <span class="monitor-badge">CZ-64</span>
+        <span class="power-led" aria-hidden="true"></span>
+      </div>
+      <div class="neck" aria-hidden="true"></div>
+      <div class="keyboard">
+        <div class="keys" aria-hidden="true"></div>
+        <div class="fkeys">
+          <button class="key" id="break" type="button" title="stop a running program (esc works too)">RUN/STOP</button>
+          <span class="try">try: LIST &middot; RUN &middot; HELP &middot; LOAD "$" &middot; 10 PRINT "HI" &middot; 20 GOTO 10</span>
+        </div>
+      </div>
+    </section>
+
+    <aside class="side">
+      <div class="boombox" id="boombox">
+        <div class="bb-handle" aria-hidden="true"></div>
+        <div class="bb-body">
+          <div class="speaker" aria-hidden="true"><div class="cone"></div></div>
+          <div class="deck">
+            <div class="cassette" id="cassette" tabindex="0" aria-label="cassette tape. if it gets eaten, drag in circles on it (or use the arrow keys) to wind it back with a pencil.">
+              <span class="tape-label">mix tape (do not)</span>
+              <div class="reels"><span class="spool" id="spool-l"><span class="pencil"></span></span><span class="spool" id="spool-r"></span></div>
+              <svg class="spill" viewBox="0 0 100 80" aria-hidden="true">
+                <path pathLength="100" d="M36 0 C 20 18, 72 20, 58 38 S 12 52, 30 66 S 88 74, 74 50 S 50 30, 64 6"/>
+              </svg>
+            </div>
+            <div class="bb-buttons">
+              <button type="button" data-bb="play">play</button>
+              <button type="button" data-bb="stop">stop</button>
+              <button type="button" data-bb="eject">eject</button>
+            </div>
+          </div>
+          <div class="speaker" aria-hidden="true"><div class="cone"></div></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="av">
+          <div class="vhs-stack" id="vhs"></div>
+          <button class="vcr" id="vcr" type="button" aria-label="vcr">
+            <span class="vcr-slot"></span>
+            <span class="vcr-clock blink" id="vcr-clock">12:00</span>
+            <span class="sticker">be kind, rewind</span>
+          </button>
+        </div>
+        <div class="cube-wrap">
+          <button class="cube-btn" id="cube" type="button" aria-label="color cube puzzle">
+            <svg id="cube-svg" viewBox="0 0 120 120" aria-hidden="true"></svg>
+          </button>
+          <span class="cube-note">do not solve</span>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <p class="caption" id="caption" role="status"></p>
+</main>
+
+<script>
+// BASIC-START
+// A small, forgiving BASIC. It owns the screen buffer; the page just draws it.
+function createBasic(io) {
+  const COLS = 40;
+  const KEEP = 400;
+
+  const FILES = {
+    'HOMEWORK.BAS': {
+      program: [
+        '10 REM HOMEWORK BY COLE',
+        '20 PRINT "THE DOG ATE MY HOMEWORK."',
+        '30 PRINT "I DO NOT HAVE A DOG."',
+        '40 PRINT "THE COMPUTER ATE MY HOMEWORK."',
+        '50 PRINT "THE COMPUTER IS NOT A DOG."',
+        '60 PRINT "PROBABLY."',
+        '70 END',
+      ],
+    },
+    'DO NOT OPEN': { text: ['YOU OPENED IT.'], event: 'opened' },
+    'COLE.TXT': {
+      text: [
+        'DEAR FUTURE COLE,',
+        'TODAY I MADE THE SCREEN SAY MY NAME',
+        '400 TIMES. IT DID NOT GET TIRED.',
+        'I DID.',
+        'ARE THERE FLYING CARS YET.',
+        'DO NOT ANSWER THAT.',
+        '- COLE, 1986',
+        'P.S. DO NOT OPEN THE OTHER FILE.',
+      ],
+    },
+    'GAME.BAS': {
+      program: [
+        '10 REM GUESS THE NUMBER',
+        '20 N = INT(RND(1) * 100) + 1',
+        '30 T = 0',
+        '40 PRINT "I AM THINKING OF A NUMBER"',
+        '50 PRINT "BETWEEN 1 AND 100."',
+        '60 INPUT "YOUR GUESS"; G',
+        '70 T = T + 1',
+        '80 IF G < N THEN PRINT "TOO LOW.": GOTO 60',
+        '90 IF G > N THEN PRINT "TOO HIGH.": GOTO 60',
+        '100 PRINT "YOU GOT IT IN"; T; "TRIES."',
+        '110 IF T > 7 THEN PRINT "THAT WAS A LOT OF TRIES."',
+        '120 END',
+      ],
+    },
+  };
+  const DIRECTORY = [
+    '0 "COLE\'S DISK      " CZ 2A',
+    '12   "HOMEWORK.BAS"     PRG',
+    '1    "DO NOT OPEN"      PRG',
+    '2    "COLE.TXT"         SEQ',
+    '9    "GAME.BAS"         PRG',
+    '640 BLOCKS FREE.',
+  ];
+
+  let buf = [];
+  let cur = '';
+  let program = new Map();
+  let vars = Object.create(null);
+  let state = 'ready'; // ready | running | input | loading
+  let lines = [];
+  let parsed = Object.create(null);
+  let immediate = [];
+  let pc = { li: -1, si: 0 };
+  let forStack = [];
+  let gosubStack = [];
+  let curLine = -1;
+  let jumps = 0;
+  let inputVar = '';
+  let inputPrompt = '';
+  let border = 14;
+  let bg = 6;
+  let timers = [];
+  const tokCache = new Map();
+
+  class BasicError extends Error {}
+  const fail = kind => { throw new BasicError(kind); };
+  const num = v => (typeof v === 'number' ? v : fail('TYPE MISMATCH'));
+  const str = v => (typeof v === 'string' ? v : fail('TYPE MISMATCH'));
+  const where = () => (curLine >= 0 ? ' IN ' + curLine : '');
+  const emit = (name, arg) => { if (io.event) io.event(name, arg); };
+
+  // ----- the screen -----
+  function push(line) {
+    buf.push(line);
+    if (buf.length > KEEP) buf.splice(0, buf.length - KEEP);
+  }
+  function print(text) {
+    cur += text;
+    while (cur.length > COLS) {
+      push(cur.slice(0, COLS));
+      cur = cur.slice(COLS);
+    }
+  }
+  function newline() { push(cur); cur = ''; }
+  function println(text) { print(text); newline(); }
+  function clear() { buf = []; cur = ''; }
+  function finish(msg) {
+    if (cur) newline();
+    if (msg) println(msg);
+    println('READY.');
+    state = 'ready';
+  }
+  function fmt(n) {
+    let s = Number.isInteger(n) ? String(n) : String(parseFloat(n.toPrecision(9)));
+    s = s.toUpperCase().replace(/^(-?)0\./, '$1.');
+    return (n < 0 ? '' : ' ') + s;
+  }
+
+  // ----- expressions -----
+  function tokenize(src) {
+    const hit = tokCache.get(src);
+    if (hit) return hit;
+    const toks = [];
+    let i = 0;
+    while (i < src.length) {
+      const c = src[i];
+      if (c === ' ') { i++; continue; }
+      if (c === '"') {
+        let j = i + 1;
+        while (j < src.length && src[j] !== '"') j++;
+        toks.push({ t: 'str', v: src.slice(i + 1, j) });
+        i = j + 1;
+        continue;
+      }
+      const rest = src.slice(i);
+      let m = /^(\d+\.?\d*|\.\d+)(E[+-]?\d+)?/.exec(rest);
+      if (m) { toks.push({ t: 'num', v: parseFloat(m[0]) }); i += m[0].length; continue; }
+      m = /^[A-Z][A-Z0-9]*\$?/.exec(rest);
+      if (m) {
+        const w = m[0];
+        toks.push(w === 'AND' || w === 'OR' || w === 'NOT' ? { t: 'op', v: w } : { t: 'id', v: w });
+        i += w.length;
+        continue;
+      }
+      m = /^(<=|>=|<>|=<|=>|[-+*/^=<>(),])/.exec(rest);
+      if (m) {
+        toks.push({ t: 'op', v: m[0] === '=<' ? '<=' : m[0] === '=>' ? '>=' : m[0] });
+        i += m[0].length;
+        continue;
+      }
+      fail('SYNTAX');
+    }
+    if (tokCache.size > 500) tokCache.clear();
+    tokCache.set(src, toks);
+    return toks;
+  }
+
+  const FUNCS = {
+    RND: () => io.random(),
+    INT: x => Math.floor(num(x)),
+    ABS: x => Math.abs(num(x)),
+    SGN: x => Math.sign(num(x)),
+    SQR: x => (num(x) < 0 ? fail('ILLEGAL QUANTITY') : Math.sqrt(x)),
+    LEN: x => str(x).length,
+    STR$: x => fmt(num(x)),
+    VAL: x => parseFloat(str(x)) || 0,
+    CHR$: x => String.fromCharCode(num(x)),
+    ASC: x => (str(x).length ? x.charCodeAt(0) : fail('ILLEGAL QUANTITY')),
+    LEFT$: (s, n) => str(s).slice(0, Math.max(0, num(n))),
+    RIGHT$: (s, n) => (num(n) <= 0 ? '' : str(s).slice(-n)),
+    MID$: (s, a, n) => str(s).substr(Math.max(0, num(a) - 1), n === undefined ? undefined : num(n)),
+    PEEK: a => (num(a) === 53280 ? border : a === 53281 ? bg : 0),
+  };
+
+  function getVar(name) {
+    if (name in vars) return vars[name];
+    return name.endsWith('$') ? '' : 0;
+  }
+
+  function evaluate(src) {
+    const toks = tokenize(src);
+    let p = 0;
+    const isOp = v => p < toks.length && toks[p].t === 'op' && toks[p].v === v;
+    const expect = v => { if (!isOp(v)) fail('SYNTAX'); p++; };
+
+    function orE() {
+      let a = andE();
+      while (isOp('OR')) { p++; a = num(a) | num(andE()); }
+      return a;
+    }
+    function andE() {
+      let a = notE();
+      while (isOp('AND')) { p++; a = num(a) & num(notE()); }
+      return a;
+    }
+    function notE() {
+      if (isOp('NOT')) { p++; return ~num(notE()); }
+      return cmpE();
+    }
+    function cmpE() {
+      let a = addE();
+      while (p < toks.length && toks[p].t === 'op' && ['=', '<>', '<', '>', '<=', '>='].includes(toks[p].v)) {
+        const op = toks[p++].v;
+        const b = addE();
+        if (typeof a !== typeof b) fail('TYPE MISMATCH');
+        let r;
+        if (op === '=') r = a === b;
+        else if (op === '<>') r = a !== b;
+        else if (op === '<') r = a < b;
+        else if (op === '>') r = a > b;
+        else if (op === '<=') r = a <= b;
+        else r = a >= b;
+        a = r ? -1 : 0;
+      }
+      return a;
+    }
+    function addE() {
+      let a = mulE();
+      while (isOp('+') || isOp('-')) {
+        const op = toks[p++].v;
+        const b = mulE();
+        if (op === '+' && typeof a === 'string') a = a + str(b);
+        else if (op === '+') a = num(a) + num(b);
+        else a = num(a) - num(b);
+      }
+      return a;
+    }
+    function mulE() {
+      let a = unary();
+      while (isOp('*') || isOp('/')) {
+        const op = toks[p++].v;
+        const b = unary();
+        if (op === '*') a = num(a) * num(b);
+        else if (num(b) === 0) fail('DIVISION BY ZERO');
+        else a = num(a) / b;
+      }
+      return a;
+    }
+    function unary() {
+      if (isOp('-')) { p++; return -num(unary()); }
+      if (isOp('+')) { p++; return unary(); }
+      return powE();
+    }
+    function powE() {
+      let a = primary();
+      while (isOp('^')) { p++; a = Math.pow(num(a), num(unary())); }
+      return a;
+    }
+    function primary() {
+      if (p >= toks.length) fail('SYNTAX');
+      const t = toks[p];
+      if (t.t === 'num' || t.t === 'str') { p++; return t.v; }
+      if (isOp('(')) {
+        p++;
+        const v = orE();
+        expect(')');
+        return v;
+      }
+      if (t.t === 'id') {
+        p++;
+        if (FUNCS[t.v]) {
+          expect('(');
+          const args = [];
+          if (!isOp(')')) {
+            args.push(orE());
+            while (isOp(',')) { p++; args.push(orE()); }
+          }
+          expect(')');
+          return FUNCS[t.v](...args);
+        }
+        if (isOp('(')) fail('BAD SUBSCRIPT');
+        return getVar(t.v);
+      }
+      return fail('SYNTAX');
+    }
+
+    const v = orE();
+    if (p < toks.length) fail('SYNTAX');
+    if (typeof v === 'number' && !isFinite(v)) fail('OVERFLOW');
+    return v;
+  }
+
+  // ----- statements -----
+  function splitStatements(line) {
+    const out = [];
+    let part = '';
+    let quoted = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') quoted = !quoted;
+      // IF and REM swallow the rest of the line, colons and all
+      if (c === ':' && !quoted && !/^\s*(IF\b|REM)/.test(part)) {
+        out.push(part.trim());
+        part = '';
+        continue;
+      }
+      part += c;
+    }
+    out.push(part.trim());
+    return out.filter(s => s.length);
+  }
+
+  function splitPrint(src) {
+    const parts = [];
+    let part = '';
+    let quoted = false;
+    let depth = 0;
+    for (const c of src) {
+      if (c === '"') quoted = !quoted;
+      if (!quoted) {
+        if (c === '(') depth++;
+        else if (c === ')') depth--;
+      }
+      if (!quoted && depth === 0 && (c === ';' || c === ',')) {
+        parts.push({ src: part, sep: c });
+        part = '';
+        continue;
+      }
+      part += c;
+    }
+    parts.push({ src: part, sep: '' });
+    return parts;
+  }
+
+  function jump(n) {
+    const li = lines.indexOf(n);
+    if (li < 0) fail("UNDEF'D STATEMENT");
+    pc = { li, si: 0 };
+    jumps++;
+  }
+  function skipLine() { pc = { li: pc.li, si: Infinity }; }
+
+  function doPrint(rest) {
+    const parts = splitPrint(rest);
+    for (const part of parts) {
+      if (part.src.trim()) {
+        const v = evaluate(part.src);
+        print(typeof v === 'number' ? fmt(v) + ' ' : v);
+      }
+      if (part.sep === ',') print(' '.repeat(10 - (cur.length % 10)));
+    }
+    const endsWithSep = parts.length > 1 && !parts[parts.length - 1].src.trim();
+    if (!endsWithSep) newline();
+  }
+
+  function doIf(cond, then) {
+    const c = evaluate(cond);
+    const truthy = typeof c === 'number' ? c !== 0 : c !== '';
+    if (!truthy) return; // the rest of the line belongs to the IF, so there's nothing left to skip
+    then = then.trim();
+    if (/^\d+$/.test(then)) { jump(+then); return; }
+    for (const part of splitStatements(then)) {
+      const before = jumps;
+      exec(part);
+      if (jumps !== before || state !== 'running') break;
+    }
+  }
+
+  function doFor(m) {
+    const v = m[1];
+    vars[v] = num(evaluate(m[2]));
+    const limit = num(evaluate(m[3]));
+    const step = m[4] ? num(evaluate(m[4])) : 1;
+    forStack = forStack.filter(f => f.v !== v);
+    if (forStack.length > 100) fail('OUT OF MEMORY');
+    forStack.push({ v, limit, step, li: pc.li, si: pc.si });
+  }
+
+  function doNext(name) {
+    let idx = forStack.length - 1;
+    if (name) {
+      while (idx >= 0 && forStack[idx].v !== name) idx--;
+    }
+    if (idx < 0) fail('NEXT WITHOUT FOR');
+    forStack.length = idx + 1;
+    const f = forStack[idx];
+    vars[f.v] = num(getVar(f.v)) + f.step;
+    const more = f.step >= 0 ? vars[f.v] <= f.limit : vars[f.v] >= f.limit;
+    if (more) {
+      pc = { li: f.li, si: f.si };
+      jumps++;
+    } else {
+      forStack.pop();
+    }
+  }
+
+  function doInput(prompt, name) {
+    if (pc.li === -1) fail('ILLEGAL DIRECT');
+    inputPrompt = (prompt || '') + '? ';
+    inputVar = name;
+    print(inputPrompt);
+    state = 'input';
+  }
+
+  function assign(name, v) {
+    if (name.endsWith('$')) str(v);
+    else num(v);
+    vars[name] = v;
+  }
+
+  function doPoke(addr, value) {
+    const a = num(addr);
+    const v = Math.floor(num(value)) & 15;
+    if (a === 53280) border = v;
+    else if (a === 53281) bg = v;
+    else return;
+    io.colors(border, bg);
+  }
+
+  function doSys(addr) {
+    if (num(addr) !== 64738) return;
+    // cold reset
+    clear();
+    state = 'loading';
+    timers.push(io.later(() => { boot(); emit('reset'); }, 700));
+  }
+
+  function exec(s) {
+    let m;
+    if (/^REM/.test(s)) { skipLine(); return; }
+    if ((m = /^(?:PRINT|\?)(.*)$/.exec(s))) { doPrint(m[1]); return; }
+    if ((m = /^IF\s*(.+?)\s*THEN\s*(.*)$/.exec(s)) || (m = /^IF\s*(.+?)\s*(GOTO\s*\d+)$/.exec(s))) { doIf(m[1], m[2]); return; }
+    if ((m = /^GOTO\s*(\d+)$/.exec(s))) { jump(+m[1]); return; }
+    if ((m = /^GOSUB\s*(\d+)$/.exec(s))) {
+      if (gosubStack.length > 200) fail('OUT OF MEMORY');
+      gosubStack.push(pc);
+      jump(+m[1]);
+      return;
+    }
+    if (s === 'RETURN') {
+      const back = gosubStack.pop();
+      if (!back) fail('RETURN WITHOUT GOSUB');
+      pc = back;
+      jumps++;
+      return;
+    }
+    if ((m = /^FOR\s*([A-Z][A-Z0-9]*)\s*=\s*(.+?)\s*TO\s*(.+?)(?:\s*STEP\s*(.+))?$/.exec(s))) { doFor(m); return; }
+    if ((m = /^NEXT\s*([A-Z][A-Z0-9]*)?$/.exec(s))) { doNext(m[1]); return; }
+    if ((m = /^INPUT\s*(?:"([^"]*)"\s*;\s*)?([A-Z][A-Z0-9]*\$?)$/.exec(s))) { doInput(m[1], m[2]); return; }
+    if (s === 'END') { finish(); return; }
+    if (s === 'STOP') { finish('BREAK' + where()); return; }
+    if (s === 'CLS') { clear(); return; }
+    if ((m = /^POKE\s*(.+?)\s*,\s*(.+)$/.exec(s))) { doPoke(evaluate(m[1]), evaluate(m[2])); return; }
+    if ((m = /^SYS\s*(.+)$/.exec(s))) { doSys(evaluate(m[1])); return; }
+    if ((m = /^(?:LET\s*)?([A-Z][A-Z0-9]*\$?)\s*=\s*(.+)$/.exec(s))) { assign(m[1], evaluate(m[2])); return; }
+    fail('SYNTAX');
+  }
+
+  // ----- running -----
+  function prepare() {
+    lines = [...program.keys()].sort((a, b) => a - b);
+    parsed = Object.create(null);
+    for (const n of lines) parsed[n] = splitStatements(program.get(n));
+  }
+
+  function step() {
+    const stmts = pc.li === -1 ? immediate : pc.li < lines.length ? parsed[lines[pc.li]] : null;
+    if (!stmts) { finish(); return; }
+    if (pc.si >= stmts.length) {
+      if (pc.li === -1) finish();
+      else pc = { li: pc.li + 1, si: 0 };
+      return;
+    }
+    curLine = pc.li === -1 ? -1 : lines[pc.li];
+    const s = stmts[pc.si];
+    pc = { li: pc.li, si: pc.si + 1 };
+    exec(s);
+  }
+
+  // run in short slices so an infinite loop never locks up the page
+  function pump() {
+    if (state !== 'running') { io.render(); return; }
+    const t0 = io.now();
+    let n = 0;
+    try {
+      while (state === 'running' && n < 3000 && io.now() - t0 < 12) {
+        step();
+        n++;
+      }
+    } catch (e) {
+      const kind = e instanceof BasicError ? e.message : 'SYNTAX';
+      if (!(e instanceof BasicError) && typeof console !== 'undefined') console.warn(e);
+      finish('?' + kind + '  ERROR' + where());
+    }
+    io.render();
+    if (state === 'running') io.schedule(pump);
+  }
+
+  function startRun(start) {
+    pc = start;
+    state = 'running';
+    pump();
+  }
+
+  function run(from) {
+    prepare();
+    vars = Object.create(null);
+    forStack = [];
+    gosubStack = [];
+    curLine = -1;
+    if (!lines.length) { finish(); return; }
+    let li = 0;
+    if (from !== null) {
+      li = lines.indexOf(from);
+      if (li < 0) { finish("?UNDEF'D STATEMENT  ERROR"); return; }
+    }
+    startRun({ li, si: 0 });
+  }
+
+  function list(m) {
+    const keys = [...program.keys()].sort((a, b) => a - b);
+    let lo = 0;
+    let hi = Infinity;
+    if (m && (m[1] || m[3])) {
+      if (m[2]) {
+        lo = m[1] ? +m[1] : 0;
+        hi = m[3] ? +m[3] : Infinity;
+      } else {
+        lo = hi = +m[1];
+      }
+    }
+    for (const k of keys) if (k >= lo && k <= hi) println(k + ' ' + program.get(k));
+  }
+
+  function load(name) {
+    if (name === '$') { DIRECTORY.forEach(println); finish(); return; }
+    const key = name === '*' ? 'HOMEWORK.BAS' : name;
+    state = 'loading';
+    println('');
+    println('SEARCHING FOR ' + name);
+    timers.push(io.later(() => {
+      const f = FILES[key];
+      if (!f) { finish('?FILE NOT FOUND  ERROR'); io.render(); return; }
+      println('LOADING');
+      io.render();
+      timers.push(io.later(() => {
+        if (f.program) {
+          program = new Map();
+          for (const l of f.program) {
+            const mm = /^(\d+)\s*(.*)$/.exec(l);
+            program.set(+mm[1], mm[2]);
+          }
+          vars = Object.create(null);
+          finish();
+          emit('loaded', key);
+        } else {
+          f.text.forEach(println);
+          finish();
+          if (f.event) emit(f.event);
+        }
+        io.render();
+      }, 1300));
+    }, 1100));
+  }
+
+  function direct(t) {
+    let m;
+    curLine = -1;
+    if ((m = /^LIST\s*(\d*)\s*(-?)\s*(\d*)$/.exec(t))) { list(m); finish(); return; }
+    if ((m = /^RUN\s*(\d*)$/.exec(t))) { run(m[1] ? +m[1] : null); return; }
+    if (t === 'NEW') { program = new Map(); vars = Object.create(null); finish(); return; }
+    if (t === 'CLS') { clear(); finish(); return; }
+    if (t === 'HELP') { println('NO.'); finish(); emit('help'); return; }
+    if (t === 'DIR' || t === 'CATALOG') { load('$'); return; }
+    if ((m = /^LOAD\s*"([^"]*)"?(\s*,\s*\d+)*\s*$/.exec(t))) { load(m[1]); return; }
+    if (/^LOAD\s*$/.test(t)) {
+      println('PRESS PLAY ON TAPE');
+      state = 'loading';
+      timers.push(io.later(() => { finish('THERE IS NO TAPE.'); io.render(); }, 2200));
+      return;
+    }
+    if (/^SAVE/.test(t)) { finish('?DISK FULL  ERROR'); return; }
+    prepare();
+    forStack = [];
+    gosubStack = [];
+    immediate = splitStatements(t);
+    startRun({ li: -1, si: 0 });
+  }
+
+  function handleInput(text) {
+    print(text);
+    newline();
+    const v = text.trim();
+    if (inputVar.endsWith('$')) {
+      vars[inputVar] = v;
+    } else {
+      const n = parseFloat(v);
+      if (isNaN(n)) {
+        println('?REDO FROM START');
+        print(inputPrompt);
+        io.render();
+        return;
+      }
+      vars[inputVar] = n;
+    }
+    state = 'running';
+    pump();
+  }
+
+  function submit(raw) {
+    const text = String(raw).toUpperCase().replace(/\s+$/, '');
+    if (state === 'input') { handleInput(text); return; }
+    if (state !== 'ready') return;
+    print(text);
+    newline();
+    const t = text.trim();
+    if (t) {
+      const m = /^(\d+)\s*(.*)$/.exec(t);
+      if (m) {
+        const n = +m[1];
+        if (n > 63999) finish('?SYNTAX  ERROR');
+        else if (m[2]) program.set(n, m[2]);
+        else program.delete(n);
+      } else {
+        direct(t);
+      }
+    }
+    io.render();
+  }
+
+  function breakKey() {
+    if (state === 'running' || state === 'input') {
+      finish('BREAK' + where());
+      io.render();
+      return true;
+    }
+    if (state === 'loading') {
+      timers.forEach(io.cancel);
+      timers = [];
+      finish('BREAK');
+      io.render();
+      return true;
+    }
+    return false;
+  }
+
+  function boot() {
+    timers.forEach(io.cancel);
+    timers = [];
+    clear();
+    program = new Map();
+    vars = Object.create(null);
+    border = 14;
+    bg = 6;
+    io.colors(border, bg);
+    push('');
+    push('        **** CZ-64 BASIC V2 ****');
+    push('');
+    push(' 64K RAM SYSTEM  38911 BASIC BYTES FREE');
+    push('');
+    push('READY.');
+    state = 'ready';
+    io.render();
+  }
+
+  return {
+    boot,
+    submit,
+    breakKey,
+    get state() { return state; },
+    get buf() { return buf; },
+    get cur() { return cur; },
+    get program() { return program; },
+    get vars() { return vars; },
+  };
+}
+// BASIC-END
+
+(() => {
+  const $ = s => document.querySelector(s);
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---------- caption ----------
+  const captionEl = $('#caption');
+  let captionTimer;
+  function say(text) {
+    clearTimeout(captionTimer);
+    captionEl.classList.add('fade');
+    captionTimer = setTimeout(() => {
+      captionEl.textContent = text;
+      captionEl.classList.remove('fade');
+    }, 180);
+  }
+
+  // ---------- audio (only ever started by a click) ----------
+  const A = { ctx: null, master: null, music: null, musicFilter: null, noise: null, on: false };
+  const soundBtn = $('#sound');
+  function audioInit() {
+    if (A.ctx) return true;
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const comp = ctx.createDynamicsCompressor();
+      comp.threshold.value = -16;
+      comp.ratio.value = 4;
+      const master = ctx.createGain();
+      master.gain.value = 0;
+      master.connect(comp).connect(ctx.destination);
+      const musicFilter = ctx.createBiquadFilter();
+      musicFilter.type = 'lowpass';
+      musicFilter.frequency.value = 14000;
+      const music = ctx.createGain();
+      music.gain.value = 0.8;
+      music.connect(musicFilter).connect(master);
+      const noise = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+      const d = noise.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      Object.assign(A, { ctx, master, music, musicFilter, noise });
+      return true;
+    } catch (err) {
+      return false;
+    }
+  }
+  function setSound(on) {
+    A.on = on;
+    soundBtn.textContent = on ? 'sound: on' : 'sound: off';
+    soundBtn.classList.toggle('on', on);
+    if (on && audioInit()) A.ctx.resume();
+    if (A.ctx) A.master.gain.setTargetAtTime(on ? 0.9 : 0, A.ctx.currentTime, 0.05);
+  }
+  soundBtn.addEventListener('click', () => setSound(!A.on));
+
+  function env(g, t, peak, attack, decay) {
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(peak, t + attack);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + attack + decay);
+  }
+  function sfx(fn) {
+    if (!A.on || !A.ctx) return;
+    try { fn(A.ctx, A.master); } catch (err) { /* sound is optional */ }
+  }
+  function keyClick() {
+    sfx((ctx, out) => {
+      const t = ctx.currentTime;
+      const s = ctx.createBufferSource();
+      s.buffer = A.noise;
+      const f = ctx.createBiquadFilter();
+      f.type = 'highpass';
+      f.frequency.value = 2500;
+      const g = ctx.createGain();
+      env(g, t, 0.05, 0.001, 0.02);
+      s.connect(f).connect(g).connect(out);
+      s.start(t, Math.random() * 0.5);
+      s.stop(t + 0.05);
+    });
+  }
+  function whirr(dur) {
+    sfx((ctx, out) => {
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(70, t);
+      o.frequency.linearRampToValueAtTime(150, t + dur * 0.7);
+      o.frequency.linearRampToValueAtTime(40, t + dur);
+      const f = ctx.createBiquadFilter();
+      f.type = 'lowpass';
+      f.frequency.value = 700;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.06, t + 0.1);
+      g.gain.setValueAtTime(0.06, t + dur - 0.15);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(f).connect(g).connect(out);
+      o.start(t);
+      o.stop(t + dur + 0.05);
+    });
+  }
+  function tones(freqs, gain) {
+    if (!A.on || !A.ctx) return { stop() {} };
+    const ctx = A.ctx;
+    const g = ctx.createGain();
+    g.gain.value = gain;
+    g.connect(A.master);
+    const oscs = freqs.map(f => {
+      const o = ctx.createOscillator();
+      o.frequency.value = f;
+      o.connect(g);
+      o.start();
+      return o;
+    });
+    let stopped = false;
+    return {
+      stop() {
+        if (stopped) return;
+        stopped = true;
+        const t = ctx.currentTime;
+        g.gain.setTargetAtTime(0, t, 0.02);
+        oscs.forEach(o => o.stop(t + 0.15));
+      },
+    };
+  }
+
+  // ---------- the computer ----------
+  const PALETTE = ['#000000', '#ffffff', '#68372b', '#70a4b2', '#6f3d86', '#588d43', '#352879', '#b8c76f',
+    '#6f4f25', '#433900', '#9a6759', '#444444', '#6c6c6c', '#9ad284', '#6c5eb5', '#959595'];
+  const ROWS = 25;
+  const crt = $('#crt');
+  const screen = $('#screen');
+  const kb = $('#kb');
+  const cursorEl = document.createElement('span');
+  cursorEl.className = 'cursor';
+
+  let renderQueued = false;
+  function requestRender() {
+    if (renderQueued) return;
+    renderQueued = true;
+    requestAnimationFrame(() => {
+      renderQueued = false;
+      render();
+    });
+  }
+
+  const basic = createBasic({
+    render: requestRender,
+    colors: (b, g) => {
+      crt.style.setProperty('--border', PALETTE[b]);
+      crt.style.setProperty('--bg', PALETTE[g]);
+    },
+    later: (fn, ms) => setTimeout(fn, ms),
+    cancel: id => clearTimeout(id),
+    schedule: fn => setTimeout(fn, 0),
+    now: () => performance.now(),
+    random: Math.random,
+    event: (name, arg) => {
+      if (name === 'opened') {
+        crt.classList.remove('flash');
+        void crt.offsetWidth;
+        crt.classList.add('flash');
+        say('you opened it.');
+      } else if (name === 'loaded') {
+        say(arg === 'GAME.BAS' ? 'loaded. type RUN. it will think of a number.' : "loaded. type RUN. or LIST, if you don't trust it.");
+      } else if (name === 'help') {
+        say('it said no. it has never helped anyone.');
+      } else if (name === 'reset') {
+        say('cold reset. everything you typed is gone. it was 1986 anyway.');
+      }
+    },
+  });
+
+  function render() {
+    const typing = basic.state === 'ready' || basic.state === 'input';
+    let last = basic.cur + (typing ? kb.value.toUpperCase() : '');
+    const extra = [];
+    while (last.length > 40) {
+      extra.push(last.slice(0, 40));
+      last = last.slice(40);
+    }
+    const shown = basic.buf.slice(-ROWS).concat(extra).slice(-(ROWS - 1));
+    screen.textContent = shown.join('\n') + (shown.length ? '\n' : '') + last;
+    if (typing) screen.appendChild(cursorEl);
+  }
+
+  kb.addEventListener('focus', () => crt.classList.add('focused'));
+  kb.addEventListener('blur', () => crt.classList.remove('focused'));
+  kb.addEventListener('input', () => {
+    if (basic.state !== 'ready' && basic.state !== 'input') kb.value = '';
+    keyClick();
+    requestRender();
+  });
+  let saidSyntax = false;
+  $('#kb-form').addEventListener('submit', e => {
+    e.preventDefault();
+    if (basic.state !== 'ready' && basic.state !== 'input') return;
+    const v = kb.value;
+    kb.value = '';
+    basic.submit(v);
+    const lastLine = basic.buf[basic.buf.length - 2] || '';
+    if (!saidSyntax && /SYNTAX/.test(lastLine)) {
+      saidSyntax = true;
+      say("it doesn't understand you. it's from 1986. try HELP.");
+    }
+    requestRender();
+  });
+
+  function doBreak() {
+    if (basic.breakKey()) say(runningSince && performance.now() - runningSince > 1500 ? 'break. it was enjoying that.' : 'break.');
+    else say('nothing to stop. the computer is just sitting there.');
+  }
+  kb.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { e.preventDefault(); doBreak(); }
+  });
+  addEventListener('keydown', e => {
+    if (e.key !== 'Escape' || e.target === kb) return;
+    const tag = e.target && e.target.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    if (basic.state === 'running' || basic.state === 'loading' || basic.state === 'input') doBreak();
+  });
+  $('#break').addEventListener('click', doBreak);
+
+  // notice a program that's never going to stop
+  let runningSince = 0;
+  let saidForever = false;
+  setInterval(() => {
+    if (basic.state === 'running') {
+      if (!runningSince) runningSince = performance.now();
+      if (!saidForever && performance.now() - runningSince > 3000) {
+        saidForever = true;
+        say("it will do this forever. press run/stop. or esc. or don't.");
+      }
+    } else if (basic.state !== 'input') {
+      runningSince = 0;
+      saidForever = false;
+    }
+  }, 500);
+
+  basic.boot();
+
+  // ---------- boombox ----------
+  const boombox = $('#boombox');
+  const cassette = $('#cassette');
+  const spoolL = $('#spool-l');
+  const spoolR = $('#spool-r');
+  const spillPath = $('.spill path');
+  const bb = { state: 'stopped', eatenOnce: false, eatAt: 0, eatStart: 0, warble: 0 };
+
+  const BPM = 112;
+  const STEP = 60 / BPM / 4;
+  const CHORDS = [
+    { bass: 110.0, arp: [440.0, 523.25, 659.25, 880.0], pad: [220.0, 261.63, 329.63] },
+    { bass: 87.31, arp: [349.23, 440.0, 523.25, 698.46], pad: [174.61, 220.0, 261.63] },
+    { bass: 130.81, arp: [392.0, 523.25, 659.25, 783.99], pad: [261.63, 329.63, 392.0] },
+    { bass: 98.0, arp: [392.0, 493.88, 587.33, 783.99], pad: [196.0, 246.94, 293.66] },
+  ];
+  const ARP = [0, 1, 2, 3, 2, 1, 2, 3];
+  const mus = { step: 0, next: 0, timer: null, paused: false };
+
+  function detune(t) {
+    return bb.warble ? -bb.warble * 320 + Math.sin(t * 11) * bb.warble * 90 : 0;
+  }
+  function note(t, freq, type, peak, attack, decay, cutoff) {
+    const ctx = A.ctx;
+    const o = ctx.createOscillator();
+    o.type = type;
+    o.frequency.value = freq;
+    o.detune.value = detune(t);
+    const g = ctx.createGain();
+    env(g, t, peak, attack, decay);
+    if (cutoff) {
+      const f = ctx.createBiquadFilter();
+      f.type = 'lowpass';
+      f.frequency.value = cutoff;
+      o.connect(f).connect(g);
+    } else {
+      o.connect(g);
+    }
+    g.connect(A.music);
+    o.start(t);
+    o.stop(t + attack + decay + 0.05);
+  }
+  function kick(t) {
+    const ctx = A.ctx;
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.frequency.setValueAtTime(140, t);
+    o.frequency.exponentialRampToValueAtTime(42, t + 0.12);
+    env(g, t, 0.9, 0.003, 0.28);
+    o.connect(g).connect(A.music);
+    o.start(t);
+    o.stop(t + 0.32);
+  }
+  // the gated snare: a big noisy tail that gets chopped off
+  function snare(t) {
+    const ctx = A.ctx;
+    const s = ctx.createBufferSource();
+    s.buffer = A.noise;
+    const f = ctx.createBiquadFilter();
+    f.type = 'bandpass';
+    f.frequency.value = 1800;
+    f.Q.value = 0.7;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.5, t + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.22, t + 0.05);
+    g.gain.setValueAtTime(0.22, t + 0.2);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.23);
+    s.connect(f).connect(g).connect(A.music);
+    s.start(t, Math.random() * 0.4);
+    s.stop(t + 0.26);
+  }
+  function hat(t) {
+    const ctx = A.ctx;
+    const s = ctx.createBufferSource();
+    s.buffer = A.noise;
+    const f = ctx.createBiquadFilter();
+    f.type = 'highpass';
+    f.frequency.value = 8000;
+    const g = ctx.createGain();
+    env(g, t, 0.06, 0.002, 0.04);
+    s.connect(f).connect(g).connect(A.music);
+    s.start(t, Math.random() * 0.5);
+    s.stop(t + 0.07);
+  }
+  function pad(t, freqs, len) {
+    const ctx = A.ctx;
+    const f = ctx.createBiquadFilter();
+    f.type = 'lowpass';
+    f.frequency.value = 1100;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.05, t + 0.35);
+    g.gain.setValueAtTime(0.05, t + len - 0.2);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+    f.connect(g).connect(A.music);
+    for (const fr of freqs) {
+      for (const cents of [-8, 8]) {
+        const o = ctx.createOscillator();
+        o.type = 'sawtooth';
+        o.frequency.value = fr;
+        o.detune.value = cents + detune(t);
+        o.connect(f);
+        o.start(t);
+        o.stop(t + len + 0.05);
+      }
+    }
+  }
+
+  function musicStep(s, t) {
+    const i = s % 16;
+    const ch = CHORDS[Math.floor(s / 16) % 4];
+    if (i === 0 || i === 6 || i === 8) kick(t);
+    if (i === 4 || i === 12) snare(t);
+    if (i % 2 === 0) hat(t);
+    if (i % 2 === 0) note(t, ch.bass, 'sawtooth', 0.22, 0.005, 0.16, 700);
+    note(t, ch.arp[ARP[i % 8]], 'square', 0.045, 0.003, 0.11, 3200);
+    if (i === 0) pad(t, ch.pad, STEP * 16);
+    if (i % 4 === 0) {
+      setTimeout(() => {
+        boombox.classList.add('pulse');
+        setTimeout(() => boombox.classList.remove('pulse'), 90);
+      }, Math.max(0, (t - A.ctx.currentTime) * 1000));
+    }
+  }
+
+  function musicSchedule() {
+    const ctx = A.ctx;
+    while (mus.next < ctx.currentTime + 0.12) {
+      musicStep(mus.step, mus.next);
+      mus.next += STEP * (1 + bb.warble * 1.4);
+      mus.step = (mus.step + 1) % 64;
+    }
+    const now = performance.now();
+    if (bb.state === 'playing' && bb.eatAt && now > bb.eatAt) startEating();
+    if (bb.state === 'eating') {
+      bb.warble = Math.min(1, (now - bb.eatStart) / 2600);
+      if (bb.warble >= 1) finishEating();
+    }
+  }
+  function musicStart() {
+    if (!audioInit()) return false;
+    A.ctx.resume();
+    const t = A.ctx.currentTime;
+    A.musicFilter.frequency.cancelScheduledValues(t);
+    A.musicFilter.frequency.setValueAtTime(14000, t);
+    A.music.gain.cancelScheduledValues(t);
+    A.music.gain.setValueAtTime(0.8, t);
+    mus.next = t + 0.06;
+    mus.step = 0;
+    mus.paused = false;
+    clearInterval(mus.timer);
+    mus.timer = setInterval(musicSchedule, 25);
+    return true;
+  }
+  function musicStop() {
+    clearInterval(mus.timer);
+    mus.timer = null;
+    mus.paused = false;
+    if (A.ctx) {
+      const t = A.ctx.currentTime;
+      A.music.gain.cancelScheduledValues(t);
+      A.music.gain.setTargetAtTime(0.0001, t, 0.03);
+    }
+  }
+
+  function startEating() {
+    bb.state = 'eating';
+    bb.eatStart = performance.now();
+    bb.eatenOnce = true;
+    boombox.classList.remove('playing');
+    boombox.classList.add('eating');
+    say('the tape is eating itself.');
+    const t = A.ctx.currentTime;
+    A.musicFilter.frequency.setValueAtTime(14000, t);
+    A.musicFilter.frequency.exponentialRampToValueAtTime(300, t + 2.6);
+    A.music.gain.setValueAtTime(0.8, t);
+    A.music.gain.exponentialRampToValueAtTime(0.0001, t + 2.6);
+  }
+  function finishEating() {
+    musicStop();
+    bb.warble = 0;
+    bb.state = 'eaten';
+    boombox.classList.remove('eating');
+    boombox.classList.add('eaten');
+    wind.total = 0;
+    spillPath.style.strokeDashoffset = '';
+    say('the tape ate itself. there is tape everywhere. you will need a pencil.');
+  }
+
+  // winding it back in with a pencil
+  const TURNS = 4;
+  const wind = { active: false, last: 0, total: 0, rot: 0 };
+  function spoolCenter() {
+    const r = spoolL.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  }
+  function turn(delta) {
+    spillPath.style.transition = 'none'; // follow the pencil directly, no easing
+    wind.total += Math.abs(delta);
+    wind.rot += (delta * 180) / Math.PI;
+    spoolL.style.setProperty('--rot', wind.rot + 'deg');
+    spoolR.style.setProperty('--rot', wind.rot * 0.8 + 'deg');
+    const progress = Math.min(1, wind.total / (TURNS * Math.PI * 2));
+    spillPath.style.strokeDashoffset = String(progress * 100);
+    if (progress >= 1) fixed();
+  }
+  function fixed() {
+    wind.active = false;
+    bb.state = 'stopped';
+    boombox.classList.remove('eaten');
+    spillPath.style.transition = 'none';
+    spillPath.style.strokeDashoffset = '';
+    void spillPath.getBoundingClientRect();
+    spillPath.style.transition = '';
+    say('fixed. with a pencil. like a professional.');
+  }
+  cassette.addEventListener('pointerdown', e => {
+    if (bb.state !== 'eaten') return;
+    e.preventDefault();
+    try { cassette.setPointerCapture(e.pointerId); } catch (err) { /* synthetic pointer */ }
+    const c = spoolCenter();
+    wind.active = true;
+    wind.last = Math.atan2(e.clientY - c.y, e.clientX - c.x);
+  });
+  cassette.addEventListener('pointermove', e => {
+    if (!wind.active || bb.state !== 'eaten') return;
+    const c = spoolCenter();
+    if (Math.hypot(e.clientX - c.x, e.clientY - c.y) < 6) return;
+    const a = Math.atan2(e.clientY - c.y, e.clientX - c.x);
+    let d = a - wind.last;
+    wind.last = a;
+    if (d > Math.PI) d -= Math.PI * 2;
+    if (d < -Math.PI) d += Math.PI * 2;
+    turn(d);
+  });
+  const stopWinding = () => { wind.active = false; };
+  cassette.addEventListener('pointerup', stopWinding);
+  cassette.addEventListener('pointercancel', stopWinding);
+  cassette.addEventListener('keydown', e => {
+    if (bb.state !== 'eaten') return;
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      turn((e.key === 'ArrowRight' ? 1 : -1) * Math.PI / 2);
+    }
+  });
+  cassette.addEventListener('click', () => {
+    if (bb.state === 'eaten' && wind.total < 0.5) say('drag in circles on the tape to wind it back with the pencil.');
+  });
+
+  let ejectTimer;
+  function bbPlay() {
+    if (bb.state === 'playing' || bb.state === 'eating') { say('it is already playing. louder is not a button.'); return; }
+    if (bb.state === 'eaten') { say('the tape is in no condition. wind it back in with the pencil first.'); return; }
+    if (bb.state === 'ejected') { clearTimeout(ejectTimer); boombox.classList.remove('ejected'); }
+    if (!A.on) setSound(true);
+    const audible = musicStart();
+    bb.state = 'playing';
+    boombox.classList.add('playing');
+    const now = performance.now();
+    if (!audible) bb.eatAt = 0;
+    else if (!bb.eatenOnce) bb.eatAt = now + rand(12000, 22000);
+    else bb.eatAt = Math.random() < 0.45 ? now + rand(20000, 50000) : 0;
+    say(audible ? pick(['play. the tape hisses, then commits.', 'side a. the good side.', 'play. somebody made this mix for somebody.']) : 'no sound on this device. the tape spins anyway.');
+  }
+  function bbStop() {
+    if (bb.state === 'eaten') { say("it's already stopped. violently."); return; }
+    if (bb.state === 'playing' || bb.state === 'eating') {
+      musicStop();
+      bb.warble = 0;
+      bb.state = 'stopped';
+      boombox.classList.remove('playing', 'eating');
+      say('stopped.');
+      return;
+    }
+    say('it was not playing. now it is also not playing.');
+  }
+  function bbEject() {
+    if (bb.state === 'eaten') { say('the tape is still attached to the machine. emotionally.'); return; }
+    if (bb.state === 'playing' || bb.state === 'eating') {
+      musicStop();
+      bb.warble = 0;
+      boombox.classList.remove('playing', 'eating');
+    }
+    if (bb.state === 'ejected') return;
+    bb.state = 'ejected';
+    boombox.classList.add('ejected');
+    say('ejected. you look at the tape. the tape looks at you. you put it back.');
+    ejectTimer = setTimeout(() => {
+      boombox.classList.remove('ejected');
+      if (bb.state === 'ejected') bb.state = 'stopped';
+    }, 1800);
+  }
+  boombox.addEventListener('click', e => {
+    const b = e.target.closest('[data-bb]');
+    if (!b) return;
+    if (b.dataset.bb === 'play') bbPlay();
+    else if (b.dataset.bb === 'stop') bbStop();
+    else bbEject();
+  });
+
+  // browsers throttle timers in background tabs, which would wreck the groove
+  document.addEventListener('visibilitychange', () => {
+    if (!A.ctx) return;
+    if (document.hidden) {
+      if (mus.timer) {
+        clearInterval(mus.timer);
+        mus.timer = null;
+        mus.paused = true;
+      }
+      A.ctx.suspend();
+    } else {
+      Promise.resolve(A.ctx.resume()).then(() => {
+        if (mus.paused && (bb.state === 'playing' || bb.state === 'eating')) {
+          mus.paused = false;
+          mus.next = A.ctx.currentTime + 0.06;
+          mus.timer = setInterval(musicSchedule, 25);
+        }
+      }).catch(() => {});
+    }
+  });
+
+  // ---------- vhs + vcr ----------
+  const TAPES = [
+    { label: 'taped over', end: 'rewound. it is the news now. it used to be something better.' },
+    { label: 'DO NOT TAPE OVER', end: 'rewound. someone taped over it anyway. the label was very clear.' },
+    { label: '???', end: 'rewound. it is 40 minutes of a fish tank. no notes.' },
+    { label: 'christmas 86 (maybe)', end: 'rewound. it is christmas. someone is filming the ceiling.' },
+    { label: 'the good one', end: 'rewound. it is blank. it was always blank. it is still the good one.' },
+  ];
+  const vhsStack = $('#vhs');
+  const vcrClock = $('#vcr-clock');
+  let vcrBusy = false;
+  TAPES.forEach((tape, i) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'vhs';
+    b.style.setProperty('--dx', (Math.random() * 16 - 8).toFixed(1) + 'px');
+    b.style.setProperty('--rz', (Math.random() * 3 - 1.5).toFixed(2) + 'deg');
+    b.setAttribute('aria-label', 'vhs tape labeled ' + tape.label);
+    const label = document.createElement('span');
+    label.className = 'label';
+    label.textContent = tape.label;
+    b.appendChild(label);
+    b.addEventListener('click', () => rewind(i, b));
+    vhsStack.appendChild(b);
+  });
+  const pad2 = n => String(n).padStart(2, '0');
+  const hms = s => `${Math.floor(s / 3600)}:${pad2(Math.floor((s % 3600) / 60))}:${pad2(s % 60)}`;
+  function rewind(i, el) {
+    if (el.classList.contains('rewound')) { say('already rewound. you were kind.'); return; }
+    if (vcrBusy) { say('one at a time. it is a vcr, not a miracle.'); return; }
+    vcrBusy = true;
+    el.classList.add('loading');
+    vcrClock.classList.remove('blink');
+    const total = Math.floor(rand(3600, 7000));
+    const dur = reduceMotion ? 800 : 2400;
+    const t0 = performance.now();
+    whirr(dur / 1000);
+    say('rewinding.');
+    const iv = setInterval(() => {
+      const k = Math.min(1, (performance.now() - t0) / dur);
+      vcrClock.textContent = 'REW ' + hms(Math.round(total * (1 - k)));
+      if (k < 1) return;
+      clearInterval(iv);
+      vcrBusy = false;
+      el.classList.remove('loading');
+      el.classList.add('rewound');
+      el.setAttribute('aria-label', 'vhs tape labeled ' + TAPES[i].label + ', rewound');
+      say(TAPES[i].end);
+      setTimeout(() => {
+        if (vcrBusy) return;
+        vcrClock.textContent = '12:00';
+        vcrClock.classList.add('blink');
+      }, 1500);
+    }, 50);
+  }
+  $('#vcr').addEventListener('click', () => {
+    if (vcrBusy) { say('it is busy rewinding. give it a second.'); return; }
+    say('the clock says 12:00. it has always said 12:00. nobody knows how to set it.');
+  });
+
+  // ---------- color cube ----------
+  const CUBE_COLORS = ['#f4f1e8', '#e8c630', '#c8352c', '#e8792a', '#2f5fa7', '#3a8a4a'];
+  const FACE_BASE = [0, 2, 4]; // top white, left red, right blue
+  const cubeSvg = $('#cube-svg');
+  const cubeBtn = $('#cube');
+  const SVGNS = 'http://www.w3.org/2000/svg';
+  const S = 17;
+  const E1 = [0.866 * S, 0.5 * S];
+  const E2 = [-0.866 * S, 0.5 * S];
+  const E3 = [0, S];
+  const add = (p, v, k = 1) => [p[0] + v[0] * k, p[1] + v[1] * k];
+  const TOP = [60, 8];
+  const FACES = [
+    { origin: TOP, u: E1, v: E2, shade: 0 },
+    { origin: add(TOP, E2, 3), u: E1, v: E3, shade: 0.14 },
+    { origin: add(add(TOP, E1, 3), E2, 3), u: [-E2[0], -E2[1]], v: E3, shade: 0.28 },
+  ];
+  const polyStr = pts => pts.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+  function poly(pts, attrs) {
+    const el = document.createElementNS(SVGNS, 'polygon');
+    el.setAttribute('points', polyStr(pts));
+    for (const k in attrs) el.setAttribute(k, attrs[k]);
+    cubeSvg.appendChild(el);
+    return el;
+  }
+  const stickerEls = [];
+  FACES.forEach(f => {
+    const o = f.origin;
+    poly([o, add(o, f.u, 3), add(add(o, f.u, 3), f.v, 3), add(o, f.v, 3)], { fill: '#141414' });
+    for (let j = 0; j < 3; j++) {
+      for (let i = 0; i < 3; i++) {
+        const p = add(add(o, f.u, i), f.v, j);
+        const corners = [p, add(p, f.u), add(add(p, f.u), f.v), add(p, f.v)];
+        const cx = corners.reduce((s, c) => s + c[0], 0) / 4;
+        const cy = corners.reduce((s, c) => s + c[1], 0) / 4;
+        stickerEls.push(poly(corners.map(c => [cx + (c[0] - cx) * 0.84, cy + (c[1] - cy) * 0.84]), {}));
+      }
+    }
+    if (f.shade) poly([o, add(o, f.u, 3), add(add(o, f.u, 3), f.v, 3), add(o, f.v, 3)], { fill: '#000', 'fill-opacity': f.shade });
+  });
+  // someone already tried peeling one off
+  (() => {
+    const f = FACES[2];
+    const p = add(add(f.origin, f.u, 3), f.v, 0);
+    poly([add(p, f.u, -0.08), add(add(p, f.u, -0.42), f.v, 0.02), add(add(p, f.u, -0.12), f.v, 0.34)], { fill: '#e9e6dc', 'fill-opacity': 0.9 });
+  })();
+
+  let cube = [];
+  for (let face = 0; face < 3; face++) for (let k = 0; k < 9; k++) cube.push(FACE_BASE[face]);
+  for (let k = 0; k < 4; k++) cube[Math.floor(Math.random() * 27)] = Math.floor(Math.random() * 6);
+  const disorder = () => cube.reduce((n, c, i) => n + (c !== FACE_BASE[Math.floor(i / 9)] ? 1 : 0), 0);
+  function paintCube() {
+    stickerEls.forEach((el, i) => el.setAttribute('fill', CUBE_COLORS[cube[i]]));
+  }
+  paintCube();
+
+  const WORSE = ['worse.', 'somehow, worse.', 'a new low.', 'the cube accepts this.', "you're getting the hang of it. of making it worse."];
+  let twists = 0;
+  cubeBtn.addEventListener('click', () => {
+    const before = disorder();
+    for (let tries = 0; tries < 12; tries++) {
+      const backup = cube.slice();
+      const n = 2 + Math.floor(Math.random() * 3);
+      for (let k = 0; k < n; k++) {
+        if (Math.random() < 0.5) {
+          const a = Math.floor(Math.random() * 27);
+          const b = Math.floor(Math.random() * 27);
+          [cube[a], cube[b]] = [cube[b], cube[a]];
+        } else {
+          cube[Math.floor(Math.random() * 27)] = Math.floor(Math.random() * 6);
+        }
+      }
+      if (disorder() >= before && cube.some((c, i) => c !== backup[i])) break;
+      cube = backup;
+    }
+    paintCube();
+    cubeBtn.classList.remove('twist');
+    void cubeBtn.offsetWidth;
+    cubeBtn.classList.add('twist');
+    twists++;
+    if (twists === 1) say("you have made it worse. that's the only direction it goes.");
+    else if (twists === 12) say('someone already tried peeling the stickers off. one is still lifting. it did not help.');
+    else say(pick(WORSE));
+  });
+
+  // ---------- the wall phone ----------
+  const phoneBtn = $('#phone');
+  const handset = $('#handset');
+  const cordPath = $('#cord');
+  const HANG = { x: 73, y: 70, deg: 0 };
+  const HELD = { x: 34, y: 196, deg: -28 };
+  const phone = { state: 'idle', pose: { ...HANG }, anim: 0, tone: null, timers: [] };
+
+  function bez(p0, p1, p2, p3, t) {
+    const u = 1 - t;
+    return {
+      x: u * u * u * p0.x + 3 * u * u * t * p1.x + 3 * u * t * t * p2.x + t * t * t * p3.x,
+      y: u * u * u * p0.y + 3 * u * u * t * p1.y + 3 * u * t * t * p2.y + t * t * t * p3.y,
+    };
+  }
+  function handsetBottom(pose) {
+    // the mouthpiece end is 62 units below the handset's center, then rotated
+    const r = (pose.deg * Math.PI) / 180;
+    return { x: pose.x - 62 * Math.sin(r), y: pose.y + 62 * Math.cos(r) };
+  }
+  function drawPhone() {
+    const pose = phone.pose;
+    handset.setAttribute('transform', `translate(${(pose.x - 73).toFixed(1)} ${(pose.y - 70).toFixed(1)}) rotate(${pose.deg.toFixed(1)} 73 70)`);
+    const a = { x: 118, y: 126 };
+    const b = handsetBottom(pose);
+    // a lifted handset pulls the cord up; keep the droop inside the wall
+    const sag = Math.max(60, 150 - (b.y - 132) * 0.6);
+    const c1 = { x: a.x + 8, y: a.y + sag };
+    const c2 = { x: b.x - 8, y: b.y + sag * 0.9 };
+    const N = 420;
+    const coils = 30;
+    let d = '';
+    for (let i = 0; i <= N; i++) {
+      const t = i / N;
+      const p = bez(a, c1, c2, b, t);
+      const q = bez(a, c1, c2, b, Math.min(1, t + 0.002));
+      const p0 = t >= 1 ? bez(a, c1, c2, b, t - 0.002) : p;
+      let tx = t >= 1 ? p.x - p0.x : q.x - p.x;
+      let ty = t >= 1 ? p.y - p0.y : q.y - p.y;
+      const len = Math.hypot(tx, ty) || 1;
+      tx /= len;
+      ty /= len;
+      const th = t * coils * Math.PI * 2;
+      const k = Math.min(1, t * 14, (1 - t) * 14) * 4.2;
+      const x = p.x + (-ty * Math.sin(th) + tx * 0.6 * Math.cos(th)) * k;
+      const y = p.y + (tx * Math.sin(th) + ty * 0.6 * Math.cos(th)) * k;
+      d += (i ? 'L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1);
+    }
+    cordPath.setAttribute('d', d);
+  }
+  function moveHandset(target) {
+    cancelAnimationFrame(phone.anim);
+    const from = { ...phone.pose };
+    if (reduceMotion) {
+      phone.pose = { ...target };
+      drawPhone();
+      return;
+    }
+    const t0 = performance.now();
+    const tick = now => {
+      const k = Math.min(1, (now - t0) / 350);
+      const e = 1 - Math.pow(1 - k, 3);
+      phone.pose = {
+        x: from.x + (target.x - from.x) * e,
+        y: from.y + (target.y - from.y) * e,
+        deg: from.deg + (target.deg - from.deg) * e,
+      };
+      drawPhone();
+      if (k < 1) phone.anim = requestAnimationFrame(tick);
+    };
+    phone.anim = requestAnimationFrame(tick);
+  }
+  function clearPhoneTimers() {
+    phone.timers.forEach(clearTimeout);
+    phone.timers = [];
+    if (phone.tone) { phone.tone.stop(); phone.tone = null; }
+  }
+  function later(fn, ms) { phone.timers.push(setTimeout(fn, ms)); }
+
+  function hangUp(text) {
+    clearPhoneTimers();
+    phone.state = 'idle';
+    phoneBtn.classList.remove('ringing');
+    moveHandset(HANG);
+    if (text) say(text);
+  }
+  function pickUp() {
+    clearPhoneTimers();
+    phone.state = 'offhook';
+    moveHandset(HELD);
+    say("dial tone. nobody is calling. it's the 80s. you would have to wait by the phone.");
+    phone.tone = tones([350, 440], 0.04);
+    later(() => {
+      if (phone.tone) { phone.tone.stop(); phone.tone = null; }
+      say("if you'd like to make a call, please hang up and try again.");
+      phone.tone = tones([480, 620], 0.035);
+      later(() => { if (phone.tone) { phone.tone.stop(); phone.tone = null; } }, 2500);
+    }, 6500);
+  }
+  function answer() {
+    clearPhoneTimers();
+    phone.state = 'call';
+    phoneBtn.classList.remove('ringing');
+    moveHandset(HELD);
+    say('hello?');
+    later(() => say("...it's for you."), 1600);
+    later(() => say("it's you. from 1986. you say not to open the file."), 3400);
+    later(() => hangUp('they hung up. you hang up too.'), 6600);
+  }
+  function startRinging() {
+    if (phone.state !== 'idle') return;
+    phone.state = 'ringing';
+    if (!reduceMotion) phoneBtn.classList.add('ringing');
+    say('the phone is ringing.');
+    const ringBurst = () => {
+      if (phone.state !== 'ringing') return;
+      phone.tone = tones([440, 480], 0.05);
+      later(() => { if (phone.tone) { phone.tone.stop(); phone.tone = null; } }, 2000);
+    };
+    ringBurst();
+    later(ringBurst, 5000);
+    later(() => {
+      if (phone.state !== 'ringing') return;
+      phone.state = 'idle';
+      phoneBtn.classList.remove('ringing');
+      say("they'll call back. they won't.");
+    }, 10000);
+  }
+  phoneBtn.addEventListener('click', () => {
+    if (phone.state === 'idle') pickUp();
+    else if (phone.state === 'ringing') answer();
+    else if (phone.state === 'offhook') hangUp('you hang up. the phone is relieved.');
+    else if (phone.state === 'call') hangUp('you hung up on yourself. rude.');
+  });
+  function scheduleRing(ms) {
+    setTimeout(() => {
+      if (document.hidden || phone.state !== 'idle') scheduleRing(20000);
+      else startRinging();
+    }, ms);
+  }
+  scheduleRing(rand(45000, 75000));
+  drawPhone();
+
+  say('the 80s. the computer has been on since 1986. nobody knows where the manual is.');
+})();
+</script>
+</body>
+</html>

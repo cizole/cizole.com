@@ -1,0 +1,2007 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>the 70s · cizole</title>
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Righteous&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/site.css">
+<style>
+  :root {
+    --gold: #da9c20;
+    --avocado: #6b7a2c;
+    --orange: #c2551f;
+    --wood: #6e4020;
+    --cream: #f3ead3;
+    --floral:
+      radial-gradient(circle at 50% 50%, #e8a33a 0 0.5cqw, transparent 0.56cqw) 0 0 / 3.2cqw 3.2cqw,
+      radial-gradient(circle, #c2551f 0 0.34cqw, transparent 0.4cqw) 1.6cqw 1.6cqw / 3.2cqw 3.2cqw,
+      radial-gradient(circle, #f1e3c0 0 0.18cqw, transparent 0.23cqw) 0.8cqw 2.3cqw / 3.2cqw 3.2cqw,
+      radial-gradient(circle, #f1e3c0 0 0.18cqw, transparent 0.23cqw) 2.4cqw 0.7cqw / 3.2cqw 3.2cqw,
+      #6b7a2c;
+  }
+  .page {
+    --w: max(300px, min(calc(100vw - 32px), calc((100dvh - 170px) * 1.6), 1150px));
+    padding: 56px 16px 24px;
+  }
+  .stage-wrap { width: var(--w); margin: 0 auto; }
+  .stage {
+    position: relative;
+    width: var(--w);
+    height: calc(var(--w) / 1.6);
+    overflow: hidden;
+    border-radius: 10px;
+    background: #6e4020;
+    container-type: size;
+    user-select: none;
+  }
+  .marker { font-family: "Permanent Marker", cursive; }
+  .retro { font-family: "Righteous", cursive; }
+
+  .obj {
+    position: absolute;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
+  .obj:focus-visible, .rod:focus-visible, .arm:focus-visible, .knob:focus-visible { outline: 2px solid var(--acid); outline-offset: 2px; }
+
+  /* ---------- the room ---------- */
+  .wall {
+    position: absolute;
+    inset: 0 0 30% 0;
+    background:
+      linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0) 14%, rgba(0, 0, 0, 0) 85%, rgba(0, 0, 0, 0.3)),
+      repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.38) 0 0.18cqw, transparent 0.18cqw 6cqw),
+      repeating-linear-gradient(90deg, rgba(255, 220, 170, 0.05) 0 0.8cqw, transparent 0.8cqw 2.1cqw, rgba(60, 30, 10, 0.1) 2.1cqw 3.3cqw, transparent 3.3cqw 6cqw),
+      linear-gradient(90deg, #6e4020, #7d4a25 30%, #6a3d1e 60%, #7a4724);
+  }
+  .wall::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 1.3cqw;
+    background: linear-gradient(#3a200d, #52301a);
+  }
+  .baseboard { position: absolute; left: 0; right: 0; top: 69%; height: 1.6cqw; background: linear-gradient(#5a3417, #3e2310); }
+  .carpet {
+    position: absolute;
+    inset: 70% 0 0 0;
+    background:
+      radial-gradient(circle, rgba(255, 190, 120, 0.35) 0.12cqw, transparent 0.2cqw) 0 0 / 0.7cqw 0.6cqw,
+      radial-gradient(circle, rgba(80, 25, 5, 0.45) 0.14cqw, transparent 0.22cqw) 0.35cqw 0.3cqw / 0.8cqw 0.7cqw,
+      linear-gradient(#b8521c, #9c4214);
+  }
+
+  /* macrame plant hanger */
+  .macrame { left: 28.6%; top: 0; width: 5.5%; height: 42%; }
+  .macrame svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .hanger { transform-origin: 50% 0; }
+  .macrame:hover .hanger, .macrame:focus-visible .hanger { animation: sway 2.6s ease-in-out infinite; }
+  @keyframes sway {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(3deg); }
+    75% { transform: rotate(-3deg); }
+  }
+
+  /* calendar */
+  .calendar {
+    left: 38.5%;
+    top: 13%;
+    width: 5.2cqw;
+    height: 7cqw;
+    background: var(--cream);
+    box-shadow: 0 0.3cqw 0.6cqw rgba(0, 0, 0, 0.4);
+  }
+  .cal-head {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 26%;
+    display: grid;
+    place-items: center;
+    background: var(--orange);
+    color: var(--cream);
+    font-size: 0.85cqw;
+  }
+  .cal-days {
+    position: absolute;
+    left: 8%;
+    right: 8%;
+    top: 34%;
+    bottom: 8%;
+    background:
+      repeating-linear-gradient(45deg, transparent 0 0.3cqw, rgba(170, 40, 30, 0.75) 0.3cqw 0.38cqw),
+      repeating-linear-gradient(-45deg, transparent 0 0.3cqw, rgba(170, 40, 30, 0.75) 0.3cqw 0.38cqw),
+      repeating-linear-gradient(90deg, transparent 0 0.58cqw, rgba(0, 0, 0, 0.15) 0.58cqw 0.62cqw),
+      repeating-linear-gradient(0deg, transparent 0 0.62cqw, rgba(0, 0, 0, 0.15) 0.62cqw 0.66cqw);
+  }
+
+  /* sunburst clock */
+  .clock { left: 45%; top: 5%; width: 11cqw; height: 11cqw; }
+  .rays {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: repeating-conic-gradient(#d9a030 0 3deg, transparent 3deg 15deg);
+    -webkit-mask-image: radial-gradient(circle, transparent 30%, #000 31%);
+    mask-image: radial-gradient(circle, transparent 30%, #000 31%);
+    animation: spin 120s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .face {
+    position: absolute;
+    inset: 30%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, #f6e7c1, #d7b36a);
+    box-shadow: 0 0 0 0.3cqw #9c6a18;
+  }
+  .hand { position: absolute; left: 50%; bottom: 50%; transform-origin: 50% 100%; border-radius: 1px; background: #3a2410; }
+  .hand.h { width: 0.35cqw; height: 1.2cqw; margin-left: -0.175cqw; }
+  .hand.m { width: 0.25cqw; height: 1.8cqw; margin-left: -0.125cqw; }
+
+  .plaque {
+    left: 66%;
+    top: 9%;
+    padding: 0.5cqw 1.3cqw;
+    border-radius: 1.3cqw;
+    background: linear-gradient(#6a3d1e, #4e2c13);
+    color: #e8a33a;
+    font-size: 1.5cqw;
+    white-space: nowrap;
+    box-shadow: 0 0.4cqw 0.8cqw rgba(0, 0, 0, 0.4), inset 0 0 0 0.2cqw #3a200d;
+  }
+
+  /* swag lamp */
+  .swag { left: 89%; top: 0; width: 5%; height: 30%; }
+  .swag .chain {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 0.3cqw;
+    height: 70%;
+    margin-left: -0.15cqw;
+    background: repeating-linear-gradient(#c9a060 0 0.4cqw, #7a5a24 0.4cqw 0.6cqw);
+  }
+  .swag .globe {
+    position: absolute;
+    left: 50%;
+    top: 62%;
+    width: 5cqw;
+    height: 5cqw;
+    margin-left: -2.5cqw;
+    border-radius: 50%;
+    background: radial-gradient(circle at 45% 40%, #ffe2a8, #e8952a 45%, #a3531a);
+    box-shadow: 0 0 3cqw 1cqw rgba(255, 180, 90, 0.45);
+    transition: box-shadow 0.4s, background 0.4s;
+  }
+  .stage.lamp-off .swag .globe { background: radial-gradient(circle at 45% 40%, #8a5a2a, #5a3417); box-shadow: none; }
+
+  .sticky {
+    position: absolute;
+    left: 62%;
+    top: 31%;
+    width: 7cqw;
+    padding: 0.4cqw 0.5cqw;
+    background: #f6e06a;
+    color: #2a1a08;
+    font-size: 0.95cqw;
+    line-height: 1.25;
+    text-align: center;
+    transform: rotate(4deg);
+    box-shadow: 0 0.3cqw 0.5cqw rgba(0, 0, 0, 0.35);
+  }
+
+  /* ---------- tv ---------- */
+  .tv { position: absolute; left: 3%; top: 44%; width: 26%; height: 40%; }
+  .tv-cab {
+    position: absolute;
+    inset: 0 0 8% 0;
+    border-radius: 1cqw;
+    background: linear-gradient(90deg, #5a3417, #704220 50%, #5a3417);
+    box-shadow: inset 0 0 0 0.35cqw #3e2310, 0 1cqw 2cqw rgba(0, 0, 0, 0.45);
+  }
+  .tv-screen {
+    position: absolute;
+    left: 6%;
+    top: 10%;
+    z-index: 41;
+    width: 62%;
+    height: 48%;
+    overflow: hidden;
+    border-radius: 14% / 18%;
+    background: #111;
+    box-shadow: 0 0 0 0.5cqw #2a1a0c;
+    transition: box-shadow 0.5s;
+  }
+  .stage.lamp-off .tv-screen { box-shadow: 0 0 0 0.5cqw #2a1a0c, 0 0 7cqw 2cqw rgba(160, 190, 255, 0.22); }
+  .tv-screen canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+  .tv-screen::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      repeating-linear-gradient(rgba(0, 0, 0, 0.16) 0 1px, transparent 1px 3px),
+      radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(0, 0, 0, 0.6));
+    pointer-events: none;
+  }
+  .solid-state {
+    position: absolute;
+    left: 20%;
+    top: 63%;
+    width: 34%;
+    padding: 0.2cqw 0;
+    border-radius: 0.3cqw;
+    background: linear-gradient(#d8c08a, #9c7c3a);
+    color: #3a2410;
+    font-size: 0.8cqw;
+    letter-spacing: 0.1em;
+    text-align: center;
+  }
+  .tv-panel {
+    position: absolute;
+    right: 5%;
+    top: 10%;
+    width: 22%;
+    height: 72%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.8cqw;
+  }
+  .knob {
+    flex: none;
+    width: 4.2cqw;
+    height: 4.2cqw;
+    padding: 0;
+    border: 0.25cqw solid #3a2410;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #e0bd72, #8a6424);
+    color: #2a1a08;
+    font-size: 1.5cqw;
+    cursor: pointer;
+  }
+  .knob.vol { width: 3cqw; height: 3cqw; cursor: default; }
+  .tv-grille {
+    flex: 1;
+    width: 100%;
+    border-radius: 0.5cqw;
+    background: repeating-linear-gradient(0deg, #3a2410 0 0.25cqw, #b8905a 0.25cqw 0.5cqw);
+    opacity: 0.8;
+  }
+  .tv-leg { position: absolute; bottom: 0; width: 1.2cqw; height: 9%; background: #3a2410; }
+  .tv-leg.l { left: 10%; }
+  .tv-leg.r { right: 10%; }
+
+  .ears { position: absolute; left: 37%; bottom: 100%; width: 0; height: 0; }
+  .ear-base {
+    position: absolute;
+    left: -2.2cqw;
+    bottom: 0;
+    width: 4.4cqw;
+    height: 1.6cqw;
+    border-radius: 2cqw 2cqw 0.3cqw 0.3cqw;
+    background: radial-gradient(circle at 40% 30%, #707070, #2a2a2a);
+  }
+  .rod {
+    position: absolute;
+    left: -0.2cqw;
+    bottom: 1.2cqw;
+    width: 0.4cqw;
+    height: 16cqw;
+    padding: 0;
+    border: 0;
+    border-radius: 0.2cqw;
+    background: linear-gradient(90deg, #f0f0f0, #999 60%, #ddd);
+    transform-origin: 50% 100%;
+    cursor: grab;
+    touch-action: none;
+  }
+  .rod::before { content: ""; position: absolute; inset: -0.3cqw -1.2cqw; }
+  .rod::after {
+    content: "";
+    position: absolute;
+    top: -0.5cqw;
+    left: -0.3cqw;
+    width: 1cqw;
+    height: 1cqw;
+    border-radius: 50%;
+    background: #ddd;
+  }
+
+  /* ---------- sofa ---------- */
+  .sofa { left: 34%; top: 42%; width: 28%; height: 30%; }
+  .sofa-back, .sofa-seat, .sofa-arm { position: absolute; background: var(--floral); }
+  .sofa-back { left: 6%; right: 6%; top: 0; height: 55%; border-radius: 3cqw 3cqw 0.8cqw 0.8cqw; box-shadow: inset 0 -1cqw 1.5cqw rgba(0, 0, 0, 0.25); }
+  .sofa-seat { left: 6%; right: 6%; top: 48%; height: 26%; border-radius: 1cqw; box-shadow: inset 0 0.6cqw 1cqw rgba(255, 255, 255, 0.08), 0 0.4cqw 0.8cqw rgba(0, 0, 0, 0.35); }
+  .sofa-arm { top: 30%; width: 11%; height: 52%; border-radius: 2cqw 2cqw 0.8cqw 0.8cqw; box-shadow: inset -0.4cqw 0 0.8cqw rgba(0, 0, 0, 0.25); }
+  .sofa-arm.l { left: 0; }
+  .sofa-arm.r { right: 0; }
+  .sofa-skirt {
+    position: absolute;
+    left: 3%;
+    right: 3%;
+    top: 78%;
+    height: 18%;
+    border-radius: 0 0 0.4cqw 0.4cqw;
+    background: repeating-linear-gradient(90deg, #5d6b22 0 1cqw, #53601e 1cqw 2cqw);
+  }
+  .sofa-sheen {
+    position: absolute;
+    inset: 0;
+    border-radius: 2cqw;
+    background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.14) 38%, transparent 46%);
+    pointer-events: none;
+  }
+
+  /* ---------- side table, phone ---------- */
+  .side-table { position: absolute; left: 62.5%; top: 60%; width: 7%; height: 20%; }
+  .side-table::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 12%; border-radius: 0.3cqw; background: linear-gradient(#7d4a25, #5a3417); }
+  .side-table::after { content: ""; position: absolute; left: 15%; right: 15%; top: 12%; bottom: 0; border-left: 0.6cqw solid #4a2a12; border-right: 0.6cqw solid #4a2a12; }
+  .phone { left: 62.8%; top: 51.5%; width: 6.4%; height: 9.5%; }
+  .phone-body {
+    position: absolute;
+    left: 8%;
+    right: 8%;
+    bottom: 0;
+    height: 62%;
+    background: linear-gradient(#e2ae3a, #b8841a);
+    clip-path: polygon(14% 0, 86% 0, 100% 100%, 0 100%);
+  }
+  .phone-dial {
+    position: absolute;
+    left: 33%;
+    width: 34%;
+    aspect-ratio: 1;
+    bottom: 10%;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--cream) 30%, #c9b07a 32% 60%, var(--cream) 62%);
+  }
+  .handset {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 12%;
+    height: 24%;
+    border-radius: 2cqw;
+    background: linear-gradient(#e8b441, #b8841a);
+    box-shadow: 0 0.2cqw 0.3cqw rgba(0, 0, 0, 0.3);
+  }
+  .phone.ringing { animation: ring 0.12s linear infinite; }
+  .phone.ringing .handset { animation: hop 0.12s linear infinite alternate; }
+  @keyframes ring { 50% { transform: rotate(3deg); } }
+  @keyframes hop { to { transform: translateY(-0.4cqw); } }
+
+  /* ---------- coffee table, fruit ---------- */
+  .coffee { position: absolute; left: 39%; top: 79%; width: 22%; height: 9%; }
+  .coffee::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 30%; border-radius: 0.4cqw; background: linear-gradient(#8a5530, #5a3417); box-shadow: 0 0.4cqw 0.6cqw rgba(0, 0, 0, 0.35); }
+  .coffee::after { content: ""; position: absolute; left: 6%; right: 6%; top: 30%; bottom: 0; border-left: 0.7cqw solid #4a2a12; border-right: 0.7cqw solid #4a2a12; }
+  .fruit { left: 45.5%; top: 73%; width: 9%; height: 7%; }
+  .bowl {
+    position: absolute;
+    left: 6%;
+    right: 6%;
+    bottom: 0;
+    height: 48%;
+    border-radius: 0 0 50% 50% / 0 0 100% 100%;
+    background: linear-gradient(#7d8c34, #55621f);
+  }
+  .f { position: absolute; border-radius: 50%; }
+  .f.apple { left: 16%; bottom: 34%; width: 2.2cqw; height: 2.2cqw; background: radial-gradient(circle at 35% 30%, #ff7a5a, #b8261a); }
+  .f.orange { left: 42%; bottom: 40%; width: 2.3cqw; height: 2.3cqw; background: radial-gradient(circle at 35% 30%, #ffc16a, #d9701a); }
+  .f.grapes {
+    left: 64%;
+    bottom: 34%;
+    width: 2cqw;
+    height: 2cqw;
+    border-radius: 0;
+    background:
+      radial-gradient(circle, #8a4ab8 0 0.45cqw, transparent 0.5cqw) 0 0 / 1cqw 1cqw;
+  }
+  .f.banana {
+    left: 26%;
+    bottom: 52%;
+    width: 4cqw;
+    height: 1.4cqw;
+    border-radius: 0 0 2cqw 2cqw;
+    border-bottom: 0.7cqw solid #f0cf3a;
+  }
+
+  /* ---------- record console ---------- */
+  .console {
+    position: absolute;
+    left: 71%;
+    top: 54%;
+    width: 27%;
+    height: 28%;
+    border-radius: 0.6cqw;
+    background: linear-gradient(#734524, #5e371b);
+    box-shadow: inset 0 0.3cqw 0 rgba(255, 220, 170, 0.15), 0 1cqw 2cqw rgba(0, 0, 0, 0.45);
+  }
+  .console-grille {
+    position: absolute;
+    top: 14%;
+    bottom: 22%;
+    width: 34%;
+    border: 0.3cqw solid #4a2a12;
+    background:
+      repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.18) 0 0.15cqw, transparent 0.15cqw 0.35cqw),
+      repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.18) 0 0.15cqw, transparent 0.15cqw 0.35cqw),
+      #b89458;
+  }
+  .console-grille.l { left: 5%; }
+  .console-grille.r { right: 5%; }
+  .console-panel {
+    position: absolute;
+    left: 42%;
+    right: 42%;
+    top: 20%;
+    bottom: 26%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
+  }
+  .console-panel i { width: 1.6cqw; height: 1.6cqw; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #e0bd72, #8a6424); }
+  .console-leg { position: absolute; bottom: -6%; width: 1cqw; height: 7%; background: #3a2410; }
+  .console-leg.l { left: 6%; }
+  .console-leg.r { right: 6%; }
+  .lid {
+    position: absolute;
+    left: 11%;
+    width: 78%;
+    bottom: calc(100% + 9cqw);
+    height: 8cqw;
+    border: 0.2cqw solid rgba(255, 255, 255, 0.12);
+    border-radius: 0.6cqw;
+    background: linear-gradient(rgba(70, 45, 30, 0.35), rgba(40, 25, 15, 0.6));
+  }
+
+  /* the deck is drawn top-down and squashed into perspective */
+  .deck {
+    position: absolute;
+    left: 11%;
+    width: 78%;
+    bottom: 100%;
+    aspect-ratio: 1;
+    border-radius: 1cqw;
+    background: linear-gradient(#3b2a1c, #2a1d12);
+    box-shadow: 0 0 0 0.4cqw #1c130c;
+    transform: scaleY(0.5);
+    transform-origin: 50% 100%;
+  }
+  .platter { position: absolute; left: 3%; top: 11%; width: 78%; height: 78%; border-radius: 50%; background: #1b1b1b; box-shadow: inset 0 0 0 0.5cqw #8a8a8a; }
+  .record {
+    position: absolute;
+    left: 5%;
+    top: 13%;
+    width: 74%;
+    height: 74%;
+    border-radius: 50%;
+    background: repeating-radial-gradient(circle, #141414 0 0.12cqw, #262626 0.12cqw 0.24cqw);
+    cursor: grab;
+    touch-action: none;
+  }
+  .label {
+    position: absolute;
+    left: 34%;
+    top: 34%;
+    width: 32%;
+    height: 32%;
+    display: grid;
+    place-content: center;
+    border-radius: 50%;
+    background: var(--orange);
+    color: var(--cream);
+    font-size: 0.8cqw;
+    line-height: 1.1;
+    text-align: center;
+  }
+  .label small { display: block; font-size: 0.45cqw; }
+  .sheen {
+    position: absolute;
+    left: 5%;
+    top: 13%;
+    width: 74%;
+    height: 74%;
+    border-radius: 50%;
+    background: conic-gradient(from 20deg, transparent 0 14%, rgba(255, 255, 255, 0.09) 20%, transparent 26% 64%, rgba(255, 255, 255, 0.07) 70%, transparent 76%);
+    pointer-events: none;
+  }
+  .arm-base { position: absolute; left: 84%; top: 6%; width: 12%; height: 12%; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #ddd, #666); }
+  .arm {
+    position: absolute;
+    left: 88.5%;
+    top: 12%;
+    width: 3%;
+    height: 60%;
+    padding: 0;
+    border: 0;
+    border-radius: 1cqw;
+    background: linear-gradient(90deg, #f0f0f0, #a8a8a8);
+    transform-origin: 50% 0;
+    cursor: grab;
+    touch-action: none;
+  }
+  .arm::before { content: ""; position: absolute; inset: -4% -250%; }
+  .headshell { position: absolute; left: -80%; bottom: -6%; width: 260%; height: 10%; border-radius: 0.2cqw; background: #333; }
+
+  .dim {
+    position: absolute;
+    inset: 0;
+    z-index: 40;
+    background: rgba(10, 5, 2, 0.62);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s;
+  }
+  .stage.lamp-off .dim { opacity: 1; }
+
+  /* ---------- hud ---------- */
+  .hud {
+    width: var(--w);
+    margin: 12px auto 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .caption { margin: 0; min-height: 2.8em; font-size: 15px; line-height: 1.4; transition: opacity 0.2s; }
+  .caption.fade { opacity: 0; }
+  .sound {
+    flex: none;
+    padding: 6px 12px;
+    border: 1px solid var(--faint);
+    border-radius: 999px;
+    background: #1a1916;
+    color: var(--dim);
+    font: 13px var(--font);
+    cursor: pointer;
+  }
+  .sound.on { border-color: var(--gold); color: var(--gold); }
+  .rotate-hint { display: none; width: var(--w); margin: 10px auto 0; color: var(--dim); font-size: 12px; }
+  @media (orientation: portrait) and (max-width: 600px) { .rotate-hint { display: block; } }
+
+  /* ---------- the phone, up close ---------- */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: grid;
+    place-items: center;
+    padding: 16px;
+    background: rgba(20, 10, 4, 0.7);
+  }
+  .overlay[hidden] { display: none; }
+  .phone-panel {
+    position: relative;
+    width: min(660px, 100%);
+    display: grid;
+    grid-template-columns: minmax(0, 290px) 1fr;
+    gap: 22px;
+    padding: 44px 22px 22px;
+    border-radius: 18px;
+    background: linear-gradient(#e2ae3a, #c78f1c);
+    color: #2a1a08;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), inset 0 2px 0 rgba(255, 255, 255, 0.3);
+  }
+  @media (max-width: 600px) {
+    .phone-panel { grid-template-columns: 1fr; }
+    #dial { max-width: 260px; margin: 0 auto; }
+  }
+  .hangup {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    padding: 6px 12px;
+    border: 0;
+    border-radius: 999px;
+    background: #2a1a08;
+    color: var(--cream);
+    font: 13px var(--font);
+    cursor: pointer;
+  }
+  .phone-hint { position: absolute; top: 14px; left: 22px; margin: 0; font-size: 12px; opacity: 0.8; }
+  #dial { display: block; width: 100%; aspect-ratio: 1; touch-action: none; cursor: grab; }
+  #dial:focus-visible { outline: 2px solid #2a1a08; outline-offset: 4px; border-radius: 50%; }
+  .notepad {
+    min-height: 250px;
+    max-height: 56vh;
+    overflow-y: auto;
+    padding: 10px 14px 14px;
+    border-radius: 4px;
+    background: #fbf6e6 repeating-linear-gradient(transparent 0 22px, #cfe0f0 22px 23px);
+    background-position: 0 6px;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.3);
+    transform: rotate(1deg);
+  }
+  .pad-number { margin: 0 0 6px; font-size: 26px; letter-spacing: 0.06em; }
+  .pad-log p { margin: 0; font-size: 13px; line-height: 23px; }
+  .pad-log p.dim { color: #7a6a4a; }
+  .answers { display: flex; gap: 10px; margin-top: 10px; }
+  .answers[hidden] { display: none; }
+  .answers button {
+    padding: 6px 16px;
+    border: 2px solid #2a1a08;
+    border-radius: 999px;
+    background: transparent;
+    color: #2a1a08;
+    font: 700 13px var(--font);
+    cursor: pointer;
+  }
+  .answers button:hover { background: #2a1a08; color: var(--cream); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .rays { animation: none; }
+    .macrame:hover .hanger, .macrame:focus-visible .hanger { animation: none; }
+    .phone.ringing, .phone.ringing .handset { animation: none; }
+    .phone.ringing { filter: drop-shadow(0 0 1cqw #ffd070); }
+  }
+</style>
+</head>
+<body>
+<a class="lobby-link" href="../">&larr; lobby</a>
+
+<main class="page">
+  <div class="stage-wrap">
+    <div class="stage" id="stage">
+      <div class="wall"></div>
+      <div class="carpet"></div>
+      <div class="baseboard"></div>
+
+      <button class="obj macrame" type="button" data-obj="macrame" aria-label="macrame plant hanger">
+        <svg class="hanger" viewBox="0 0 40 140" preserveAspectRatio="xMidYMin meet" aria-hidden="true">
+          <line x1="20" y1="0" x2="20" y2="10" stroke="#e8d9b0" stroke-width="1.4"/>
+          <circle cx="20" cy="12" r="3" fill="none" stroke="#d9c79a" stroke-width="1.4"/>
+          <path d="M20 15 L7 97 M20 15 L20 97 M20 15 L33 97" stroke="#e8d9b0" stroke-width="1.5" fill="none"/>
+          <path d="M10 60 L20 70 L30 60 M11 72 L20 80 L29 72" stroke="#d9c79a" stroke-width="1.4" fill="none"/>
+          <circle cx="16" cy="40" r="1.8" fill="#d9c79a"/><circle cx="20" cy="40" r="1.8" fill="#d9c79a"/><circle cx="24" cy="40" r="1.8" fill="#d9c79a"/>
+          <path d="M5 95 H35 L31 122 H9 Z" fill="#c2551f"/>
+          <path d="M5 95 H35 V99 H5 Z" fill="#9c4214"/>
+          <path d="M11 96 q-9 14 -7 34" stroke="#5f8a2c" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+          <path d="M16 96 q-4 18 -2 38" stroke="#4f7a24" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+          <path d="M26 96 q6 16 3 36" stroke="#5f8a2c" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+          <path d="M30 96 q10 10 9 26" stroke="#4f7a24" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+          <path d="M18 122 L16 138 M20 122 L20 139 M22 122 L24 138" stroke="#e8d9b0" stroke-width="1.2"/>
+        </svg>
+      </button>
+
+      <button class="obj calendar" type="button" data-obj="calendar" aria-label="wall calendar">
+        <span class="cal-head retro">aug 1976</span>
+        <span class="cal-days"></span>
+      </button>
+
+      <button class="obj clock" type="button" data-obj="clock" aria-label="sunburst wall clock">
+        <span class="rays"></span>
+        <span class="face"><i class="hand h" id="hand-h"></i><i class="hand m" id="hand-m"></i></span>
+      </button>
+
+      <button class="obj plaque retro" type="button" data-obj="plaque">the den &middot; est. 1976</button>
+
+      <button class="obj swag" type="button" data-obj="swag" aria-label="swag lamp"><span class="chain"></span><span class="globe"></span></button>
+
+      <div class="sticky marker">555-0170<br>do not call</div>
+
+      <div class="tv">
+        <div class="tv-cab"></div>
+        <div class="ears" id="ears">
+          <span class="ear-base"></span>
+          <button class="rod" id="rod-l" type="button" aria-label="left antenna. arrow keys turn it."></button>
+          <button class="rod" id="rod-r" type="button" aria-label="right antenna. arrow keys turn it."></button>
+        </div>
+        <div class="tv-screen"><canvas id="tv" width="160" height="120" aria-label="tv screen"></canvas></div>
+        <span class="solid-state retro">solid state</span>
+        <div class="tv-panel">
+          <button class="knob channel retro" id="channel" type="button" aria-label="channel knob">2</button>
+          <span class="knob vol"></span>
+          <span class="tv-grille"></span>
+        </div>
+        <span class="tv-leg l"></span><span class="tv-leg r"></span>
+      </div>
+
+      <button class="obj sofa" type="button" data-obj="sofa" aria-label="floral sofa with a plastic cover">
+        <span class="sofa-back"></span><span class="sofa-arm l"></span><span class="sofa-arm r"></span>
+        <span class="sofa-seat"></span><span class="sofa-skirt"></span><span class="sofa-sheen"></span>
+      </button>
+
+      <div class="side-table"></div>
+      <button class="obj phone" id="phone" type="button" aria-label="rotary phone">
+        <span class="phone-body"></span><span class="phone-dial"></span><span class="handset"></span>
+      </button>
+
+      <div class="coffee"></div>
+      <button class="obj fruit" type="button" data-obj="fruit" aria-label="bowl of fruit">
+        <span class="bowl"></span><i class="f banana"></i><i class="f apple"></i><i class="f orange"></i><i class="f grapes"></i>
+      </button>
+
+      <div class="console">
+        <span class="lid"></span>
+        <div class="deck" id="deck">
+          <span class="platter"></span>
+          <div class="record" id="record"><span class="label retro"><b>side b.</b><small>nobody listens to side b.</small></span></div>
+          <span class="sheen"></span>
+          <span class="arm-base"></span>
+          <button class="arm" id="arm" type="button" aria-label="tone arm. enter drops or lifts it."><span class="headshell"></span></button>
+        </div>
+        <span class="console-grille l"></span>
+        <span class="console-panel"><i></i><i></i></span>
+        <span class="console-grille r"></span>
+        <span class="console-leg l"></span><span class="console-leg r"></span>
+      </div>
+
+      <div class="dim" aria-hidden="true"></div>
+    </div>
+  </div>
+
+  <div class="hud">
+    <p class="caption" id="caption" role="status"></p>
+    <button class="sound" id="sound" type="button">sound: off</button>
+  </div>
+  <p class="rotate-hint">tip: the den is bigger sideways.</p>
+</main>
+
+<div class="overlay" id="phone-wrap" hidden>
+  <div class="phone-panel" role="dialog" aria-label="rotary phone">
+    <p class="phone-hint">drag a finger hole to the stop. or type digits.</p>
+    <button class="hangup" id="hangup" type="button">hang up</button>
+    <svg id="dial" viewBox="0 0 200 200" tabindex="0" aria-label="rotary dial. type digits to dial.">
+      <defs>
+        <mask id="wheel-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="200" height="200">
+          <rect x="0" y="0" width="200" height="200" fill="black"/>
+          <circle cx="100" cy="100" r="86" fill="white"/>
+          <circle cx="100" cy="100" r="47" fill="black"/>
+          <g id="mask-holes"></g>
+        </mask>
+      </defs>
+      <circle cx="100" cy="100" r="97" fill="#b9831a"/>
+      <circle cx="100" cy="100" r="88" fill="#9c6a14"/>
+      <circle cx="100" cy="100" r="86" fill="#f3ead3"/>
+      <g id="dial-digits"></g>
+      <circle cx="100" cy="100" r="40" fill="#efe3c4" stroke="#c9b58c" stroke-width="1.5"/>
+      <text x="100" y="95" text-anchor="middle" font-size="8" fill="#6a5430" font-family="Space Mono, monospace">your number</text>
+      <text x="100" y="110" text-anchor="middle" font-size="12" fill="#3a2a12" font-family="Space Mono, monospace" font-weight="700">555-0177</text>
+      <g id="wheel">
+        <circle cx="100" cy="100" r="86" fill="rgba(236, 226, 200, 0.93)" mask="url(#wheel-mask)"/>
+        <g id="wheel-rims"></g>
+      </g>
+      <path d="M 159 141 L 177 154" stroke="#d8d8d8" stroke-width="6" stroke-linecap="round"/>
+      <path d="M 159 141 L 177 154" stroke="#8a8a8a" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+    <div class="notepad">
+      <p class="pad-number marker" id="pad-number">___-____</p>
+      <div class="pad-log" id="pad-log"></div>
+      <div class="answers" id="answers" hidden>
+        <button type="button" data-a="yes">yes</button>
+        <button type="button" data-a="no">no</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const normDeg = a => ((((a % 360) + 540) % 360) - 180);
+  const TAU = Math.PI * 2;
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const stage = $('#stage');
+  const captionEl = $('#caption');
+
+  let captionTimer;
+  function say(text) {
+    clearTimeout(captionTimer);
+    captionEl.classList.add('fade');
+    captionTimer = setTimeout(() => {
+      captionEl.textContent = text;
+      captionEl.classList.remove('fade');
+    }, 180);
+  }
+
+  // ---------- audio: nothing is created until someone clicks something ----------
+  const audio = { ctx: null, on: false };
+  const soundBtn = $('#sound');
+
+  function initAudio() {
+    if (audio.ctx) return;
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const comp = ctx.createDynamicsCompressor();
+    comp.threshold.value = -18;
+    comp.ratio.value = 3;
+    const master = ctx.createGain();
+    master.gain.value = 0;
+    master.connect(comp).connect(ctx.destination);
+
+    // old console speakers: nothing above ~5k
+    const warm = ctx.createBiquadFilter();
+    warm.type = 'lowpass';
+    warm.frequency.value = 5200;
+    warm.connect(master);
+    const music = ctx.createGain();
+    music.gain.value = 0.55;
+    music.connect(warm);
+
+    // electric piano bus with a gentle tremolo
+    const trem = ctx.createGain();
+    trem.gain.value = 0.8;
+    const tremLfo = ctx.createOscillator();
+    tremLfo.frequency.value = 4.6;
+    const tremDepth = ctx.createGain();
+    tremDepth.gain.value = 0.2;
+    tremLfo.connect(tremDepth).connect(trem.gain);
+    tremLfo.start();
+    trem.connect(music);
+
+    const sfx = ctx.createGain();
+    sfx.gain.value = 0.7;
+    sfx.connect(master);
+
+    const noise = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+    const nd = noise.getChannelData(0);
+    for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+
+    // vinyl: a little hiss and a lot of dust
+    const len = ctx.sampleRate * 4;
+    const crackle = ctx.createBuffer(1, len, ctx.sampleRate);
+    const cd = crackle.getChannelData(0);
+    for (let i = 0; i < len; i++) cd[i] = (Math.random() * 2 - 1) * 0.006;
+    for (let k = 0; k < 44; k++) {
+      const pos = Math.floor(Math.random() * (len - 60));
+      const amp = (Math.random() < 0.12 ? 0.8 : 0.12 + Math.random() * 0.35) * (Math.random() < 0.5 ? -1 : 1);
+      for (let j = 0; j < 50; j++) cd[pos + j] += amp * Math.exp(-j / 5);
+    }
+
+    Object.assign(audio, { ctx, master, music, epBus: trem, sfx, noise, crackle });
+  }
+
+  function setSound(on) {
+    audio.on = on;
+    soundBtn.textContent = on ? 'sound: on' : 'sound: off';
+    soundBtn.classList.toggle('on', on);
+    if (on) {
+      initAudio();
+      audio.ctx.resume();
+    }
+    if (audio.ctx) audio.master.gain.setTargetAtTime(on ? 0.9 : 0, audio.ctx.currentTime, 0.05);
+    if (!on) stopDialTone();
+    else if (!phoneWrap.hidden && call.state === 'idle') startDialTone();
+  }
+  let userMuted = false;
+  soundBtn.addEventListener('click', () => {
+    setSound(!audio.on);
+    userMuted = !audio.on;
+  });
+
+  function tone(freqs, dur, gain = 0.08, type = 'sine', when = 0) {
+    if (!audio.on || !audio.ctx) return;
+    const ctx = audio.ctx;
+    const t = ctx.currentTime + when;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(gain, t + 0.01);
+    g.gain.setValueAtTime(gain, t + Math.max(0.02, dur - 0.03));
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    g.connect(audio.sfx);
+    for (const f of freqs) {
+      const o = ctx.createOscillator();
+      o.type = type;
+      o.frequency.value = f;
+      o.connect(g);
+      o.start(t);
+      o.stop(t + dur + 0.02);
+    }
+  }
+
+  function noiseHit(t, type, freq, gain, dur, q = 1, dest) {
+    const ctx = audio.ctx;
+    const s = ctx.createBufferSource();
+    s.buffer = audio.noise;
+    const f = ctx.createBiquadFilter();
+    f.type = type;
+    f.frequency.value = freq;
+    f.Q.value = q;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(gain, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    s.connect(f).connect(g).connect(dest || audio.music);
+    s.start(t, Math.random() * 0.5);
+    s.stop(t + dur + 0.02);
+  }
+
+  function pulseClick() {
+    if (!audio.on || !audio.ctx) return;
+    noiseHit(audio.ctx.currentTime, 'bandpass', 2400, 0.35, 0.012, 2, audio.sfx);
+  }
+
+  // ---------- the record ----------
+  const BPM = 88;
+  const STEP = 60 / BPM / 4;
+  const SWING = 0.16;
+  const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+  // Dmaj7, Bm7, Em7, A7: one bar each
+  const CHORDS = [[54, 57, 61, 62], [54, 57, 59, 62], [55, 59, 62, 64], [55, 57, 61, 64]];
+  const ROOTS = [38, 35, 40, 33];
+  const EP_HITS = { 0: [6, 0.9], 7: [1, 0.5], 10: [4, 0.7] };
+  const BASS = { 0: ['root', 3], 7: ['fifth', 2], 10: ['root', 3], 14: ['lead', 2] };
+  const LEAD = {
+    18: [69, 2], 20: [71, 2], 22: [74, 4], 28: [71, 3],
+    32: [69, 4], 38: [66, 2], 40: [64, 6],
+  };
+
+  function epNote(t, midi, dur, vel, r) {
+    const ctx = audio.ctx;
+    const f = mtof(midi) * r;
+    const car = ctx.createOscillator();
+    car.frequency.value = f;
+    const mod = ctx.createOscillator();
+    mod.frequency.value = f;
+    const mg = ctx.createGain();
+    mg.gain.setValueAtTime(f * 1.3 * vel, t);
+    mg.gain.exponentialRampToValueAtTime(Math.max(1, f * 0.06), t + 0.5);
+    mod.connect(mg).connect(car.frequency);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.085 * vel, t + 0.006);
+    g.gain.exponentialRampToValueAtTime(0.03 * vel, t + dur);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.35);
+    car.connect(g).connect(audio.epBus);
+    car.start(t);
+    mod.start(t);
+    car.stop(t + dur + 0.4);
+    mod.stop(t + dur + 0.4);
+  }
+  function bassNote(t, midi, dur, r) {
+    const ctx = audio.ctx;
+    const f = mtof(midi) * r;
+    const lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = 420;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.32, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.12, t + dur);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.08);
+    for (const type of ['triangle', 'sine']) {
+      const o = ctx.createOscillator();
+      o.type = type;
+      o.frequency.value = f;
+      o.connect(lp);
+      o.start(t);
+      o.stop(t + dur + 0.1);
+    }
+    lp.connect(g).connect(audio.music);
+  }
+  function kick(t, r) {
+    const ctx = audio.ctx;
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.frequency.setValueAtTime(100 * r, t);
+    o.frequency.exponentialRampToValueAtTime(42 * r, t + 0.12);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.45, t + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.32);
+    o.connect(g).connect(audio.music);
+    o.start(t);
+    o.stop(t + 0.35);
+  }
+  function rim(t) {
+    noiseHit(t, 'bandpass', 2000, 0.12, 0.05, 3);
+  }
+  function hat(t, gain) {
+    noiseHit(t, 'highpass', 8500, gain, 0.035);
+  }
+  function flute(t, midi, dur, r) {
+    const ctx = audio.ctx;
+    const f = mtof(midi) * r;
+    const o = ctx.createOscillator();
+    o.frequency.value = f;
+    const vib = ctx.createOscillator();
+    vib.frequency.value = 5;
+    const vibDepth = ctx.createGain();
+    vibDepth.gain.setValueAtTime(0, t);
+    vibDepth.gain.linearRampToValueAtTime(f * 0.007, t + 0.25);
+    vib.connect(vibDepth).connect(o.frequency);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.06, t + 0.06);
+    g.gain.setValueAtTime(0.06, t + Math.max(0.07, dur - 0.05));
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.15);
+    o.connect(g).connect(audio.music);
+    o.start(t);
+    vib.start(t);
+    o.stop(t + dur + 0.2);
+    vib.stop(t + dur + 0.2);
+  }
+
+  const turn = {
+    phi: 0, needleDown: false, holding: false, rate: 1, rateTarget: 1, angle: 0,
+    anim: null, playedOnce: false, scratchedOnce: false,
+  };
+  let step = 0;
+  let nextT = 0;
+  let loopCount = 0;
+  let sched = null;
+
+  function playStep(s, t) {
+    const bar = Math.floor(s / 16);
+    const st = s % 16;
+    const r = clamp(turn.rate, 0.5, 1.1);
+    const ep = EP_HITS[st];
+    if (ep) CHORDS[bar].forEach(m => epNote(t, m, ep[0] * STEP, ep[1], r));
+    const b = BASS[st];
+    if (b) {
+      const root = ROOTS[bar];
+      const midi = b[0] === 'root' ? root : b[0] === 'fifth' ? root + 7 : ROOTS[(bar + 1) % 4] - 1;
+      bassNote(t, midi, b[1] * STEP, r);
+    }
+    if (st === 0 || st === 10 || (bar === 3 && st === 7)) kick(t, r);
+    if (st === 4 || st === 12) rim(t);
+    if (st % 2 === 0) hat(t, st % 4 === 2 ? 0.05 : 0.03);
+    if (loopCount % 2 === 1 && LEAD[s]) flute(t, LEAD[s][0], LEAD[s][1] * STEP, r);
+    if (s === 63) loopCount++;
+  }
+
+  function schedule() {
+    const ctx = audio.ctx;
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    if (turn.rate < 0.15) { nextT = Math.max(nextT, now + 0.02); return; }
+    if (nextT < now - 0.2) nextT = now + 0.02;
+    while (nextT < now + 0.15) {
+      playStep(step, nextT + (step % 2 ? (STEP * SWING) / turn.rate : 0));
+      nextT += STEP / turn.rate;
+      step = (step + 1) % 64;
+    }
+  }
+  function startMusic() {
+    if (!audio.ctx) return;
+    step = 0;
+    loopCount = 0;
+    nextT = audio.ctx.currentTime + 0.08;
+    clearInterval(sched);
+    sched = setInterval(schedule, 25);
+  }
+  function stopMusic() {
+    clearInterval(sched);
+    sched = null;
+  }
+
+  let crackleNode = null;
+  function startCrackle() {
+    stopCrackle();
+    if (!audio.ctx) return;
+    const ctx = audio.ctx;
+    const src = ctx.createBufferSource();
+    src.buffer = audio.crackle;
+    src.loop = true;
+    const hp = ctx.createBiquadFilter();
+    hp.type = 'highpass';
+    hp.frequency.value = 700;
+    const g = ctx.createGain();
+    g.gain.value = 0.3;
+    src.connect(hp).connect(g).connect(audio.master);
+    src.start();
+    crackleNode = src;
+  }
+  function stopCrackle() {
+    if (!crackleNode) return;
+    try { crackleNode.stop(); } catch (err) { /* already stopped */ }
+    crackleNode = null;
+  }
+  function thump() {
+    if (!audio.on || !audio.ctx) return;
+    tone([55], 0.12, 0.2);
+    noiseHit(audio.ctx.currentTime, 'lowpass', 900, 0.3, 0.05, 1, audio.sfx);
+  }
+
+  let lastGrain = 0;
+  function scratchGrain(w) {
+    const ctx = audio.ctx;
+    const t = ctx.currentTime;
+    const s = ctx.createBufferSource();
+    s.buffer = audio.noise;
+    const bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = clamp(220 + Math.abs(w) * 3, 220, 3500);
+    bp.Q.value = 4;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(clamp(Math.abs(w) / 900, 0.02, 0.35), t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.06);
+    s.connect(bp).connect(g).connect(audio.sfx);
+    s.start(t, Math.random() * 0.5);
+    s.stop(t + 0.07);
+  }
+
+  // deck geometry, in deck units (0-100 both ways, before the squash)
+  const CENTER = { x: 42, y: 50 };
+  const PIVOT = { x: 90, y: 12 };
+  const ARM = 60;
+  const deckEl = $('#deck');
+  const recordEl = $('#record');
+  const armEl = $('#arm');
+
+  function stylusDist(phi = turn.phi) {
+    const r = (phi * Math.PI) / 180;
+    return Math.hypot(PIVOT.x - ARM * Math.sin(r) - CENTER.x, PIVOT.y + ARM * Math.cos(r) - CENTER.y);
+  }
+  function deckPoint(e) {
+    const r = deckEl.getBoundingClientRect();
+    return { x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100 };
+  }
+
+  function setDown() {
+    if (turn.phi < 4) { turn.needleDown = false; return; }
+    const d = stylusDist();
+    if (d > 37) { turn.needleDown = false; say("that's the mat. the mat is not music."); return; }
+    if (d < 14) { turn.needleDown = false; say("that's the label. the label doesn't play."); return; }
+    turn.needleDown = true;
+    let autoOn = false;
+    if (!audio.on && !userMuted) {
+      setSound(true);
+      autoOn = true;
+    } else if (!audio.on) {
+      // muted on purpose: the record still plays, silently
+      initAudio();
+      audio.ctx.resume();
+      say('the record is playing. you turned the sound off. that was your choice.');
+    }
+    thump();
+    startCrackle();
+    startMusic();
+    if (!turn.playedOnce && audio.on) {
+      turn.playedOnce = true;
+      if (autoOn) {
+        say("sound is on now. it's a record player. what did you expect.");
+        setTimeout(() => { if (turn.needleDown) say('side b. nobody listens to side b. except you, apparently.'); }, 4200);
+      } else {
+        say('side b. nobody listens to side b. except you, apparently.');
+      }
+    }
+  }
+  function lift() {
+    turn.needleDown = false;
+    stopMusic();
+    stopCrackle();
+  }
+  function endOfSide() {
+    turn.needleDown = false;
+    stopMusic();
+    say('side b is over. the arm goes home. it always does.');
+    setTimeout(() => {
+      stopCrackle();
+      turn.anim = { from: turn.phi, to: 0, t0: performance.now(), dur: 1800 };
+    }, 2500);
+  }
+  function toggleArm() {
+    if (turn.needleDown) {
+      lift();
+      turn.anim = { from: turn.phi, to: 0, t0: performance.now(), dur: 1200 };
+      say('you lift the arm. silence. the good kind.');
+    } else {
+      turn.anim = { from: turn.phi, to: 18, t0: performance.now(), dur: 1200, done: setDown };
+    }
+  }
+
+  let armDrag = null;
+  armEl.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    try { armEl.setPointerCapture(e.pointerId); } catch (err) { /* synthetic pointer */ }
+    armDrag = { x: e.clientX, y: e.clientY, moved: false };
+    turn.anim = null;
+  });
+  armEl.addEventListener('pointermove', e => {
+    if (!armDrag) return;
+    if (!armDrag.moved && Math.hypot(e.clientX - armDrag.x, e.clientY - armDrag.y) < 5) return;
+    if (!armDrag.moved) {
+      armDrag.moved = true;
+      if (turn.needleDown) lift();
+    }
+    const p = deckPoint(e);
+    turn.phi = clamp((Math.atan2(-(p.x - PIVOT.x), p.y - PIVOT.y) * 180) / Math.PI, 0, 45);
+  });
+  armEl.addEventListener('pointerup', () => {
+    if (!armDrag) return;
+    const moved = armDrag.moved;
+    armDrag = null;
+    if (moved) setDown();
+    else toggleArm();
+  });
+  armEl.addEventListener('pointercancel', () => { armDrag = null; });
+  armEl.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      toggleArm();
+    }
+  });
+
+  let scratch = null;
+  recordEl.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    try { recordEl.setPointerCapture(e.pointerId); } catch (err) { /* synthetic pointer */ }
+    const p = deckPoint(e);
+    scratch = { a: (Math.atan2(p.y - CENTER.y, p.x - CENTER.x) * 180) / Math.PI, t: performance.now(), moved: false };
+    turn.holding = true;
+    turn.rateTarget = 0;
+  });
+  recordEl.addEventListener('pointermove', e => {
+    if (!scratch) return;
+    const p = deckPoint(e);
+    const a = (Math.atan2(p.y - CENTER.y, p.x - CENTER.x) * 180) / Math.PI;
+    const now = performance.now();
+    const delta = normDeg(a - scratch.a);
+    const secs = Math.max(1, now - scratch.t) / 1000;
+    scratch.a = a;
+    scratch.t = now;
+    if (Math.abs(delta) > 0.5) scratch.moved = true;
+    turn.angle = (turn.angle + delta + 360) % 360;
+    if (turn.needleDown && audio.on && audio.ctx && now - lastGrain > 28) {
+      lastGrain = now;
+      scratchGrain(delta / secs);
+    }
+  });
+  function endScratch() {
+    if (!scratch) return;
+    const moved = scratch.moved;
+    scratch = null;
+    turn.holding = false;
+    turn.rateTarget = 1;
+    if (moved && turn.needleDown && !turn.scratchedOnce) {
+      turn.scratchedOnce = true;
+      say("you're scratching a record in 1976. you're early.");
+    } else if (!moved) {
+      say('the label says "side b. nobody listens to side b."');
+    }
+  }
+  recordEl.addEventListener('pointerup', endScratch);
+  recordEl.addEventListener('pointercancel', endScratch);
+
+  function updateTurntable(dt) {
+    if (turn.anim) {
+      const a = turn.anim;
+      const k = clamp((performance.now() - a.t0) / a.dur, 0, 1);
+      const eased = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+      turn.phi = a.from + (a.to - a.from) * eased;
+      if (k >= 1) {
+        turn.anim = null;
+        if (a.done) a.done();
+      }
+    }
+    turn.rate += (turn.rateTarget - turn.rate) * Math.min(1, dt * (turn.holding ? 14 : 2.4));
+    if (!turn.holding) turn.angle = (turn.angle + dt * 200 * turn.rate) % 360;
+    if (turn.needleDown && !turn.holding && !turn.anim) {
+      turn.phi += dt * 0.15 * turn.rate;
+      if (stylusDist() < 14.5) endOfSide();
+    }
+    recordEl.style.transform = `rotate(${turn.angle.toFixed(1)}deg)`;
+    armEl.style.transform = `rotate(${turn.phi.toFixed(2)}deg)`;
+  }
+
+  // ---------- the tv ----------
+  const CARPET_LINES = [
+    'this is the carpet.',
+    "it's shag.",
+    'you can lose things in it.',
+    'we lost a dog in it in 1974.',
+    "he's fine. he lives in there now.",
+    'next week: the drapes.',
+  ];
+  function drawTestPattern(p, t) {
+    const bars = ['#c0c0c0', '#c0c000', '#00c0c0', '#00c000', '#c000c0', '#c00000', '#0000c0'];
+    const rev = ['#0000c0', '#131313', '#c000c0', '#131313', '#00c0c0', '#131313', '#c0c0c0'];
+    const bw = 160 / 7;
+    bars.forEach((c, i) => { p.fillStyle = c; p.fillRect(i * bw, 0, bw + 1, 74); });
+    rev.forEach((c, i) => { p.fillStyle = c; p.fillRect(i * bw, 74, bw + 1, 10); });
+    p.fillStyle = '#101010';
+    p.fillRect(0, 84, 160, 36);
+    p.fillStyle = '#f0f0f0';
+    p.textAlign = 'center';
+    p.font = 'bold 11px monospace';
+    p.fillText('PLEASE STAND BY', 80, 102);
+    if (Math.floor(t * 0.8) % 2) {
+      p.font = '8px monospace';
+      p.fillText('(still standing by)', 80, 114);
+    }
+  }
+  function drawWeather(p, t) {
+    const sky = p.createLinearGradient(0, 0, 0, 120);
+    sky.addColorStop(0, '#2b5aa8');
+    sky.addColorStop(1, '#6aa0d8');
+    p.fillStyle = sky;
+    p.fillRect(0, 0, 160, 120);
+    p.fillStyle = '#6b8a3a';
+    p.beginPath();
+    p.ellipse(58, 70, 42, 22, -0.2, 0, TAU);
+    p.fill();
+    p.fillStyle = '#fff';
+    p.textAlign = 'center';
+    p.font = 'bold 8px monospace';
+    p.fillText('CIZOLE', 58, 73);
+    p.fillStyle = '#ffd23a';
+    p.beginPath();
+    p.arc(122, 30 + Math.sin(t * 2) * 2, 13, 0, TAU);
+    p.fill();
+    // a cloud, but wood paneled
+    p.fillStyle = woodPattern;
+    for (const [cx, cy, rx, ry] of [[104, 42, 20, 10], [92, 46, 12, 8], [116, 47, 12, 7]]) {
+      p.beginPath();
+      p.ellipse(cx, cy, rx, ry, 0, 0, TAU);
+      p.fill();
+    }
+    p.fillStyle = 'rgba(0, 0, 0, 0.55)';
+    p.fillRect(0, 94, 160, 26);
+    p.fillStyle = '#fff';
+    p.font = 'bold 9px monospace';
+    p.fillText('PARTLY WOOD PANELED', 80, 105);
+    p.font = '8px monospace';
+    p.fillText('HIGH 71    LOW 70', 80, 116);
+  }
+  function drawCarpetMan(p, t) {
+    p.fillStyle = '#d9c29a';
+    p.fillRect(0, 0, 160, 120);
+    p.fillStyle = '#b8521c';
+    p.fillRect(0, 70, 160, 50);
+    p.fillStyle = 'rgba(255, 200, 140, 0.45)';
+    for (let i = 0; i < 90; i++) {
+      const x = (i * 37) % 160;
+      const y = 72 + ((i * 53) % 34);
+      p.fillRect(x, y, 1, 2);
+    }
+    // the man
+    p.fillStyle = '#3a2410';
+    p.fillRect(40, 64, 6, 18);
+    p.fillRect(50, 64, 6, 18);
+    p.fillStyle = '#6a4424';
+    p.fillRect(38, 36, 20, 30);
+    p.fillStyle = '#e8b890';
+    p.beginPath();
+    p.arc(48, 28, 8, 0, TAU);
+    p.fill();
+    p.fillStyle = '#3a2410';
+    p.fillRect(40, 18, 16, 5);
+    const a = 0.7 + Math.sin(t * 1.5) * 0.15;
+    p.strokeStyle = '#6a4424';
+    p.lineWidth = 4;
+    p.beginPath();
+    p.moveTo(56, 42);
+    p.lineTo(56 + Math.cos(a) * 18, 42 + Math.sin(a) * 18);
+    p.stroke();
+    p.strokeStyle = '#222';
+    p.lineWidth = 1;
+    p.beginPath();
+    p.moveTo(56 + Math.cos(a) * 18, 42 + Math.sin(a) * 18);
+    p.lineTo(56 + Math.cos(a) * 44, 42 + Math.sin(a) * 44);
+    p.stroke();
+    p.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    p.fillRect(0, 104, 160, 16);
+    p.fillStyle = '#fff';
+    p.textAlign = 'center';
+    p.font = '7px monospace';
+    p.fillText(CARPET_LINES[Math.floor(t / 3) % CARPET_LINES.length], 80, 115);
+  }
+  const CHANNELS = [
+    { num: 2, draw: drawTestPattern, caption: "channel 2. please stand by. they've been saying that since 1974." },
+    { num: 4, draw: drawWeather, caption: 'channel 4. the weather in cizole: partly wood paneled.' },
+    { num: 9, draw: drawCarpetMan, caption: "channel 9. a man is explaining the carpet. it's a two-part episode." },
+  ];
+  const tv = {
+    ch: 0, a1: -30, a2: 30, roll: 0, burst: 0, good: false, touched: false,
+    seen: [false, false, false], capTimer: 0, lastGrumble: 0,
+  };
+  const targets = CHANNELS.map(() => {
+    let t;
+    do { t = [-80 + Math.random() * 65, 15 + Math.random() * 65]; } while (Math.hypot(t[0] + 30, t[1] - 30) < 28);
+    return t;
+  });
+  function reception() {
+    const t = targets[tv.ch];
+    return clamp(1 - Math.hypot(tv.a1 - t[0], tv.a2 - t[1]) / 42, 0, 1);
+  }
+
+  const tvCanvas = $('#tv');
+  const tvx = tvCanvas.getContext('2d');
+  const prog = document.createElement('canvas');
+  prog.width = 160;
+  prog.height = 120;
+  const px = prog.getContext('2d');
+  const woodTile = document.createElement('canvas');
+  woodTile.width = 6;
+  woodTile.height = 6;
+  const wt = woodTile.getContext('2d');
+  wt.fillStyle = '#7a4a24';
+  wt.fillRect(0, 0, 6, 6);
+  wt.fillStyle = '#5c3517';
+  wt.fillRect(0, 0, 1, 6);
+  const woodPattern = px.createPattern(woodTile, 'repeat');
+  const noiseCanvas = document.createElement('canvas');
+  noiseCanvas.width = 160;
+  noiseCanvas.height = 120;
+  const nx = noiseCanvas.getContext('2d');
+  const noiseImg = nx.createImageData(160, 120);
+
+  function goodReception() {
+    const c = CHANNELS[tv.ch];
+    clearTimeout(tv.capTimer);
+    if (!tv.seen[tv.ch]) {
+      tv.seen[tv.ch] = true;
+      say('the reception is perfect as long as you stand exactly like that forever.');
+      tv.capTimer = setTimeout(() => { if (tv.good) say(c.caption); }, 3800);
+    } else {
+      say(c.caption);
+    }
+  }
+
+  function drawTV(dt, t) {
+    const q = reception();
+    CHANNELS[tv.ch].draw(px, t);
+    if (!reduceMotion && q < 0.85) tv.roll = (tv.roll + dt * (1 - q) * 90) % 120;
+    else tv.roll *= 0.85;
+    tvx.clearRect(0, 0, 160, 120);
+    const off = Math.round(tv.roll);
+    tvx.drawImage(prog, 0, off);
+    tvx.drawImage(prog, 0, off - 120);
+    if (!reduceMotion && q < 0.7) {
+      for (let i = 0; i < 3; i++) {
+        const y = Math.floor(Math.random() * 116);
+        const h = 2 + Math.floor(Math.random() * 4);
+        tvx.drawImage(tvCanvas, 0, y, 160, h, (1 - q) * 14 * (Math.random() - 0.5), y, 160, h);
+      }
+    }
+    tv.burst = Math.max(0, tv.burst - dt);
+    const amount = tv.burst > 0 ? 1 : Math.pow(1 - q, 0.8);
+    if (amount > 0.01) {
+      const d = noiseImg.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const v = (Math.random() * 255) | 0;
+        d[i] = d[i + 1] = d[i + 2] = v;
+        d[i + 3] = 255;
+      }
+      nx.putImageData(noiseImg, 0, 0);
+      tvx.globalAlpha = Math.min(1, amount * 1.05);
+      tvx.drawImage(noiseCanvas, 0, 0);
+      tvx.globalAlpha = 1;
+    }
+    if (tv.touched && q > 0.92) {
+      if (!tv.good) { tv.good = true; goodReception(); }
+    } else if (q < 0.8) {
+      tv.good = false;
+    }
+  }
+
+  const earsEl = $('#ears');
+  const rodL = $('#rod-l');
+  const rodR = $('#rod-r');
+  function applyRods() {
+    rodL.style.transform = `rotate(${tv.a1.toFixed(1)}deg)`;
+    rodR.style.transform = `rotate(${tv.a2.toFixed(1)}deg)`;
+  }
+  function afterAdjust() {
+    const now = performance.now();
+    if (reception() < 0.25 && now - tv.lastGrumble > 9000) {
+      tv.lastGrumble = now;
+      say(pick([
+        'static. the antenna is doing its best.',
+        'mostly static. some of it is shaped like a man.',
+        "somewhere in there is a weather report. it's partly static.",
+      ]));
+    }
+  }
+  function wireRod(rod, which) {
+    let dragging = false;
+    rod.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      dragging = true;
+      tv.touched = true;
+      try { rod.setPointerCapture(e.pointerId); } catch (err) { /* synthetic pointer */ }
+    });
+    rod.addEventListener('pointermove', e => {
+      if (!dragging) return;
+      const b = earsEl.getBoundingClientRect();
+      const base = { x: b.left, y: b.top - stage.getBoundingClientRect().width * 0.012 };
+      const a = (Math.atan2(e.clientX - base.x, -(e.clientY - base.y)) * 180) / Math.PI;
+      if (which === 'l') tv.a1 = clamp(a, -88, -4);
+      else tv.a2 = clamp(a, 4, 88);
+      applyRods();
+    });
+    const end = () => {
+      if (!dragging) return;
+      dragging = false;
+      afterAdjust();
+    };
+    rod.addEventListener('pointerup', end);
+    rod.addEventListener('pointercancel', end);
+    rod.addEventListener('keydown', e => {
+      const d = e.key === 'ArrowLeft' || e.key === 'ArrowDown' ? -3 : e.key === 'ArrowRight' || e.key === 'ArrowUp' ? 3 : 0;
+      if (!d) return;
+      e.preventDefault();
+      tv.touched = true;
+      if (which === 'l') tv.a1 = clamp(tv.a1 + d, -88, -4);
+      else tv.a2 = clamp(tv.a2 + d, 4, 88);
+      applyRods();
+    });
+  }
+  wireRod(rodL, 'l');
+  wireRod(rodR, 'r');
+  applyRods();
+
+  const channelBtn = $('#channel');
+  channelBtn.addEventListener('click', () => {
+    tv.ch = (tv.ch + 1) % CHANNELS.length;
+    tv.burst = 0.35;
+    tv.good = false;
+    tv.touched = true;
+    channelBtn.textContent = CHANNELS[tv.ch].num;
+    pulseClick();
+    say(`channel ${CHANNELS[tv.ch].num}.` + (reception() < 0.9 ? ' static. adjust the rabbit ears.' : ''));
+  });
+
+  // ---------- the phone ----------
+  const phoneBtn = $('#phone');
+  const phoneWrap = $('#phone-wrap');
+  const dialSvg = $('#dial');
+  const wheel = $('#wheel');
+  const padNumber = $('#pad-number');
+  const padLog = $('#pad-log');
+  const answersEl = $('#answers');
+  const SVGNS = 'http://www.w3.org/2000/svg';
+  const holeAngle = n => 125 - 30 * n; // n = 1..10, where 10 is the zero
+  const polar = (a, r) => ({ x: 100 + r * Math.sin((a * Math.PI) / 180), y: 100 - r * Math.cos((a * Math.PI) / 180) });
+
+  for (let n = 1; n <= 10; n++) {
+    const p = polar(holeAngle(n), 66);
+    const text = document.createElementNS(SVGNS, 'text');
+    text.setAttribute('x', p.x.toFixed(1));
+    text.setAttribute('y', (p.y + 6).toFixed(1));
+    text.setAttribute('text-anchor', 'middle');
+    text.setAttribute('font-size', '17');
+    text.setAttribute('font-weight', '700');
+    text.setAttribute('font-family', 'Space Mono, monospace');
+    text.setAttribute('fill', '#3a2a12');
+    text.textContent = n % 10;
+    $('#dial-digits').appendChild(text);
+    const hole = document.createElementNS(SVGNS, 'circle');
+    hole.setAttribute('cx', p.x.toFixed(1));
+    hole.setAttribute('cy', p.y.toFixed(1));
+    hole.setAttribute('r', '11.5');
+    hole.setAttribute('fill', 'black');
+    $('#mask-holes').appendChild(hole);
+    const rimEl = document.createElementNS(SVGNS, 'circle');
+    rimEl.setAttribute('cx', p.x.toFixed(1));
+    rimEl.setAttribute('cy', p.y.toFixed(1));
+    rimEl.setAttribute('r', '11.5');
+    rimEl.setAttribute('fill', 'none');
+    rimEl.setAttribute('stroke', 'rgba(120, 90, 40, 0.55)');
+    rimEl.setAttribute('stroke-width', '1.5');
+    $('#wheel-rims').appendChild(rimEl);
+  }
+
+  const call = { state: 'idle', number: '', timers: [], opTimer: 0 };
+  const dial = { drag: null, busy: false, queue: [] };
+  let dialToneNodes = null;
+
+  function startDialTone() {
+    stopDialTone();
+    if (!audio.on || !audio.ctx) return;
+    const ctx = audio.ctx;
+    const g = ctx.createGain();
+    g.gain.value = 0.04;
+    g.connect(audio.sfx);
+    const oscs = [350, 440].map(f => {
+      const o = ctx.createOscillator();
+      o.frequency.value = f;
+      o.connect(g);
+      o.start();
+      return o;
+    });
+    dialToneNodes = { g, oscs };
+  }
+  function stopDialTone() {
+    if (!dialToneNodes) return;
+    for (const o of dialToneNodes.oscs) {
+      try { o.stop(); } catch (err) { /* already stopped */ }
+    }
+    dialToneNodes = null;
+  }
+
+  const fmt = num => {
+    const s = (num + '_______').slice(0, 7);
+    return s.slice(0, 3) + '-' + s.slice(3);
+  };
+  function logLine(text, cls) {
+    const p = document.createElement('p');
+    p.textContent = text;
+    if (cls) p.className = cls;
+    padLog.appendChild(p);
+    padLog.scrollTop = padLog.scrollHeight;
+  }
+  function later(ms, fn) { call.timers.push(setTimeout(fn, ms)); }
+  function clearCallTimers() {
+    call.timers.forEach(clearTimeout);
+    call.timers = [];
+    clearTimeout(call.opTimer);
+  }
+
+  // steps: [[ms, text or null, fn?], ...]; the call ends after the last one
+  function script(steps) {
+    let end = 0;
+    for (const [ms, text, fn] of steps) {
+      end = Math.max(end, ms);
+      later(ms, () => {
+        if (text) logLine(text, text.startsWith('(') ? 'dim' : '');
+        if (fn) fn();
+      });
+    }
+    later(end + 2600, resetLine);
+  }
+  function resetLine() {
+    call.state = 'idle';
+    call.number = '';
+    padNumber.textContent = fmt('');
+    answersEl.hidden = true;
+    logLine('(dial tone. again.)', 'dim');
+    startDialTone();
+  }
+
+  const ringback = () => tone([440, 480], 1.8, 0.05);
+  const hangClick = () => tone([90], 0.06, 0.25, 'square');
+  function holdMusic() {
+    [67, 71, 74, 71, 72, 69, 67, 66, 67, 71, 74, 76].forEach((m, i) => tone([mtof(m)], 0.36, 0.035, 'square', i * 0.42));
+  }
+
+  function connect(kind) {
+    call.state = 'connecting';
+    stopDialTone();
+    if (kind === 'operator') {
+      script([
+        [0, '(ringing.)', ringback],
+        [2300, 'operator: operator.'],
+        [3900, "operator: it's 1976. how did you get this number."],
+        [5600, 'operator: please hold.', holdMusic],
+        [11200, 'operator: ...the operator has gone to lunch.'],
+        [12600, '(click.)', hangClick],
+      ]);
+    } else if (kind === 'den') {
+      script([
+        [0, '(ringing.)', ringback],
+        [2200, '(ringing.)', ringback],
+        [4400, "machine: hi. you've reached the den."],
+        [6000, "machine: we're not home. we're in the den."],
+        [7800, "machine: we can hear it ringing. we're choosing not to answer."],
+        [9800, 'machine: leave a message after the tone.'],
+        [11200, '(beep.)', () => tone([1000], 0.45, 0.08)],
+        [13000, "(you don't leave a message. nobody ever does.)"],
+      ]);
+    } else if (kind === 'self') {
+      script([
+        [0, '(busy signal.)', () => { for (let i = 0; i < 4; i++) tone([480, 620], 0.5, 0.05, 'sine', i); }],
+        [2600, "(it's busy. you're on the phone. with yourself.)"],
+      ]);
+    } else {
+      script([
+        [0, null, () => { tone([913.8], 0.28, 0.06); tone([1370.6], 0.28, 0.06, 'sine', 0.3); tone([1776.7], 0.38, 0.06, 'sine', 0.6); }],
+        [1100, 'recording: the number you have dialed is not in service.'],
+        [3000, "recording: it's 1976. everything is in service."],
+        [5000, "recording: please check the number and dial again. or don't. it's the weekend."],
+      ]);
+    }
+  }
+
+  function registerDigit(d) {
+    if (call.state !== 'idle' && call.state !== 'dialing') return;
+    stopDialTone();
+    call.state = 'dialing';
+    call.number += d;
+    padNumber.textContent = fmt(call.number);
+    clearTimeout(call.opTimer);
+    if (call.number === '0') call.opTimer = setTimeout(() => connect('operator'), 1800);
+    if (call.number.length === 7) {
+      connect(call.number === '5550170' ? 'den' : call.number === '5550177' ? 'self' : 'none');
+    }
+  }
+
+  function setWheel(rot) { wheel.setAttribute('transform', `rotate(${rot.toFixed(2)} 100 100)`); }
+
+  function spinBack(from, pulses) {
+    dial.busy = true;
+    const speed = reduceMotion ? 900 : 300;
+    let rot = from;
+    let lastT = performance.now();
+    const unwind = now => {
+      const prev = rot;
+      rot = Math.max(0, rot - ((now - lastT) / 1000) * speed);
+      lastT = now;
+      if (pulses && Math.floor((prev - 0.001) / 30) > Math.floor((rot - 0.001) / 30)) pulseClick();
+      setWheel(rot);
+      if (rot > 0) { requestAnimationFrame(unwind); return; }
+      dial.busy = false;
+      if (pulses) registerDigit(pulses % 10);
+      pump();
+    };
+    requestAnimationFrame(unwind);
+  }
+  function autoDial(n) {
+    dial.busy = true;
+    const target = 30 * n;
+    const t0 = performance.now();
+    const dur = reduceMotion ? 120 : 220 + n * 25;
+    const windUp = now => {
+      const k = clamp((now - t0) / dur, 0, 1);
+      setWheel(target * k);
+      if (k < 1) { requestAnimationFrame(windUp); return; }
+      spinBack(target, n);
+    };
+    requestAnimationFrame(windUp);
+  }
+  function pump() {
+    if (dial.busy || !dial.queue.length) return;
+    autoDial(dial.queue.shift());
+  }
+  const canDial = () => call.state === 'idle' || call.state === 'dialing';
+
+  function svgPoint(e) {
+    const r = dialSvg.getBoundingClientRect();
+    return { x: ((e.clientX - r.left) / r.width) * 200, y: ((e.clientY - r.top) / r.height) * 200 };
+  }
+  const angleOf = p => (Math.atan2(p.x - 100, -(p.y - 100)) * 180) / Math.PI;
+
+  dialSvg.addEventListener('pointerdown', e => {
+    if (dial.busy || !canDial()) return;
+    const p = svgPoint(e);
+    const r = Math.hypot(p.x - 100, p.y - 100);
+    if (r < 50 || r > 84) return;
+    const a = angleOf(p);
+    let best = 0;
+    let bestD = 16;
+    for (let n = 1; n <= 10; n++) {
+      const d = Math.abs(normDeg(a - holeAngle(n)));
+      if (d < bestD) { bestD = d; best = n; }
+    }
+    if (!best) return;
+    e.preventDefault();
+    try { dialSvg.setPointerCapture(e.pointerId); } catch (err) { /* synthetic pointer */ }
+    dial.drag = { n: best, last: a, total: 0, rot: 0 };
+  });
+  dialSvg.addEventListener('pointermove', e => {
+    if (!dial.drag) return;
+    const a = angleOf(svgPoint(e));
+    dial.drag.total += normDeg(a - dial.drag.last);
+    dial.drag.last = a;
+    dial.drag.rot = clamp(dial.drag.total, 0, 30 * dial.drag.n);
+    setWheel(dial.drag.rot);
+  });
+  function releaseDial() {
+    if (!dial.drag) return;
+    const { n, rot } = dial.drag;
+    dial.drag = null;
+    // like a real dial, it sends however far you wound it
+    const pulses = Math.floor((rot + 6) / 30);
+    if (pulses >= 1 && pulses < n) logLine(`(you let go early. that was a ${pulses % 10}.)`, 'dim');
+    spinBack(rot, pulses >= 1 ? pulses : 0);
+  }
+  dialSvg.addEventListener('pointerup', releaseDial);
+  dialSvg.addEventListener('pointercancel', releaseDial);
+
+  function openPhone(mode) {
+    clearCallTimers();
+    phoneWrap.hidden = false;
+    padLog.textContent = '';
+    answersEl.hidden = true;
+    call.number = '';
+    padNumber.textContent = fmt('');
+    if (mode === 'answer') {
+      call.state = 'incoming';
+      logLine('(you pick up.)', 'dim');
+      later(1300, () => {
+        logLine('caller: is your refrigerator running?');
+        answersEl.hidden = false;
+        answersEl.querySelector('button').focus();
+      });
+    } else {
+      call.state = 'idle';
+      logLine('(dial tone.)', 'dim');
+      startDialTone();
+      dialSvg.focus();
+    }
+  }
+  function closePhone() {
+    const wasBusy = call.state !== 'idle' || call.number;
+    clearCallTimers();
+    stopDialTone();
+    dial.queue = [];
+    phoneWrap.hidden = true;
+    call.state = 'idle';
+    call.number = '';
+    hangClick();
+    say(wasBusy ? 'you hang up. the phone looks relieved.' : 'you hang up. nobody was there. nobody is ever there.');
+    phoneBtn.focus();
+  }
+  $('#hangup').addEventListener('click', closePhone);
+  phoneWrap.addEventListener('click', e => { if (e.target === phoneWrap) closePhone(); });
+
+  answersEl.addEventListener('click', e => {
+    const b = e.target.closest('button');
+    if (!b || call.state !== 'incoming') return;
+    answersEl.hidden = true;
+    call.state = 'connecting';
+    if (b.dataset.a === 'yes') {
+      script([
+        [0, 'you: yes.'],
+        [1100, "caller: well, you'd better go catch it."],
+        [2700, '(click.)', hangClick],
+        [4000, '(there is no refrigerator in this room. you check anyway.)'],
+      ]);
+    } else {
+      script([
+        [0, 'you: no.'],
+        [1200, 'caller: ...oh. ok. sorry to bother you.'],
+        [2700, '(click.)', hangClick],
+      ]);
+    }
+  });
+
+  addEventListener('keydown', e => {
+    if (phoneWrap.hidden) return;
+    if (e.key === 'Escape') { closePhone(); return; }
+    if (/^[0-9]$/.test(e.key) && canDial()) {
+      dial.queue.push(e.key === '0' ? 10 : Number(e.key));
+      pump();
+    }
+  });
+
+  // it rings, eventually
+  let ringing = false;
+  let ringTimer = 0;
+  let ringLoop = 0;
+  let ringStop = 0;
+  function ringBurst() {
+    if (!audio.on || !audio.ctx) return;
+    const ctx = audio.ctx;
+    const t = ctx.currentTime;
+    const g = ctx.createGain();
+    g.gain.value = 0;
+    g.gain.setValueAtTime(0.05, t);
+    g.gain.setValueAtTime(0, t + 1.8);
+    g.connect(audio.sfx);
+    const am = ctx.createOscillator();
+    am.type = 'square';
+    am.frequency.value = 20;
+    const amDepth = ctx.createGain();
+    amDepth.gain.value = 0.05;
+    am.connect(amDepth).connect(g.gain);
+    am.start(t);
+    am.stop(t + 1.8);
+    for (const f of [1000, 1250]) {
+      const o = ctx.createOscillator();
+      o.type = 'triangle';
+      o.frequency.value = f;
+      o.connect(g);
+      o.start(t);
+      o.stop(t + 1.8);
+    }
+  }
+  function scheduleRing(ms) {
+    clearTimeout(ringTimer);
+    ringTimer = setTimeout(startRinging, ms);
+  }
+  function startRinging() {
+    if (!phoneWrap.hidden || document.hidden) { scheduleRing(10000); return; }
+    ringing = true;
+    phoneBtn.classList.add('ringing');
+    say("the phone is ringing. it's for you. it's always for you.");
+    ringBurst();
+    ringLoop = setInterval(ringBurst, 4000);
+    ringStop = setTimeout(() => stopRinging(true), 20000);
+  }
+  function stopRinging(missed) {
+    ringing = false;
+    clearInterval(ringLoop);
+    clearTimeout(ringStop);
+    phoneBtn.classList.remove('ringing');
+    if (missed) say("it stopped ringing. it was probably important. it wasn't.");
+    scheduleRing((120 + Math.random() * 120) * 1000);
+  }
+  phoneBtn.addEventListener('click', () => {
+    if (ringing) {
+      stopRinging(false);
+      openPhone('answer');
+    } else {
+      openPhone('dial');
+    }
+  });
+  scheduleRing((40 + Math.random() * 50) * 1000);
+
+  // ---------- the rest of the den ----------
+  function cycle(lines) {
+    let i = 0;
+    return () => (i < lines.length ? lines[i++] : pick(lines));
+  }
+  const handH = $('#hand-h');
+  const handM = $('#hand-m');
+  function tickClock() {
+    const d = new Date();
+    const m = d.getMinutes();
+    const h = d.getHours() % 12;
+    handH.style.transform = `rotate(${(h + m / 60) * 30}deg)`;
+    handM.style.transform = `rotate(${m * 6}deg)`;
+  }
+  setInterval(tickClock, 10000);
+  tickClock();
+
+  const OBJ = {
+    fruit: cycle([
+      "don't eat the fruit. it's wax. we've been over this.",
+      "it's still wax.",
+      "you licked it, didn't you.",
+      'the grapes are also wax. everything in the bowl is wax. the bowl is fine.',
+    ]),
+    sofa: cycle([
+      'the sofa has a plastic cover. it squeaks.',
+      "nobody sits on the sofa. it's for guests.",
+      'there have been no guests.',
+      'the plastic comes off when company comes. company is not coming.',
+    ]),
+    macrame: cycle([
+      'macrame. it took forty hours. it holds one fern.',
+      'the fern is fine. the fern has always been fine.',
+    ]),
+    calendar: cycle([
+      'august 1976. every day is crossed out.',
+      'none of them were special. all of them were fine.',
+    ]),
+    plaque: () => "the den. est. 1976. it's been 1976 ever since.",
+    clock: () => {
+      const d = new Date();
+      const h = d.getHours() % 12 || 12;
+      return `it's ${h}:${String(d.getMinutes()).padStart(2, '0')}. or 1976. the clock won't commit.`;
+    },
+    swag: () => (stage.classList.toggle('lamp-off')
+      ? 'the swag lamp is off. the tv is doing the lighting now.'
+      : "the swag lamp. that's what it's called. nobody knows why."),
+  };
+  stage.addEventListener('click', e => {
+    const el = e.target.closest('[data-obj]');
+    if (!el || !OBJ[el.dataset.obj]) return;
+    say(OBJ[el.dataset.obj]());
+  });
+
+  // background tabs throttle timers, which would wreck the groove
+  document.addEventListener('visibilitychange', () => {
+    if (!audio.ctx) return;
+    if (document.hidden) {
+      clearInterval(sched);
+      sched = null;
+      audio.ctx.suspend();
+    } else {
+      audio.ctx.resume();
+      if (turn.needleDown) {
+        nextT = audio.ctx.currentTime + 0.05;
+        clearInterval(sched);
+        sched = setInterval(schedule, 25);
+      }
+    }
+  });
+
+  // ---------- go ----------
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    updateTurntable(dt);
+    drawTV(dt, now / 1000);
+    requestAnimationFrame(frame);
+  }
+  say("the den. it's 1976 in here. it will always be 1976 in here.");
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
