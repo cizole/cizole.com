@@ -81,6 +81,8 @@ a { color: var(--acid); }
 }
 a.rooms-item:hover, a.rooms-item:focus-visible { background: #1d1c19; color: var(--acid); outline: none; }
 .rooms-item.here { color: var(--acid); }
+.rooms-item.defunct { color: #57534a; cursor: not-allowed; }
+.rooms-item.defunct .rooms-name { text-decoration: line-through; }
 .rooms-num { color: var(--dim); }
 .rooms-foot {
   display: flex;

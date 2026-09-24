@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mirror (closed) · cizole</title>
+<link rel="icon" href="../favicon.svg?v=2" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/site.css">
+<style>
+  /* 015 is retired. this is the sign on the door. */
+  main {
+    min-height: 100%;
+    display: grid;
+    place-items: center;
+    padding: 72px 20px 40px;
+    box-sizing: border-box;
+  }
+  .scene { position: relative; width: min(340px, 80vw); aspect-ratio: 3 / 4; }
+  .frame {
+    position: absolute;
+    inset: 0;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #8e9094, #d7d8da 40%, #6f7175);
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+  }
+  .sheet {
+    position: absolute;
+    inset: 4% 3% -3%;
+    border-radius: 4px 4px 10px 12px;
+    background:
+      repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.07) 0 14px, rgba(255, 255, 255, 0.05) 14px 30px, rgba(0, 0, 0, 0.1) 30px 46px),
+      linear-gradient(#dcd8cd, #bdb8ab);
+    box-shadow: inset 0 -20px 30px rgba(0, 0, 0, 0.18), 0 12px 24px rgba(0, 0, 0, 0.45);
+    transform-origin: 50% 0;
+    cursor: not-allowed;
+  }
+  .sheet.stir { animation: stir 1.8s ease-in-out; }
+  @keyframes stir {
+    30% { transform: scaleX(1.012) skewX(-0.6deg); }
+    60% { transform: scaleX(0.995) skewX(0.4deg); }
+  }
+  .sign {
+    position: absolute;
+    left: 50%;
+    top: 26%;
+    width: 78%;
+    padding: 16px 16px 18px;
+    background: #f4efe2;
+    color: #1d1b17;
+    text-align: center;
+    transform: translateX(-50%) rotate(-2.5deg);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
+  }
+  .sign::before, .sign::after {
+    content: "";
+    position: absolute;
+    top: -9px;
+    width: 58px;
+    height: 20px;
+    background: rgba(232, 217, 168, 0.85);
+  }
+  .sign::before { left: -14px; transform: rotate(-24deg); }
+  .sign::after { right: -14px; transform: rotate(22deg); }
+  .sign .no { margin: 0 0 6px; color: #7a7466; font-size: 12px; letter-spacing: 0.14em; }
+  .sign h1 { margin: 0 0 8px; color: #b0453a; font-family: "Permanent Marker", cursive; font-size: 40px; font-weight: 400; line-height: 1; }
+  .sign p { margin: 0; font-size: 13px; line-height: 1.5; }
+  .sign .fine { margin-top: 10px; color: #6b665a; font-size: 11px; }
+  .caption { min-height: 1.5em; margin: 28px 0 0; color: var(--dim); font-size: 13px; text-align: center; }
+  @media (prefers-reduced-motion: reduce) {
+    .sheet.stir { animation: none; }
+  }
+</style>
+</head>
+<body>
+<a class="lobby-link" href="../">&larr; lobby</a>
+<main>
+  <div>
+    <div class="scene">
+      <div class="frame"></div>
+      <div class="sheet" id="sheet" title="please don't"></div>
+      <div class="sign">
+        <p class="no">015 &middot; MIRROR</p>
+        <h1>closed</h1>
+        <p>it was weird. even for here.</p>
+        <p class="fine">management apologizes for anything you may have seen in it.</p>
+      </div>
+    </div>
+    <p class="caption" id="caption" role="status"></p>
+  </div>
+</main>
+<script>
+(() => {
+  const sheet = document.getElementById('sheet');
+  const caption = document.getElementById('caption');
+  const LINES = [
+    "no.",
+    "the sheet stays on.",
+    "it's closed. that's the whole room now.",
+    "you would not like it. nobody liked it.",
+    "please stop lifting the sheet.",
+  ];
+  let n = 0;
+  sheet.addEventListener('click', () => {
+    caption.textContent = LINES[Math.min(n++, LINES.length - 1)];
+  });
+
+  // every so often, the sheet moves a little. it shouldn't.
+  (function later() {
+    setTimeout(() => {
+      if (!document.hidden) {
+        sheet.classList.remove('stir');
+        void sheet.offsetWidth;
+        sheet.classList.add('stir');
+      }
+      later();
+    }, 9000 + Math.random() * 16000);
+  })();
+})();
+</script>
+<script src="../assets/rooms.js"></script>
+<script src="../assets/away.js"></script>
+</body>
+</html>

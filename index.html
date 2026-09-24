@@ -61,9 +61,31 @@
   .blurb { margin-left: auto; color: var(--dim); font-size: 14px; text-align: right; }
   .note { display: block; color: var(--acid); font-size: 12px; }
   .last .blurb::after { content: "  \00b7  you were just here"; color: var(--acid); }
+  /* retired rooms keep their number, and a reason */
+  .exhibits .closed {
+    display: flex;
+    align-items: baseline;
+    gap: 20px;
+    padding: 18px 4px;
+    cursor: not-allowed;
+  }
+  .closed .num { color: #45423b; }
+  .closed .name { color: #5b574d; text-decoration: line-through; text-decoration-thickness: 2px; }
+  .closed .blurb { color: #77725f; font-style: italic; }
+  .stamp {
+    align-self: center;
+    padding: 1px 7px;
+    border: 1px solid #7a3a31;
+    border-radius: 3px;
+    color: #c0574a;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    transform: rotate(-4deg);
+  }
   footer { margin-top: 56px; color: #4a463d; font-size: 12px; }
   @media (max-width: 520px) {
-    .exhibits a { flex-wrap: wrap; row-gap: 4px; }
+    .exhibits a, .exhibits .closed { flex-wrap: wrap; row-gap: 4px; }
     .blurb { flex-basis: 100%; margin-left: 0; text-align: left; }
   }
 </style>
@@ -90,9 +112,17 @@
   };
   const list = document.getElementById('rooms');
   let lastRow = null;
-  // featured rooms go first
-  for (const r of [...rooms.filter(r => r.featured), ...rooms.filter(r => !r.featured)]) {
+  for (const r of rooms) {
     const li = document.createElement('li');
+    if (r.defunct) {
+      const row = document.createElement('div');
+      row.className = 'closed';
+      row.title = 'this room is closed';
+      row.append(span('num', r.n), span('name', r.name), span('stamp', 'closed'), span('blurb', r.defunct));
+      li.appendChild(row);
+      list.appendChild(li);
+      continue;
+    }
     const a = document.createElement('a');
     a.href = r.slug + '/';
     const blurb = span('blurb', r.blurb);

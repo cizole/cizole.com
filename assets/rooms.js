@@ -1,6 +1,9 @@
-// The room directory: one list of every room. The lobby draws its grid from it,
+// The room directory: one list of every room. The lobby draws its list from it,
 // and every room gets a "rooms" menu next to its lobby link, so you can go
 // room to room without scrolling the lobby.
+//
+// Room numbers are permanent. A retired room stays here with `defunct: '<reason>'`:
+// it shows as closed (struck through, not clickable) everywhere rooms are listed.
 (() => {
   const ROOMS = [
     { n: '001', slug: 'eyes', name: 'eyes', blurb: "they're watching" },
@@ -17,6 +20,7 @@
     { n: '012', slug: '80s', name: 'the 80s', blurb: 'be kind, rewind' },
     { n: '013', slug: '90s', name: 'the 90s', blurb: 'best viewed in 800x600' },
     { n: '014', slug: 'other-window', name: 'the other window', blurb: 'bring a second window', featured: true },
+    { n: '015', slug: 'mirror', name: 'mirror', blurb: 'looks normal', defunct: 'closed. it was weird. even for here.' },
     { n: '016', slug: 'junk-drawer', name: 'junk drawer', blurb: 'no organizational guarantees' },
     { n: '017', slug: 'basement', name: 'the basement', blurb: 'the doors go to the rooms. mostly.' },
     { n: '018', slug: 'weather', name: 'weather', blurb: 'it is not snowing in here' },
@@ -57,14 +61,21 @@
   const grid = document.createElement('div');
   grid.className = 'rooms-grid';
   ROOMS.forEach((r, i) => {
-    const item = document.createElement(i === here ? 'span' : 'a');
-    item.className = 'rooms-item' + (i === here ? ' here' : '');
+    const linked = i !== here && !r.defunct;
+    const item = document.createElement(linked ? 'a' : 'span');
+    item.className = 'rooms-item' + (i === here ? ' here' : '') + (r.defunct ? ' defunct' : '');
     if (i === here) item.setAttribute('aria-current', 'page');
-    else item.href = `../${r.slug}/`;
+    if (linked) item.href = `../${r.slug}/`;
+    if (r.defunct) item.title = r.defunct;
     const num = document.createElement('span');
     num.className = 'rooms-num';
     num.textContent = r.n;
-    item.append(num, ' ', i === here ? `${r.name} (you are here)` : r.name);
+    const name = document.createElement('span');
+    name.className = 'rooms-name';
+    name.textContent = r.name;
+    item.append(num, ' ', name);
+    if (r.defunct) item.append(' (closed)');
+    else if (i === here) item.append(' (you are here)');
     grid.appendChild(item);
   });
 
@@ -76,9 +87,17 @@
     a.textContent = text;
     return a;
   };
-  if (here >= 0) {
-    const prev = ROOMS[(here - 1 + ROOMS.length) % ROOMS.length];
-    const next = ROOMS[(here + 1) % ROOMS.length];
+  // prev/next skip closed rooms
+  const open = (from, step) => {
+    for (let k = 1; k <= ROOMS.length; k++) {
+      const r = ROOMS[(from + step * k + ROOMS.length * k) % ROOMS.length];
+      if (!r.defunct) return r;
+    }
+    return null;
+  };
+  const prev = here >= 0 ? open(here, -1) : null;
+  const next = here >= 0 ? open(here, 1) : null;
+  if (prev && next) {
     foot.append(
       link(`../${prev.slug}/`, `← ${prev.n} ${prev.name}`),
       link('../', 'lobby'),
