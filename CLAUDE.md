@@ -32,7 +32,6 @@ Room ideas not built yet (numbers continue from the lobby):
 - guestbook: the internet used to have these
 - links: leave while you still can
 - the light switch: turning the lights off makes something in the room move
-- 404 department: an increasingly unhelpful search party
 - a single checkbox whose label keeps changing after you check it
 - nothing: a page called "nothing" with an absurd amount of hidden interaction
 - uptime: "cizole.com: operational / cole: questionable / motivation: intermittent / cat interference: elevated"
@@ -54,7 +53,7 @@ Room ideas not built yet (numbers continue from the lobby):
 - Every room includes `<script src="../assets/rooms.js"></script>` and then `<script src="../assets/away.js"></script>` right before `</body>`. rooms.js adds the "rooms" button next to the lobby link, so keep the top-left corner clear.
 - `robots.txt` and `humans.txt` at the root are in the site's voice. The lobby prints a small message to the browser console for anyone who opens devtools; it hints at the Konami code.
 - Links that leave a room (webrings, doors, real URLs) open in a new tab (`target="_blank" rel="noopener"`, or `window.open` inside the click/key handler), so nobody loses their place. The lobby link, the rooms menu, and the lobby itself navigate in place.
-- Use relative paths (`../assets/site.css`). The exception is `404.html`, which is served at any missing URL, so it uses root paths and inline styles.
+- Use relative paths (`../assets/site.css`). The exception is `404.html` (the 404 department: a search party that looks for the URL you typed), which is served at any missing URL, so it uses root paths and inline styles and doesn't load rooms.js.
 - Respect `prefers-reduced-motion`.
 - Preview with a local server, since folder links like `eyes/` don't work over `file://`: `python -m http.server 8765 --bind 127.0.0.1`, then open http://127.0.0.1:8765/.
 - `assets/rooms.js` is the single source of truth for room numbers, names, and status. The lobby, the rooms menu, the basement's doors, the 90s webring, and each room's tab title (`<name> · cizole`) all read from it, so renaming or retiring a room there updates everything. Don't hardcode room lists anywhere else. The only per-room data kept elsewhere is the basement's `GLOW` map (the color of the light behind each door, optional).
