@@ -1,0 +1,1431 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>sauna · cizole</title>
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/site.css">
+<style>
+  :root {
+    --cedar: #b36b35;
+    --cedar-dark: #7a4221;
+    --cedar-light: #d9955a;
+    --ember: #ff8a3c;
+  }
+  .page {
+    --w: max(300px, min(calc(100vw - 32px), calc((100dvh - 170px) * 1.6), 1150px));
+    padding: 56px 16px 24px;
+  }
+  .stage-wrap { width: var(--w); margin: 0 auto; }
+  .stage {
+    position: relative;
+    width: var(--w);
+    height: calc(var(--w) / 1.6);
+    overflow: hidden;
+    border-radius: 10px;
+    background: #5a3018;
+    container-type: size;
+    user-select: none;
+  }
+
+  .obj {
+    position: absolute;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
+  .obj:focus-visible, .ladle:focus-visible { outline: 2px solid var(--acid); outline-offset: 2px; }
+  .obj svg, .ladle svg { display: block; width: 100%; height: 100%; overflow: visible; }
+
+  /* ---------- the room ---------- */
+  .ceiling {
+    position: absolute;
+    inset: 0 0 92% 0;
+    background:
+      linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.2)),
+      repeating-linear-gradient(90deg, #6b3a1d 0 5cqw, #4f2a14 5cqw 5.2cqw);
+  }
+  .wall {
+    position: absolute;
+    inset: 8% 0 20% 0;
+    background:
+      radial-gradient(ellipse at 13% 85%, rgba(255, 140, 60, 0.3), transparent 45%),
+      linear-gradient(rgba(0, 0, 0, 0.38), rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, 0.1) 70%, rgba(0, 0, 0, 0.3)),
+      repeating-linear-gradient(180deg, transparent 0 2.9cqw, rgba(60, 25, 8, 0.6) 2.9cqw 3.05cqw),
+      repeating-linear-gradient(90deg, rgba(255, 220, 170, 0.06) 0 0.6cqw, transparent 0.6cqw 2.4cqw, rgba(90, 40, 10, 0.08) 2.4cqw 4cqw),
+      linear-gradient(90deg, #a2592a, #b86f38 40%, #a55e2d 75%, #92502a);
+  }
+  .floor {
+    position: absolute;
+    inset: 80% 0 0 0;
+    background:
+      linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.15)),
+      repeating-linear-gradient(90deg, #8a4b24 0 4cqw, #1e0f06 4cqw 4.5cqw);
+  }
+
+  /* benches */
+  .bench {
+    border-radius: 0.3cqw;
+    background: linear-gradient(#e2a063, #bb743c 60%, #9a5a2c);
+    box-shadow: 0 0.5cqw 0.7cqw rgba(0, 0, 0, 0.4);
+  }
+  .bench.top { left: 25%; right: 14.6%; top: 46%; height: 3.4%; }
+  .bench.low { left: 23%; right: 14.6%; top: 64%; height: 3.4%; }
+  .riser {
+    position: absolute;
+    background: repeating-linear-gradient(90deg, #8a4b24 0 3.4cqw, #5e3117 3.4cqw 3.6cqw);
+    box-shadow: inset 0 1.2cqw 1.4cqw rgba(0, 0, 0, 0.45);
+  }
+  .riser.top { left: 25%; right: 14.6%; top: 49.4%; height: 14.6%; }
+  .riser.low { left: 23%; right: 14.6%; top: 67.4%; height: 12.6%; }
+
+  /* the stove, wood-fired */
+  .pipe {
+    position: absolute;
+    left: 11.4%;
+    top: 0;
+    width: 3.2%;
+    height: 44%;
+    background: linear-gradient(90deg, #202020, #4a4a48 40%, #2a2a28);
+  }
+  .pipe::after {
+    content: "";
+    position: absolute;
+    left: -0.6cqw;
+    right: -0.6cqw;
+    top: 30%;
+    height: 1.2cqw;
+    background: #3a3a38;
+    border-radius: 0.2cqw;
+  }
+  .stove { left: 4%; top: 52%; width: 18%; height: 36%; }
+  .stove-body {
+    position: absolute;
+    inset: 0;
+    border-radius: 0.5cqw;
+    background: linear-gradient(90deg, #262626, #3d3d3b 35%, #2b2b29 70%, #1c1c1b);
+    box-shadow: inset 0 0 0 0.3cqw #151515, 0 1cqw 1.5cqw rgba(0, 0, 0, 0.5);
+  }
+  .stove-door {
+    position: absolute;
+    left: 22%;
+    right: 22%;
+    top: 34%;
+    height: 38%;
+    border: 0.35cqw solid #151515;
+    border-radius: 0.4cqw;
+    background: radial-gradient(ellipse at 50% 90%, #ffd27a, #ff7a2a 35%, #a82a0a 70%, #3a0d02);
+    box-shadow: 0 0 2cqw rgba(255, 120, 40, 0.6);
+    animation: fire 1.6s ease-in-out infinite alternate;
+  }
+  @keyframes fire {
+    from { filter: brightness(0.9); }
+    50% { filter: brightness(1.12); }
+    to { filter: brightness(0.96); }
+  }
+  .stove-vent { position: absolute; left: 20%; right: 20%; bottom: 8%; height: 7%; background: repeating-linear-gradient(90deg, #111 0 0.6cqw, #333 0.6cqw 1cqw); }
+  .cage {
+    position: absolute;
+    left: 5.2%;
+    top: 40%;
+    width: 15.6%;
+    height: 12.5%;
+    border: 0.3cqw solid #2a2a28;
+    border-top: 0;
+    background: repeating-linear-gradient(90deg, rgba(40, 40, 38, 0.95) 0 0.3cqw, transparent 0.3cqw 1.8cqw);
+    pointer-events: none;
+    z-index: 3;
+  }
+  .rocks { left: 5.6%; top: 38.5%; width: 14.8%; height: 13.5%; z-index: 2; }
+
+  /* bucket + ladle */
+  .bucket { left: 22.5%; top: 75%; width: 8%; height: 17%; z-index: 10; }
+  .ladle {
+    position: absolute;
+    left: calc(var(--x) * 1% - 1.4cqw);
+    top: calc(var(--y) * 1% - 4.4cqw);
+    z-index: 8;
+    width: 12cqw;
+    height: 6cqw;
+    padding: 0;
+    border: 0;
+    background: none;
+    transform: rotate(calc(var(--a) * 1deg));
+    transform-origin: 1.4cqw 4.4cqw;
+    cursor: grab;
+    touch-action: none;
+  }
+  .ladle.lifted { z-index: 30; cursor: grabbing; }
+  .ladle.returning { transition: left 0.35s ease-out, top 0.35s ease-out, transform 0.35s ease-out; }
+  .ladle .water { opacity: 0; transition: opacity 0.2s; }
+  .ladle.full .water { opacity: 1; }
+
+  /* on the wall */
+  .whisk { left: 22.5%; top: 8%; width: 5%; height: 26%; }
+  .meter { left: 29%; top: 11%; width: 11%; height: 16%; }
+  .hourglass { left: 42.4%; top: 8%; width: 4.6%; height: 25%; }
+  .hg-spin { display: block; width: 100%; height: 100%; transform-origin: 50% 50%; }
+  .hg-label {
+    position: absolute;
+    left: 50%;
+    bottom: -2.6cqw;
+    transform: translateX(-50%);
+    padding: 0.1cqw 0.5cqw;
+    border-radius: 0.2cqw;
+    background: #5a2f15;
+    color: #f0d4a8;
+    font-size: 0.85cqw;
+    white-space: nowrap;
+  }
+  .rules {
+    left: 49%;
+    top: 11.5%;
+    width: 10.5%;
+    height: 17%;
+    padding: 0.8cqw 0.8cqw;
+    border-radius: 0.4cqw;
+    background: linear-gradient(#7a4020, #5e3117);
+    box-shadow: inset 0 0 0 0.2cqw #3e1f0c, 0 0.4cqw 0.6cqw rgba(0, 0, 0, 0.4);
+    color: #f3dcb4;
+    font-size: 0.95cqw;
+    line-height: 1.35;
+    text-align: left;
+  }
+  .rules b { display: block; margin-bottom: 0.3cqw; font-size: 1.15cqw; letter-spacing: 0.05em; }
+  .window { left: 74%; top: 7%; width: 8.5%; height: 18%; }
+  .window-glass {
+    position: absolute;
+    inset: 0.6cqw;
+    overflow: hidden;
+    border-radius: 0.2cqw;
+    background:
+      radial-gradient(circle, rgba(255, 255, 255, 0.8) 0.12cqw, transparent 0.2cqw) 0 0 / 1.3cqw 1.1cqw,
+      radial-gradient(circle, rgba(255, 255, 255, 0.6) 0.1cqw, transparent 0.18cqw) 0.6cqw 0.5cqw / 1.7cqw 1.4cqw,
+      linear-gradient(#0f1a2e, #23344f 70%, #cfd8e3 71%, #aab6c6);
+    animation: snowfall 9s linear infinite;
+  }
+  @keyframes snowfall { to { background-position: 0 11cqw, 0.6cqw 14.5cqw, 0 0; } }
+  .window-glass::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(180deg, rgba(240, 232, 222, 0.75), rgba(240, 232, 222, 0.45) 60%, rgba(240, 232, 222, 0.7)),
+      repeating-linear-gradient(90deg, transparent 0 1.1cqw, rgba(255, 255, 255, 0.25) 1.1cqw 1.2cqw, transparent 1.2cqw 2.3cqw);
+  }
+  .window-frame { position: absolute; inset: 0; border: 0.6cqw solid #6a3719; border-radius: 0.4cqw; box-shadow: 0 0.4cqw 0.6cqw rgba(0, 0, 0, 0.4); }
+  .towel { left: 79.3%; top: 25%; width: 5.4%; height: 20%; }
+  .plunge-sign {
+    left: 86.4%;
+    top: 2.2%;
+    width: 11.8%;
+    height: 5%;
+    border-radius: 0.3cqw;
+    background: #2f5d7a;
+    color: #e6f3fb;
+    font-size: 1cqw;
+    letter-spacing: 0.08em;
+    box-shadow: 0 0.3cqw 0.5cqw rgba(0, 0, 0, 0.4);
+  }
+  .door-frame {
+    position: absolute;
+    left: 86%;
+    top: 8%;
+    width: 12.6%;
+    height: 72%;
+    background: linear-gradient(#a9c6de, #6f8fae);
+    box-shadow: inset 0 0 0 0.5cqw #4a2510;
+    perspective: 50cqw;
+  }
+  .door { inset: 0; width: 100%; height: 100%; transform-origin: 0 50%; transition: transform 0.5s cubic-bezier(0.3, 0.1, 0.2, 1); }
+  .door.ajar { transform: rotateY(-38deg); }
+  .door-leaf {
+    position: absolute;
+    inset: 0;
+    border: 0.5cqw solid #5e3117;
+    background:
+      repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.16) 0 0.15cqw, transparent 0.15cqw 2.6cqw),
+      linear-gradient(90deg, #b06a36, #c27a42 50%, #a8622f);
+  }
+  .door-glass {
+    position: absolute;
+    left: 24%;
+    right: 24%;
+    top: 12%;
+    height: 22%;
+    border: 0.35cqw solid #5e3117;
+    background: linear-gradient(rgba(240, 232, 222, 0.8), rgba(210, 225, 238, 0.7));
+  }
+  .door-note {
+    position: absolute;
+    left: 30%;
+    top: 20%;
+    padding: 0.2cqw 0.4cqw;
+    background: #f7f1c6;
+    color: #3a2a12;
+    font-size: 0.75cqw;
+    transform: rotate(-4deg);
+    box-shadow: 0 0.15cqw 0.3cqw rgba(0, 0, 0, 0.3);
+    white-space: nowrap;
+  }
+  .door-handle {
+    position: absolute;
+    right: 9%;
+    top: 46%;
+    width: 1.1cqw;
+    height: 7cqw;
+    border-radius: 0.5cqw;
+    background: linear-gradient(90deg, #6a3719, #8a4b24);
+    box-shadow: 0.2cqw 0.2cqw 0.3cqw rgba(0, 0, 0, 0.4);
+  }
+
+  /* the other person */
+  .person { left: 60%; top: 16%; width: 13%; height: 50%; }
+  .person .breath { transform-box: fill-box; transform-origin: 50% 100%; animation: breathe 4.6s ease-in-out infinite; }
+  @keyframes breathe { 50% { transform: scaleY(1.012); } }
+
+  /* ---------- the air ---------- */
+  .fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  #fx { z-index: 50; }
+  #fog { z-index: 60; opacity: 0; }
+  #sweat { z-index: 70; }
+
+  /* ---------- hud ---------- */
+  .hud {
+    position: relative;
+    z-index: 80;
+    width: var(--w);
+    margin: 12px auto 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .caption { margin: 0; min-height: 2.8em; font-size: 15px; line-height: 1.4; transition: opacity 0.2s; }
+  .caption.fade { opacity: 0; }
+  .sound {
+    flex: none;
+    padding: 6px 12px;
+    border: 1px solid var(--faint);
+    border-radius: 999px;
+    background: #1a1916;
+    color: var(--dim);
+    font: 13px var(--font);
+    cursor: pointer;
+  }
+  .sound.on { border-color: var(--ember); color: var(--ember); }
+  .rotate-hint { position: relative; z-index: 80; display: none; width: var(--w); margin: 10px auto 0; color: var(--dim); font-size: 12px; }
+  @media (orientation: portrait) and (max-width: 600px) { .rotate-hint { display: block; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .stove-door, .window-glass, .person .breath { animation: none; }
+    .door { transition: none; }
+  }
+</style>
+</head>
+<body>
+<a class="lobby-link" href="../">&larr; lobby</a>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="shimmer" x="-3%" y="-3%" width="106%" height="106%">
+    <feTurbulence id="shimmer-noise" type="turbulence" baseFrequency="0.006 0.035" numOctaves="1" seed="3" result="noise"/>
+    <feDisplacementMap id="shimmer-map" in="SourceGraphic" in2="noise" scale="0" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<main class="page">
+  <div class="stage-wrap">
+    <div class="stage" id="stage">
+      <div class="ceiling"></div>
+      <div class="wall"></div>
+      <div class="floor"></div>
+      <div class="pipe" aria-hidden="true"></div>
+
+      <button class="obj whisk" type="button" data-obj="whisk" aria-label="a bundle of birch branches">
+        <svg viewBox="0 0 40 120" preserveAspectRatio="xMidYMin meet" aria-hidden="true">
+          <path d="M20 0 V10" stroke="#c8b27a" stroke-width="1.6"/>
+          <circle cx="20" cy="12" r="2.4" fill="none" stroke="#9a8a5a" stroke-width="1.4"/>
+          <path d="M16 16 L18 44 M20 15 L20 45 M24 16 L22 44" stroke="#6a4a24" stroke-width="2.2" stroke-linecap="round"/>
+          <rect x="14" y="30" width="12" height="5" rx="1.5" fill="#d6c089"/>
+          <g fill="#6f7a36">
+            <ellipse cx="12" cy="56" rx="6" ry="10" transform="rotate(-18 12 56)"/>
+            <ellipse cx="28" cy="58" rx="6" ry="10" transform="rotate(18 28 58)"/>
+            <ellipse cx="20" cy="64" rx="7" ry="12"/>
+            <ellipse cx="10" cy="76" rx="6" ry="10" transform="rotate(-24 10 76)"/>
+            <ellipse cx="30" cy="78" rx="6" ry="10" transform="rotate(24 30 78)"/>
+            <ellipse cx="20" cy="86" rx="7" ry="12"/>
+            <ellipse cx="14" cy="98" rx="5" ry="9" transform="rotate(-12 14 98)"/>
+            <ellipse cx="26" cy="100" rx="5" ry="9" transform="rotate(12 26 100)"/>
+          </g>
+          <g fill="#8c8a44" opacity="0.8">
+            <ellipse cx="16" cy="70" rx="4" ry="7" transform="rotate(-8 16 70)"/>
+            <ellipse cx="25" cy="90" rx="4" ry="7" transform="rotate(10 25 90)"/>
+            <ellipse cx="20" cy="108" rx="4" ry="7"/>
+          </g>
+        </svg>
+      </button>
+
+      <button class="obj meter" type="button" data-obj="meter" aria-label="thermometer and hygrometer">
+        <svg viewBox="0 0 110 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+          <rect x="2" y="2" width="106" height="96" rx="12" fill="#6a3719" stroke="#3e1f0c" stroke-width="3"/>
+          <g id="dial-t">
+            <circle cx="30" cy="44" r="23" fill="#f3e6cc" stroke="#2a1a0c" stroke-width="2.5"/>
+            <g id="ticks-t" stroke="#6a5030" stroke-width="1"></g>
+            <line id="needle-t" x1="30" y1="44" x2="30" y2="26" stroke="#b3261e" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="30" cy="44" r="2.5" fill="#2a1a0c"/>
+            <text x="30" y="60" text-anchor="middle" font-size="7" fill="#6a5030" font-family="Space Mono, monospace">&deg;f</text>
+          </g>
+          <g id="dial-h">
+            <circle cx="80" cy="44" r="23" fill="#f3e6cc" stroke="#2a1a0c" stroke-width="2.5"/>
+            <g id="ticks-h" stroke="#6a5030" stroke-width="1"></g>
+            <line id="needle-h" x1="80" y1="44" x2="80" y2="26" stroke="#2b5a7a" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="80" cy="44" r="2.5" fill="#2a1a0c"/>
+            <text x="80" y="60" text-anchor="middle" font-size="7" fill="#6a5030" font-family="Space Mono, monospace">%</text>
+          </g>
+          <text id="read-t" x="30" y="84" text-anchor="middle" font-size="10" fill="#f3dcb4" font-family="Space Mono, monospace">174</text>
+          <text id="read-h" x="80" y="84" text-anchor="middle" font-size="10" fill="#f3dcb4" font-family="Space Mono, monospace">12</text>
+        </svg>
+      </button>
+
+      <button class="obj hourglass" id="hourglass" type="button" aria-label="hourglass timer. click to flip it.">
+        <span class="hg-spin" id="hg-spin">
+          <svg viewBox="0 0 40 142" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+            <defs>
+              <clipPath id="bulb-top"><path d="M9 12 C9 40 18 52 19.2 70 H20.8 C22 52 31 40 31 12 Z"/></clipPath>
+              <clipPath id="bulb-bot"><path d="M9 130 C9 102 18 90 19.2 72 H20.8 C22 90 31 102 31 130 Z"/></clipPath>
+            </defs>
+            <rect x="2" y="2" width="36" height="9" rx="2" fill="#7a4020"/>
+            <rect x="2" y="131" width="36" height="9" rx="2" fill="#7a4020"/>
+            <rect x="4" y="10" width="3" height="122" fill="#5e3117"/>
+            <rect x="33" y="10" width="3" height="122" fill="#5e3117"/>
+            <path d="M9 12 C9 40 18 52 19.2 70 H20.8 C22 52 31 40 31 12 Z M9 130 C9 102 18 90 19.2 72 H20.8 C22 90 31 102 31 130 Z" fill="rgba(210, 225, 235, 0.22)" stroke="rgba(240, 240, 240, 0.5)" stroke-width="0.8"/>
+            <rect id="sand-top" x="8" y="70" width="24" height="0" fill="#e8c77a" clip-path="url(#bulb-top)"/>
+            <rect id="sand-bot" x="8" y="80" width="24" height="50" fill="#e8c77a" clip-path="url(#bulb-bot)"/>
+            <line id="sand-stream" x1="20" y1="70" x2="20" y2="128" stroke="#e8c77a" stroke-width="0.9" opacity="0"/>
+          </svg>
+        </span>
+        <span class="hg-label">15 min</span>
+      </button>
+
+      <button class="obj rules" type="button" data-obj="rules">
+        <b>sauna rules</b>
+        1. no phones.<br>
+        2. you are looking at a screen.<br>
+        3. we'll allow it.
+      </button>
+
+      <button class="obj window" type="button" data-obj="window" aria-label="a small fogged window">
+        <span class="window-glass"></span>
+        <span class="window-frame"></span>
+      </button>
+
+      <button class="obj towel" type="button" data-obj="towel" aria-label="a towel on a hook">
+        <svg viewBox="0 0 54 200" preserveAspectRatio="xMidYMin meet" aria-hidden="true">
+          <circle cx="27" cy="8" r="4" fill="#c9a24a"/>
+          <path d="M27 11 V20" stroke="#c9a24a" stroke-width="3"/>
+          <path d="M8 22 Q27 14 46 22 L50 188 Q27 196 4 188 Z" fill="#efe6d6"/>
+          <path d="M6 150 H48 M5.5 160 H48.5" stroke="#2f5d7a" stroke-width="3"/>
+          <path d="M8 22 Q27 14 46 22 L44 60 Q27 52 10 60 Z" fill="#e2d7c4"/>
+          <path d="M14 70 Q18 120 12 180 M40 70 Q36 120 42 180" stroke="rgba(0,0,0,0.07)" stroke-width="3" fill="none"/>
+        </svg>
+      </button>
+
+      <button class="obj plunge-sign" type="button" data-obj="plungesign">cold plunge &rarr;</button>
+      <div class="door-frame">
+        <button class="obj door" id="door" type="button" aria-label="door to the cold plunge. opens in a new tab.">
+          <span class="door-leaf"></span>
+          <span class="door-glass"></span>
+          <span class="door-note">out of order</span>
+          <span class="door-handle"></span>
+        </button>
+      </div>
+
+      <button class="obj bench top" type="button" data-obj="upper" aria-label="upper bench"></button>
+      <div class="riser top" aria-hidden="true"></div>
+      <button class="obj bench low" type="button" data-obj="lower" aria-label="lower bench"></button>
+      <div class="riser low" aria-hidden="true"></div>
+
+      <button class="obj person" type="button" data-obj="person" aria-label="another person on the top bench, wrapped in a towel">
+        <svg viewBox="0 0 100 240" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
+          <defs>
+            <linearGradient id="skin-lit" x1="0" x2="1">
+              <stop offset="0" stop-color="#8a4c28"/>
+              <stop offset="0.45" stop-color="#4a2716"/>
+              <stop offset="1" stop-color="#2a150b"/>
+            </linearGradient>
+          </defs>
+          <g fill="url(#skin-lit)">
+            <rect x="30" y="166" width="12" height="60" rx="5"/>
+            <rect x="58" y="166" width="12" height="60" rx="5"/>
+            <ellipse cx="36" cy="228" rx="9" ry="4"/>
+            <ellipse cx="64" cy="228" rx="9" ry="4"/>
+            <g class="breath">
+              <path d="M22 66 Q50 54 78 66 L74 138 Q50 146 26 138 Z"/>
+              <path d="M24 66 Q12 96 16 118 Q20 140 30 152 L36 148 Q28 132 27 114 Q26 96 32 76 Z"/>
+              <path d="M76 66 Q88 96 84 118 Q80 140 70 152 L64 148 Q72 132 73 114 Q74 96 68 76 Z"/>
+              <rect x="44" y="48" width="12" height="14" rx="4"/>
+              <ellipse cx="50" cy="34" rx="15" ry="18"/>
+            </g>
+          </g>
+          <path d="M22 132 Q50 124 78 132 L80 170 Q50 178 20 170 Z" fill="#e9dfcf"/>
+          <path d="M21 160 Q50 168 79 160" stroke="#2f5d7a" stroke-width="2.4" fill="none"/>
+          <path d="M22 132 Q50 124 78 132 L78 140 Q50 132 22 140 Z" fill="#d8cbb4"/>
+          <ellipse cx="30" cy="150" rx="7" ry="4" fill="#4a2716"/>
+          <ellipse cx="70" cy="150" rx="7" ry="4" fill="#3a1f10"/>
+        </svg>
+      </button>
+
+      <button class="obj stove" type="button" data-obj="stove" aria-label="the wood stove">
+        <span class="stove-body"></span>
+        <span class="stove-door"></span>
+        <span class="stove-vent"></span>
+      </button>
+      <button class="obj rocks" type="button" data-obj="rocks" aria-label="the sauna rocks">
+        <svg viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <radialGradient id="rock" cx="0.35" cy="0.3" r="0.8">
+              <stop offset="0" stop-color="#9a948c"/>
+              <stop offset="0.6" stop-color="#5e5852"/>
+              <stop offset="1" stop-color="#34302c"/>
+            </radialGradient>
+            <linearGradient id="rock-heat" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0" stop-color="rgba(255, 110, 40, 0.45)"/>
+              <stop offset="0.5" stop-color="rgba(255, 110, 40, 0)"/>
+            </linearGradient>
+          </defs>
+          <g fill="url(#rock)">
+            <ellipse cx="10" cy="32" rx="10" ry="7"/>
+            <ellipse cx="28" cy="33" rx="11" ry="7"/>
+            <ellipse cx="48" cy="32" rx="12" ry="8"/>
+            <ellipse cx="70" cy="33" rx="11" ry="7"/>
+            <ellipse cx="89" cy="32" rx="10" ry="7"/>
+            <ellipse cx="18" cy="22" rx="10" ry="7"/>
+            <ellipse cx="38" cy="21" rx="11" ry="8"/>
+            <ellipse cx="59" cy="21" rx="11" ry="8"/>
+            <ellipse cx="80" cy="22" rx="10" ry="7"/>
+            <ellipse cx="28" cy="11" rx="9" ry="6"/>
+            <ellipse cx="50" cy="10" rx="10" ry="7"/>
+            <ellipse cx="70" cy="11" rx="9" ry="6"/>
+          </g>
+          <rect x="0" y="0" width="100" height="40" fill="url(#rock-heat)"/>
+        </svg>
+      </button>
+      <div class="cage" aria-hidden="true"></div>
+
+      <button class="obj bucket" type="button" data-obj="bucket" aria-label="a wooden bucket of water">
+        <svg viewBox="0 0 80 100" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
+          <ellipse cx="40" cy="18" rx="32" ry="8" fill="#3a1f0c"/>
+          <ellipse cx="40" cy="20" rx="28" ry="6" fill="#4d7a9a"/>
+          <path d="M8 18 L14 92 Q40 100 66 92 L72 18 Q40 30 8 18 Z" fill="#b8703a"/>
+          <path d="M20 24 L24 94 M32 27 L34 97 M46 27 L45 97 M58 25 L56 95" stroke="rgba(60, 25, 8, 0.45)" stroke-width="1.2"/>
+          <path d="M10 36 Q40 46 70 36" stroke="#5a5a58" stroke-width="3" fill="none"/>
+          <path d="M13 80 Q40 90 67 80" stroke="#5a5a58" stroke-width="3" fill="none"/>
+          <ellipse cx="40" cy="18" rx="32" ry="8" fill="none" stroke="#8a4b24" stroke-width="3"/>
+        </svg>
+      </button>
+
+      <button class="ladle full" id="ladle" type="button" aria-label="the ladle. drag it over the rocks, or press enter to throw water.">
+        <svg viewBox="0 0 120 60" aria-hidden="true">
+          <path d="M20 38 L116 8" stroke="#7a4020" stroke-width="5" stroke-linecap="round"/>
+          <path d="M20 38 L116 8" stroke="#a2592a" stroke-width="2" stroke-linecap="round"/>
+          <ellipse cx="14" cy="44" rx="12" ry="9" fill="#9a5a2c"/>
+          <ellipse cx="14" cy="41" rx="10" ry="5" fill="#5e3117"/>
+          <ellipse class="water" cx="14" cy="41.5" rx="8.5" ry="4" fill="#7fb0d0"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="hud">
+    <p class="caption" id="caption" role="status"></p>
+    <button class="sound" id="sound" type="button">sound: off</button>
+  </div>
+  <p class="rotate-hint">tip: the sauna is bigger sideways.</p>
+</main>
+
+<canvas class="fx" id="fx" aria-hidden="true"></canvas>
+<canvas class="fx" id="fog" aria-hidden="true"></canvas>
+<canvas class="fx" id="sweat" aria-hidden="true"></canvas>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const TAU = Math.PI * 2;
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const stage = $('#stage');
+  const captionEl = $('#caption');
+
+  // ---------- the air in here ----------
+  const BASE_TEMP = 174;
+  const BASE_HUM = 12;
+  let temp = BASE_TEMP;
+  let hum = BASE_HUM;
+  let burst = 0; // a fresh cloud of steam, fading
+  let fogOpacity = 0;
+  let visibleSec = 0;
+  let throwsRecent = [];
+  let totalThrows = 0;
+
+  // ---------- captions ----------
+  let captionTimer;
+  let lastSayAt = 0;
+  function say(text) {
+    lastSayAt = performance.now();
+    clearTimeout(captionTimer);
+    captionEl.classList.add('fade');
+    captionTimer = setTimeout(() => {
+      captionEl.textContent = text;
+      captionEl.classList.remove('fade');
+    }, 180);
+  }
+  function cycle(lines) {
+    let i = 0;
+    return () => (i < lines.length ? lines[i++] : pick(lines));
+  }
+
+  // ---------- audio: nothing is created until someone clicks something ----------
+  const audio = { ctx: null, on: false, master: null, noise: null, roar: null, crackle: null };
+  const soundBtn = $('#sound');
+
+  function initAudio() {
+    if (audio.ctx) return;
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const master = ctx.createGain();
+    master.gain.value = 0;
+    master.connect(ctx.destination);
+    const len = ctx.sampleRate * 2;
+    const noise = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d = noise.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    // the stove's low roar: brown-ish noise, very quiet
+    const brown = ctx.createBuffer(1, len, ctx.sampleRate);
+    const b = brown.getChannelData(0);
+    let lastB = 0;
+    for (let i = 0; i < len; i++) {
+      lastB = (lastB + 0.02 * (Math.random() * 2 - 1)) / 1.02;
+      b[i] = lastB * 3.5;
+    }
+    const roarSrc = ctx.createBufferSource();
+    roarSrc.buffer = brown;
+    roarSrc.loop = true;
+    const roarLp = ctx.createBiquadFilter();
+    roarLp.type = 'lowpass';
+    roarLp.frequency.value = 220;
+    const roar = ctx.createGain();
+    roar.gain.value = 0.35;
+    roarSrc.connect(roarLp).connect(roar).connect(master);
+    roarSrc.start();
+    Object.assign(audio, { ctx, master, noise, roar });
+  }
+
+  function noiseBurst({ at = 0, dur = 0.02, gain = 0.1, type = 'bandpass', freq = 2000, q = 1, sweepTo = null }) {
+    if (!audio.on || !audio.ctx) return;
+    const ctx = audio.ctx;
+    const t = ctx.currentTime + at;
+    const src = ctx.createBufferSource();
+    src.buffer = audio.noise;
+    const f = ctx.createBiquadFilter();
+    f.type = type;
+    f.frequency.setValueAtTime(freq, t);
+    if (sweepTo) f.frequency.exponentialRampToValueAtTime(sweepTo, t + dur);
+    f.Q.value = q;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(gain, t + Math.min(0.03, dur * 0.2));
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    src.connect(f).connect(g).connect(audio.master);
+    src.start(t, Math.random() * Math.max(0, 1.9 - dur));
+    src.stop(t + dur + 0.05);
+  }
+  function hiss(strength) {
+    noiseBurst({ dur: 1.6, gain: 0.22 * strength, type: 'bandpass', freq: 6500, sweepTo: 1800, q: 0.6 });
+    noiseBurst({ at: 0.05, dur: 1.1, gain: 0.08 * strength, type: 'highpass', freq: 4000 });
+  }
+  function thunk() {
+    if (!audio.on || !audio.ctx) return;
+    const ctx = audio.ctx;
+    const t = ctx.currentTime;
+    const o = ctx.createOscillator();
+    o.frequency.setValueAtTime(190, t);
+    o.frequency.exponentialRampToValueAtTime(80, t + 0.12);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.25, t + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+    o.connect(g).connect(audio.master);
+    o.start(t);
+    o.stop(t + 0.2);
+  }
+  function chime() {
+    if (!audio.on || !audio.ctx) return;
+    const ctx = audio.ctx;
+    const t = ctx.currentTime;
+    for (const [f, delay] of [[880, 0], [660, 0.18]]) {
+      const o = ctx.createOscillator();
+      o.frequency.value = f;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t + delay);
+      g.gain.exponentialRampToValueAtTime(0.08, t + delay + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + delay + 0.9);
+      o.connect(g).connect(audio.master);
+      o.start(t + delay);
+      o.stop(t + delay + 1);
+    }
+  }
+  function startCrackle() {
+    clearInterval(audio.crackle);
+    audio.crackle = setInterval(() => {
+      if (Math.random() < 0.28) noiseBurst({ dur: 0.012 + Math.random() * 0.02, gain: 0.04 + Math.random() * 0.08, freq: 1200 + Math.random() * 3000, q: 2 });
+      if (Math.random() < 0.03) noiseBurst({ dur: 0.08, gain: 0.12, type: 'lowpass', freq: 380 });
+    }, 90);
+  }
+  function stopCrackle() {
+    clearInterval(audio.crackle);
+    audio.crackle = null;
+  }
+  function setSound(on) {
+    audio.on = on;
+    soundBtn.textContent = on ? 'sound: on' : 'sound: off';
+    soundBtn.classList.toggle('on', on);
+    if (on) {
+      initAudio();
+      audio.ctx.resume();
+      startCrackle();
+    } else {
+      stopCrackle();
+    }
+    if (audio.ctx) audio.master.gain.setTargetAtTime(on ? 0.8 : 0, audio.ctx.currentTime, 0.08);
+  }
+  soundBtn.addEventListener('click', () => setSound(!audio.on));
+
+  // ---------- canvases for steam, fog, and sweat ----------
+  const fx = $('#fx');
+  const fxg = fx.getContext('2d');
+  const fog = $('#fog');
+  const fogg = fog.getContext('2d');
+  const sweat = $('#sweat');
+  const swg = sweat.getContext('2d');
+  const FOG_SCALE = 0.25;
+  let dpr = 1;
+  let vw = innerWidth;
+  let vh = innerHeight;
+  function sizeCanvases() {
+    dpr = Math.min(devicePixelRatio || 1, 1.5);
+    vw = innerWidth;
+    vh = innerHeight;
+    for (const c of [fx, sweat]) {
+      c.width = Math.round(vw * dpr);
+      c.height = Math.round(vh * dpr);
+    }
+    fxg.setTransform(dpr, 0, 0, dpr, 0, 0);
+    swg.setTransform(dpr, 0, 0, dpr, 0, 0);
+    // resizing clears the fog, which is fine: it grows back
+    fog.width = Math.max(1, Math.round(vw * FOG_SCALE));
+    fog.height = Math.max(1, Math.round(vh * FOG_SCALE));
+    fogg.fillStyle = 'rgb(236, 226, 214)';
+    fogg.fillRect(0, 0, fog.width, fog.height);
+  }
+  sizeCanvases();
+  addEventListener('resize', sizeCanvases);
+
+  // stage percentages -> viewport pixels
+  function toView(x, y) {
+    const r = stage.getBoundingClientRect();
+    return { x: r.left + (x / 100) * r.width, y: r.top + (y / 100) * r.height, scale: r.width / 1000 };
+  }
+  function toStage(clientX, clientY) {
+    const r = stage.getBoundingClientRect();
+    return { x: ((clientX - r.left) / r.width) * 100, y: ((clientY - r.top) / r.height) * 100 };
+  }
+
+  // ---------- steam puffs and water drops ----------
+  const puffs = [];
+  const drops = [];
+  function steamBurst(strength) {
+    const p = toView(13, 44);
+    const n = reduceMotion ? 8 : Math.round(22 * strength);
+    for (let i = 0; i < n; i++) {
+      puffs.push({
+        x: p.x + (Math.random() - 0.5) * 60 * p.scale * 2,
+        y: p.y - Math.random() * 20,
+        vx: (Math.random() - 0.3) * 40,
+        vy: -30 - Math.random() * 60,
+        r: (18 + Math.random() * 30) * p.scale * 1.6,
+        grow: 18 + Math.random() * 30,
+        life: 0,
+        max: 3 + Math.random() * 3,
+        a: 0.35 + Math.random() * 0.2,
+        cold: false,
+      });
+    }
+  }
+  function coldAir() {
+    const top = toView(86, 25);
+    const bot = toView(86, 75);
+    for (let i = 0; i < (reduceMotion ? 6 : 18); i++) {
+      puffs.push({
+        x: top.x,
+        y: top.y + Math.random() * (bot.y - top.y),
+        vx: -60 - Math.random() * 90,
+        vy: (Math.random() - 0.5) * 12,
+        r: (14 + Math.random() * 20) * top.scale * 1.6,
+        grow: 14 + Math.random() * 18,
+        life: 0,
+        max: 2 + Math.random() * 1.5,
+        a: 0.3 + Math.random() * 0.2,
+        cold: true,
+      });
+    }
+  }
+  function ambientWisp() {
+    const p = toView(8 + Math.random() * 10, 42);
+    puffs.push({
+      x: p.x, y: p.y, vx: 8 + Math.random() * 20, vy: -18 - Math.random() * 14,
+      r: (14 + Math.random() * 16) * p.scale * 1.6, grow: 10 + Math.random() * 12,
+      life: 0, max: 5 + Math.random() * 3, a: 0.14 + Math.random() * 0.1, cold: false,
+    });
+  }
+  function pourDrops(from) {
+    const target = toView(13, 44);
+    for (let i = 0; i < 14; i++) {
+      drops.push({
+        x: from.x + (Math.random() - 0.5) * 8,
+        y: from.y,
+        vx: (target.x - from.x) * (0.9 + Math.random() * 0.3),
+        vy: -40 - Math.random() * 40,
+        floor: target.y,
+        r: 1.5 + Math.random() * 1.8,
+      });
+    }
+  }
+  function drawFx(dt) {
+    fxg.clearRect(0, 0, vw, vh);
+    for (let i = puffs.length - 1; i >= 0; i--) {
+      const p = puffs[i];
+      p.life += dt;
+      if (p.life >= p.max) { puffs.splice(i, 1); continue; }
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vx *= 0.99;
+      p.r += p.grow * dt;
+      const k = p.life / p.max;
+      const alpha = p.a * Math.sin(Math.PI * Math.min(1, k * 1.4)) * (1 - k * 0.5);
+      const col = p.cold ? '220, 236, 248' : '244, 236, 226';
+      const grad = fxg.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r);
+      grad.addColorStop(0, `rgba(${col}, ${alpha.toFixed(3)})`);
+      grad.addColorStop(1, `rgba(${col}, 0)`);
+      fxg.fillStyle = grad;
+      fxg.beginPath();
+      fxg.arc(p.x, p.y, p.r, 0, TAU);
+      fxg.fill();
+    }
+    fxg.fillStyle = 'rgba(190, 220, 240, 0.9)';
+    for (let i = drops.length - 1; i >= 0; i--) {
+      const d = drops[i];
+      d.vy += 900 * dt;
+      d.x += d.vx * dt;
+      d.y += d.vy * dt;
+      if (d.y > d.floor) { drops.splice(i, 1); continue; }
+      fxg.beginPath();
+      fxg.arc(d.x, d.y, d.r, 0, TAU);
+      fxg.fill();
+    }
+  }
+
+  // ---------- the fog you can wipe ----------
+  let wipedDistance = 0;
+  let saidWipe = false;
+  let saidWave = false;
+  let lastPointer = null;
+  function wipeAt(x, y, radius) {
+    const fx0 = x * FOG_SCALE;
+    const fy0 = y * FOG_SCALE;
+    const r = radius * FOG_SCALE;
+    fogg.globalCompositeOperation = 'destination-out';
+    const grad = fogg.createRadialGradient(fx0, fy0, 0, fx0, fy0, r);
+    grad.addColorStop(0, 'rgba(0, 0, 0, 0.9)');
+    grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    fogg.fillStyle = grad;
+    fogg.beginPath();
+    fogg.arc(fx0, fy0, r, 0, TAU);
+    fogg.fill();
+    fogg.globalCompositeOperation = 'source-over';
+    // wiping takes the sweat with it
+    for (let i = sweatDrops.length - 1; i >= 0; i--) {
+      const d = sweatDrops[i];
+      if (Math.hypot(d.x - x, d.y - y) < radius * 0.8) sweatDrops.splice(i, 1);
+    }
+  }
+  function onMove(e) {
+    const p = { x: e.clientX, y: e.clientY };
+    if (lastPointer) {
+      const dist = Math.hypot(p.x - lastPointer.x, p.y - lastPointer.y);
+      const steps = Math.max(1, Math.ceil(dist / 12));
+      for (let s = 1; s <= steps; s++) {
+        const t = s / steps;
+        wipeAt(lastPointer.x + (p.x - lastPointer.x) * t, lastPointer.y + (p.y - lastPointer.y) * t, 34);
+      }
+      if (fogOpacity > 0.3) wipedDistance += dist;
+    }
+    lastPointer = p;
+    if (!saidWipe && wipedDistance > 500) {
+      saidWipe = true;
+      say("you wiped the steam. it doesn't care. it comes back.");
+    } else if (!saidWave && wipedDistance > 9000) {
+      saidWave = true;
+      say("you're just waving at the steam now. it's waving back.");
+    }
+  }
+  addEventListener('pointermove', onMove);
+  document.documentElement.addEventListener('pointerleave', () => { lastPointer = null; });
+
+  // ---------- sweat, on your side of the screen ----------
+  const sweatDrops = [];
+  const trails = [];
+  function spawnSweat() {
+    sweatDrops.push({
+      x: Math.random() * vw,
+      y: Math.random() * vh * 0.85,
+      r: 2.2 + Math.random() * 3.6,
+      hold: 3 + Math.random() * 12,
+      vy: 0,
+      max: 18 + Math.random() * 45,
+      wob: Math.random() * TAU,
+      lastTrail: 0,
+    });
+  }
+  function drawSweat(dt) {
+    swg.clearRect(0, 0, vw, vh);
+    for (let i = trails.length - 1; i >= 0; i--) {
+      const t = trails[i];
+      t.life -= dt / 7;
+      if (t.life <= 0) { trails.splice(i, 1); continue; }
+      swg.fillStyle = `rgba(255, 244, 228, ${(0.1 * t.life).toFixed(3)})`;
+      swg.beginPath();
+      swg.arc(t.x, t.y, t.r, 0, TAU);
+      swg.fill();
+    }
+    for (let i = sweatDrops.length - 1; i >= 0; i--) {
+      const d = sweatDrops[i];
+      if (d.hold > 0) {
+        d.hold -= dt;
+      } else {
+        d.vy = Math.min(d.max * (reduceMotion ? 0.3 : 1), d.vy + 20 * dt);
+        d.y += d.vy * dt;
+        d.wob += dt * 3;
+        d.x += Math.sin(d.wob) * 6 * dt;
+        if (d.y - d.lastTrail > 5) {
+          d.lastTrail = d.y;
+          trails.push({ x: d.x, y: d.y - d.r * 0.6, r: d.r * 0.45, life: 1 });
+        }
+        if (d.y > vh + 10) { sweatDrops.splice(i, 1); continue; }
+      }
+      const r = d.r;
+      const grad = swg.createRadialGradient(d.x - r * 0.35, d.y - r * 0.4, r * 0.1, d.x, d.y, r);
+      grad.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+      grad.addColorStop(0.35, 'rgba(255, 245, 230, 0.16)');
+      grad.addColorStop(0.85, 'rgba(90, 50, 20, 0.1)');
+      grad.addColorStop(1, 'rgba(40, 20, 5, 0.35)');
+      swg.fillStyle = grad;
+      swg.beginPath();
+      swg.ellipse(d.x, d.y, r * 0.88, r, 0, 0, TAU);
+      swg.fill();
+    }
+  }
+
+  // ---------- heat shimmer ----------
+  const shimmerMap = $('#shimmer-map');
+  const shimmerNoise = $('#shimmer-noise');
+  let shimmerOn = false;
+  let shimmerTick = 0;
+  function updateShimmer(heat, now) {
+    if (reduceMotion) return;
+    const scale = Math.min(6, heat * 5);
+    const want = scale > 1.2;
+    if (want !== shimmerOn) {
+      shimmerOn = want;
+      const f = want ? 'url(#shimmer)' : '';
+      stage.style.filter = f;
+      captionEl.style.filter = f;
+    }
+    if (!want || now - shimmerTick < 70) return;
+    shimmerTick = now;
+    shimmerMap.setAttribute('scale', scale.toFixed(2));
+    const t = now / 1000;
+    const fx0 = 0.006 + Math.sin(t * 0.7) * 0.0012;
+    const fy0 = 0.035 + Math.sin(t * 1.3) * 0.006;
+    shimmerNoise.setAttribute('baseFrequency', `${fx0.toFixed(4)} ${fy0.toFixed(4)}`);
+  }
+
+  // ---------- the meter ----------
+  const needleT = $('#needle-t');
+  const needleH = $('#needle-h');
+  const readT = $('#read-t');
+  const readH = $('#read-h');
+  (() => {
+    const make = (group, cx) => {
+      for (let i = 0; i <= 10; i++) {
+        const a = (-135 + i * 27) * Math.PI / 180;
+        const x1 = cx + Math.sin(a) * 18;
+        const y1 = 44 - Math.cos(a) * 18;
+        const x2 = cx + Math.sin(a) * 21;
+        const y2 = 44 - Math.cos(a) * 21;
+        const l = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        l.setAttribute('x1', x1.toFixed(2));
+        l.setAttribute('y1', y1.toFixed(2));
+        l.setAttribute('x2', x2.toFixed(2));
+        l.setAttribute('y2', y2.toFixed(2));
+        group.appendChild(l);
+      }
+    };
+    make($('#ticks-t'), 30);
+    make($('#ticks-h'), 80);
+  })();
+  function updateMeter() {
+    const at = -135 + (clamp(temp, 40, 280) - 40) / 240 * 270;
+    const ah = -135 + clamp(hum, 0, 100) / 100 * 270;
+    needleT.setAttribute('transform', `rotate(${at.toFixed(1)} 30 44)`);
+    needleH.setAttribute('transform', `rotate(${ah.toFixed(1)} 80 44)`);
+    readT.textContent = String(Math.round(temp));
+    readH.textContent = String(Math.round(hum));
+  }
+
+  // ---------- the hourglass ----------
+  const HG_MS = 180000; // it says fifteen minutes. it is three.
+  const hgBtn = $('#hourglass');
+  const hgSpin = $('#hg-spin');
+  const sandTop = $('#sand-top');
+  const sandBot = $('#sand-bot');
+  const sandStream = $('#sand-stream');
+  const hg = { topAtFlip: 0, flippedAt: Date.now(), flipping: false, flips: 0, finished: true, finishes: 0 };
+  const hgTop = now => Math.max(0, hg.topAtFlip - (now - hg.flippedAt) / HG_MS);
+  function drawSand(top) {
+    const bot = 1 - top;
+    sandTop.setAttribute('y', (70 - top * 44).toFixed(2));
+    sandTop.setAttribute('height', (top * 44).toFixed(2));
+    sandBot.setAttribute('y', (130 - bot * 44).toFixed(2));
+    sandBot.setAttribute('height', (bot * 44).toFixed(2));
+    const running = top > 0 && !hg.flipping;
+    sandStream.setAttribute('opacity', running ? '0.9' : '0');
+    sandStream.setAttribute('y2', (130 - bot * 44).toFixed(2));
+  }
+  const FINISH_LINES = [
+    "fifteen minutes. you've been in here fifteen minutes. that's the right amount. nobody leaves at the right amount.",
+    'it said fifteen minutes. it was three. the hourglass has always been optimistic.',
+    'the sand is done. you are not done. that has never stopped anyone.',
+  ];
+  function flipHourglass() {
+    if (hg.flipping) return;
+    const now = Date.now();
+    const top = hgTop(now);
+    hg.flipping = true;
+    thunk();
+    if (hg.flips === 0 && top <= 0) say('someone already used it. you flip it. fifteen minutes, it says.');
+    else if (top > 0.05 && top < 0.95) say("you flipped it early. time is a suggestion in here.");
+    else say(pick(['you flip the hourglass. it starts over. so do you.', 'flipped. fifteen minutes. allegedly.']));
+    hg.flips++;
+    const done = () => {
+      hgSpin.style.transition = 'none';
+      hgSpin.style.transform = 'rotate(0deg)';
+      hg.topAtFlip = 1 - top;
+      hg.flippedAt = Date.now();
+      hg.flipping = false;
+      hg.finished = hg.topAtFlip <= 0;
+      drawSand(hg.topAtFlip);
+    };
+    if (reduceMotion) {
+      done();
+      return;
+    }
+    hgSpin.style.transition = 'transform 0.7s cubic-bezier(0.5, 0, 0.3, 1)';
+    hgSpin.style.transform = 'rotate(180deg)';
+    setTimeout(done, 720);
+  }
+  hgBtn.addEventListener('click', flipHourglass);
+  drawSand(0);
+
+  // ---------- the ladle ----------
+  const ladleEl = $('#ladle');
+  const REST = { x: 26.4, y: 80.6, a: 0 };
+  const ROCKS = { x0: 5, x1: 21, y0: 36, y1: 56 };
+  const BUCKET = { x0: 22, x1: 31, y0: 74, y1: 92 };
+  const ladle = { x: REST.x, y: REST.y, a: REST.a, full: true, busy: false, drag: null, pouredAt: -1e9 };
+  const inBox = (p, b) => p.x > b.x0 && p.x < b.x1 && p.y > b.y0 && p.y < b.y1;
+  function placeLadle() {
+    ladleEl.style.setProperty('--x', ladle.x.toFixed(2));
+    ladleEl.style.setProperty('--y', ladle.y.toFixed(2));
+    ladleEl.style.setProperty('--a', ladle.a.toFixed(1));
+    ladleEl.classList.toggle('full', ladle.full);
+  }
+  placeLadle();
+
+  const THROW_LINES = {
+    first: 'tsssss. the rocks accept the water.',
+    enough: "that's enough. it's never enough.",
+    judging: 'the rocks are judging you.',
+    person: 'the person on the top bench: "you\'re going to steam us both. keep going."',
+    more: [
+      'the humidity has a personality now.',
+      "you can't see the door. the door can't see you.",
+      'tsssss. that one was for you.',
+      'the rocks hiss. it sounds like approval. it is not approval.',
+    ],
+  };
+  function splash() {
+    const now = performance.now();
+    totalThrows++;
+    throwsRecent = throwsRecent.filter(t => now - t < 20000).concat(now);
+    const n = throwsRecent.length;
+    const strength = clamp(1.2 - hum / 120, 0.4, 1);
+    temp += 2.6;
+    hum += 10 * (1 - hum / 110);
+    burst = Math.min(1.4, burst + 0.6);
+    steamBurst(strength);
+    hiss(strength);
+    // the fog comes back faster after a good throw
+    fogg.fillStyle = 'rgba(236, 226, 214, 0.35)';
+    fogg.fillRect(0, 0, fog.width, fog.height);
+    if (totalThrows === 1) say(THROW_LINES.first + (audio.on ? '' : ' (sound is off. the hiss is implied.)'));
+    else if (n === 3) say(THROW_LINES.enough);
+    else if (n === 6) say(THROW_LINES.judging);
+    else if (n === 9) say(THROW_LINES.person);
+    else if (n > 9 && Math.random() < 0.5) say(pick(THROW_LINES.more));
+  }
+  function pour() {
+    if (!ladle.full) return;
+    ladle.full = false;
+    ladle.pouredAt = performance.now();
+    const from = toView(ladle.x, ladle.y);
+    pourDrops(from);
+    const keep = ladle.a;
+    ladle.a = 70;
+    placeLadle();
+    setTimeout(() => {
+      if (ladle.drag || ladle.busy) {
+        ladle.a = keep;
+        placeLadle();
+      }
+    }, 320);
+    setTimeout(splash, 260);
+  }
+
+  function tween(to, ms) {
+    return new Promise(resolve => {
+      const from = { x: ladle.x, y: ladle.y, a: ladle.a };
+      const start = performance.now();
+      const step = now => {
+        const k = clamp((now - start) / ms, 0, 1);
+        const e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+        ladle.x = from.x + (to.x - from.x) * e;
+        ladle.y = from.y + (to.y - from.y) * e;
+        ladle.a = from.a + (to.a - from.a) * e;
+        placeLadle();
+        if (k < 1) requestAnimationFrame(step);
+        else resolve();
+      };
+      if (reduceMotion || ms <= 0) {
+        Object.assign(ladle, to);
+        placeLadle();
+        resolve();
+      } else {
+        requestAnimationFrame(step);
+      }
+    });
+  }
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  async function autoThrow() {
+    if (ladle.busy) return;
+    ladle.busy = true;
+    ladleEl.classList.add('lifted');
+    ladle.full = true;
+    await tween({ x: 13, y: 34, a: -15 }, 550);
+    pour();
+    await wait(560);
+    await tween(REST, 520);
+    ladle.full = true;
+    placeLadle();
+    ladleEl.classList.remove('lifted');
+    ladle.busy = false;
+  }
+
+  let saidRefill = false;
+  ladleEl.addEventListener('pointerdown', e => {
+    if (ladle.busy) return;
+    e.preventDefault();
+    try { ladleEl.setPointerCapture(e.pointerId); } catch (err) { /* synthetic pointer */ }
+    const p = toStage(e.clientX, e.clientY);
+    ladle.drag = { id: e.pointerId, sx: e.clientX, sy: e.clientY, moved: false, ox: ladle.x - p.x, oy: ladle.y - p.y };
+  });
+  ladleEl.addEventListener('pointermove', e => {
+    const d = ladle.drag;
+    if (!d || e.pointerId !== d.id) return;
+    if (!d.moved && Math.hypot(e.clientX - d.sx, e.clientY - d.sy) < 6) return;
+    if (!d.moved) {
+      d.moved = true;
+      ladleEl.classList.remove('returning');
+      ladleEl.classList.add('lifted');
+    }
+    const p = toStage(e.clientX, e.clientY);
+    ladle.x = clamp(p.x + d.ox, 1, 99);
+    ladle.y = clamp(p.y + d.oy, 2, 98);
+    // hold the pour tilt for a moment, then level off again
+    if (performance.now() - ladle.pouredAt > 320) ladle.a = -20;
+    placeLadle();
+    if (ladle.full && inBox(ladle, ROCKS)) pour();
+    if (!ladle.full && inBox(ladle, BUCKET)) {
+      ladle.full = true;
+      placeLadle();
+      if (!saidRefill) {
+        saidRefill = true;
+        say('you refill the ladle. the bucket never runs out. nobody asks why.');
+      }
+    }
+  });
+  function endDrag(e) {
+    const d = ladle.drag;
+    if (!d || e.pointerId !== d.id) return;
+    ladle.drag = null;
+    if (!d.moved) {
+      autoThrow();
+      return;
+    }
+    // back into the bucket
+    ladleEl.classList.add('returning');
+    Object.assign(ladle, REST);
+    ladle.full = true;
+    placeLadle();
+    setTimeout(() => {
+      ladleEl.classList.remove('returning');
+      ladleEl.classList.remove('lifted');
+    }, 380);
+  }
+  ladleEl.addEventListener('pointerup', endDrag);
+  ladleEl.addEventListener('pointercancel', endDrag);
+  ladleEl.addEventListener('click', e => {
+    // keyboard: enter/space on the ladle throws a ladleful
+    if (e.detail === 0) autoThrow();
+  });
+
+  // ---------- the other person ----------
+  const PERSON_LINES = [
+    "i've been in here since 1998.",
+    "don't touch the thermostat. there is no thermostat.",
+    'first time?',
+    "you get used to it. you don't get used to it.",
+    'i came in for fifteen minutes.',
+    "i'm not asleep. i'm resting with intent.",
+    'the cold plunge has been out of order since somebody asked about it.',
+    'more water. no. less. no. more.',
+    "don't look at the hourglass. it knows when you look.",
+    'the towel stays on. those are the rules. i wrote them.',
+  ];
+  let personQueue = [];
+  function personLine() {
+    if (!personQueue.length) personQueue = [...PERSON_LINES].sort(() => Math.random() - 0.5);
+    return `the person on the top bench: "${personQueue.pop()}"`;
+  }
+  let personClicks = 0;
+  let nextChatter = 30 + Math.random() * 15;
+
+  // ---------- the door ----------
+  const doorBtn = $('#door');
+  let doorOpens = 0;
+  doorBtn.addEventListener('click', () => {
+    const tab = window.open('../freezer/', '_blank');
+    if (tab) {
+      try { tab.opener = null; } catch (err) { /* cross-origin later, fine */ }
+    }
+    doorOpens++;
+    doorBtn.classList.add('ajar');
+    setTimeout(() => doorBtn.classList.remove('ajar'), 1300);
+    coldAir();
+    temp = Math.max(120, temp - 7);
+    hum = Math.max(BASE_HUM - 4, hum - 12);
+    burst = Math.max(0, burst - 0.5);
+    wipeAt(vw * 0.85, vh * 0.45, Math.max(vw, vh) * 0.25);
+    if (!tab) say('the door is stuck. the freezer is down the hall. it always is.');
+    else if (doorOpens === 1) say('the cold plunge is out of order. the freezer will have to do. (it opened in a new tab.)');
+    else say(pick([
+      'you let the heat out. the person on the top bench noticed.',
+      'cold air. the steam flinches.',
+      'the freezer is still there. it opened in a new tab again.',
+    ]));
+  });
+
+  // ---------- everything else ----------
+  const OBJ = {
+    stove: cycle([
+      "the stove. wood-fired. it's been burning since before anyone here arrived.",
+      "there's no off switch. there's a door. the door doesn't help.",
+    ]),
+    rocks: cycle([
+      "the rocks. they're very hot. the ladle is for that. not your hand.",
+      'they look like regular rocks. they are extremely not regular rocks.',
+    ]),
+    bucket: cycle([
+      'a wooden bucket of water. the water is for the rocks. drink your own water.',
+      'drag the ladle over the rocks. or click it. the rocks are waiting.',
+    ]),
+    whisk: cycle([
+      "a bundle of birch branches. you're supposed to hit yourself with it. read up first.",
+      "it's called a vihta. it smells amazing. it's still a bundle of sticks.",
+    ]),
+    meter: () => {
+      const t = Math.round(temp);
+      const h = Math.round(hum);
+      const verdict = temp > 190 ? 'that is a lot. it says it is fine.' : hum > 45 ? 'it is humid. you are the humidity now.' : "it says it's fine. it always says it's fine.";
+      return `${t}°f. ${h}% humidity. ${verdict}`;
+    },
+    rules: cycle([
+      'sauna rules. 1. no phones. 2. you are looking at a screen. 3. we\'ll allow it.',
+      'there used to be a fourth rule. somebody sat on it.',
+    ]),
+    window: cycle([
+      "a small window. it's fogged. outside it's snowing. that's the point.",
+      "you can't see out. nobody can see in. that's also the point.",
+    ]),
+    towel: cycle([
+      "a towel. it's for sitting on. it's also for wearing. it's a busy towel.",
+      "it's damp. everything in here is damp. that's the whole deal.",
+    ]),
+    plungesign: () => 'cold plunge, this way. the door says out of order. the door is honest.',
+    upper: cycle([
+      'the upper bench. it is thirty degrees hotter. the person up there lives there now.',
+      'heat rises. so did they. a long time ago.',
+    ]),
+    lower: cycle([
+      'the lower bench is for beginners. no judgment. some judgment.',
+      'it is cooler down here. by a little. not by enough.',
+    ]),
+    person: () => {
+      personClicks++;
+      if (personClicks === 1) return "the person on the top bench. they nod. they don't open their eyes.";
+      return personLine();
+    },
+  };
+  stage.addEventListener('click', e => {
+    const el = e.target.closest('[data-obj]');
+    if (!el || !OBJ[el.dataset.obj]) return;
+    say(OBJ[el.dataset.obj]());
+  });
+
+  // ---------- coming back ----------
+  addEventListener('cizole:return', e => {
+    const secs = e.detail.awayMs / 1000;
+    if (secs < 4) return;
+    const cooled = Math.round(Math.min(40, 4 + secs * 0.3));
+    temp = Math.max(120, temp - cooled);
+    hum = Math.min(hum, BASE_HUM + 2);
+    burst = 0;
+    sweatDrops.length = 0;
+    trails.length = 0;
+    say(`the sauna cooled down while you were gone. ${cooled} degrees. the person on the top bench didn't leave. they never leave.`);
+  });
+
+  // background tabs throttle timers; the stove can wait
+  document.addEventListener('visibilitychange', () => {
+    if (!audio.ctx) return;
+    if (document.hidden) {
+      stopCrackle();
+      audio.ctx.suspend();
+    } else if (audio.on) {
+      audio.ctx.resume();
+      startCrackle();
+    }
+  });
+
+  // ---------- go ----------
+  let saidSweat = false;
+  let saidScreenSweat = false;
+  let saidHint = false;
+  let saidFog = false;
+  let meterTick = 0;
+  let regrow = 0;
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    visibleSec += dt;
+
+    // the stove pulls everything back toward normal, slowly
+    temp += (BASE_TEMP - temp) * 0.02 * dt;
+    hum += (BASE_HUM - hum) * 0.012 * dt;
+    burst = Math.max(0, burst - dt * 0.25);
+
+    const fogTarget = clamp((hum - 18) / 50, 0, 1) * 0.8 + burst * 0.25;
+    fogOpacity += (clamp(fogTarget, 0, 0.88) - fogOpacity) * Math.min(1, dt * 0.8);
+    fog.style.opacity = fogOpacity.toFixed(3);
+    // the fog grows back where it was wiped. canvas alpha can't take steps
+    // smaller than 1/255, so it grows back in chunks, not every frame.
+    regrow += dt;
+    if (regrow > 0.25) {
+      fogg.fillStyle = `rgba(236, 226, 214, ${((0.08 + fogOpacity * 0.3) * regrow).toFixed(4)})`;
+      fogg.fillRect(0, 0, fog.width, fog.height);
+      regrow = 0;
+    }
+
+    if (hum > 25 && Math.random() < dt * (hum - 20) / 25) ambientWisp();
+    drawFx(dt);
+
+    const heat = clamp((temp - 170) / 30, 0, 1) * 0.6 + clamp((hum - 14) / 60, 0, 1) * 0.6 + clamp(visibleSec / 600, 0, 0.25);
+    updateShimmer(heat, now);
+
+    const sweatRate = clamp((visibleSec - 25) / 200, 0, 1) * (0.25 + heat);
+    if (sweatDrops.length < 70 && Math.random() < sweatRate * dt) spawnSweat();
+    drawSweat(dt);
+
+    // hourglass
+    const tnow = Date.now();
+    if (!hg.flipping) {
+      const top = hgTop(tnow);
+      drawSand(top);
+      if (!hg.finished && top <= 0) {
+        hg.finished = true;
+        chime();
+        say(FINISH_LINES[Math.min(hg.finishes, FINISH_LINES.length - 1)]);
+        hg.finishes++;
+      }
+    }
+
+    if (now - meterTick > 200) {
+      meterTick = now;
+      updateMeter();
+    }
+
+    const quiet = now - lastSayAt > 9000;
+    if (!saidHint && visibleSec > 45 && totalThrows === 0 && quiet) {
+      saidHint = true;
+      say('the ladle is in the bucket. the rocks are on the stove. you know what to do.');
+    } else if (!saidSweat && visibleSec > 90 && sweatDrops.length > 2 && quiet) {
+      saidSweat = true;
+      say("you're starting to sweat. that's the idea.");
+    } else if (!saidScreenSweat && visibleSec > 240 && sweatDrops.length > 10 && quiet) {
+      saidScreenSweat = true;
+      say("your screen is sweating now. that part isn't the idea.");
+    } else if (!saidFog && fogOpacity > 0.6) {
+      saidFog = true;
+      say("you can't see the door anymore. the door can't see you either. wipe the steam if you want it back.");
+    } else if (visibleSec > nextChatter) {
+      nextChatter = visibleSec + 45 + Math.random() * 45;
+      if (quiet) say(personLine());
+    }
+    requestAnimationFrame(frame);
+  }
+  say("a sauna. it's 174 degrees. somebody is already here.");
+  updateMeter();
+  requestAnimationFrame(frame);
+})();
+</script>
+<script src="../assets/rooms.js"></script>
+<script src="../assets/away.js"></script>
+</body>
+</html>

@@ -20,6 +20,9 @@
     { n: '016', slug: 'junk-drawer', name: 'junk drawer', blurb: 'no organizational guarantees' },
     { n: '017', slug: 'basement', name: 'the basement', blurb: 'the doors go to the rooms. mostly.' },
     { n: '018', slug: 'weather', name: 'weather', blurb: 'it is not snowing in here' },
+    { n: '019', slug: 'escher', name: 'escher room', blurb: 'every way is up' },
+    { n: '020', slug: 'sauna', name: 'sauna', blurb: "it's never enough" },
+    { n: '021', slug: 'freezer', name: 'freezer', blurb: 'the door closes. they do that.' },
     { n: '022', slug: 'about', name: 'about', blurb: 'regrettably, a person' },
   ];
   window.CIZOLE_ROOMS = ROOMS;

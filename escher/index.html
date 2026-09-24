@@ -1,0 +1,867 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>escher room · cizole</title>
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/site.css">
+<style>
+  :root {
+    --paper: #efe7d6;
+    --ink: #1c1914;
+    --ink-soft: rgba(28, 25, 20, 0.6);
+  }
+  html, body { overflow: hidden; background: var(--paper); }
+  body { color: var(--ink); }
+
+  #wall, #stage { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+  #wall { z-index: 0; }
+  #stage { z-index: 1; touch-action: none; cursor: grab; outline: none; }
+  #stage.dragging { cursor: grabbing; }
+  #stage:focus-visible { box-shadow: inset 0 0 0 3px var(--ink-soft); }
+  .vignette {
+    position: fixed;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    box-shadow: inset 0 0 140px rgba(90, 64, 30, 0.28);
+  }
+
+  /* doors and windows that picked a different floor */
+  .prop {
+    position: fixed;
+    z-index: 3;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .prop svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .prop:focus-visible { outline: 2px dashed var(--ink); outline-offset: 4px; }
+  .ceiling-door { top: 0; left: calc(50% - 4vmin); width: 8vmin; height: 14vmin; transform: rotate(180deg); }
+  .wall-door { left: 3vmin; top: calc(50% - 7vmin); width: 8vmin; height: 14vmin; transform: rotate(90deg); }
+  .side-window { right: 1vmin; top: calc(24% - 6vmin); width: 10vmin; height: 12vmin; transform: rotate(-90deg); }
+  .floor-lamp { right: 17vmin; bottom: 0; width: 6vmin; height: 15vmin; transform: rotate(180deg); }
+  .wall-walker { right: 1.5vmin; top: 0; width: 4vmin; height: 7vmin; will-change: transform; }
+  .wall-walker .leg { transform-origin: 20px 44px; animation: stride 0.9s ease-in-out infinite alternate; }
+  .wall-walker .leg.b { animation-delay: -0.45s; }
+  @keyframes stride {
+    from { transform: rotate(-22deg); }
+    to { transform: rotate(22deg); }
+  }
+
+  .counter {
+    position: fixed;
+    top: 14px;
+    right: 16px;
+    z-index: 4;
+    padding: 4px 8px;
+    background: rgba(239, 231, 214, 0.85);
+    font-size: 12px;
+    line-height: 1.55;
+    text-align: right;
+  }
+  .counter b { font-weight: 700; }
+  .counter .hint { color: var(--ink-soft); }
+  .caption {
+    position: fixed;
+    left: 50%;
+    bottom: 16px;
+    z-index: 4;
+    max-width: min(640px, 92vw);
+    padding: 6px 12px;
+    border-radius: 4px;
+    background: rgba(239, 231, 214, 0.92);
+    font-size: 14px;
+    line-height: 1.45;
+    text-align: center;
+    transform: translateX(-50%);
+    transition: opacity 0.18s;
+  }
+  .caption.fade { opacity: 0; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .wall-walker .leg { animation-duration: 2s; }
+  }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+<a class="lobby-link" href="../">&larr; lobby</a>
+
+<canvas id="wall" aria-hidden="true"></canvas>
+<canvas id="stage" tabindex="0" role="img" aria-label="an impossible staircase that goes up all the way around. drag, or use the arrow keys, to look at it from another angle."></canvas>
+<div class="vignette" aria-hidden="true"></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <pattern id="hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="5" stroke="#1c1914" stroke-width="1" opacity="0.55"/>
+    </pattern>
+  </defs>
+</svg>
+
+<button class="prop ceiling-door" type="button" data-prop="ceiling" aria-label="a door on the ceiling">
+  <svg viewBox="0 0 80 140" aria-hidden="true">
+    <rect x="4" y="4" width="72" height="132" fill="#efe7d6" stroke="currentColor" stroke-width="3"/>
+    <rect x="15" y="17" width="50" height="44" fill="url(#hatch)" stroke="currentColor" stroke-width="2"/>
+    <rect x="15" y="75" width="50" height="48" fill="url(#hatch)" stroke="currentColor" stroke-width="2"/>
+    <circle cx="64" cy="70" r="4" fill="currentColor"/>
+    <path d="M-6 138 H86" stroke="currentColor" stroke-width="3"/>
+  </svg>
+</button>
+
+<button class="prop wall-door" type="button" data-prop="wall" aria-label="a door on the wall, lying down">
+  <svg viewBox="0 0 80 140" aria-hidden="true">
+    <rect x="4" y="4" width="72" height="132" fill="#efe7d6" stroke="currentColor" stroke-width="3"/>
+    <rect x="15" y="17" width="50" height="106" fill="url(#hatch)" stroke="currentColor" stroke-width="2"/>
+    <circle cx="16" cy="72" r="4" fill="currentColor"/>
+    <path d="M-6 138 H86" stroke="currentColor" stroke-width="3"/>
+    <rect x="14" y="140" width="52" height="7" fill="url(#hatch)" stroke="currentColor" stroke-width="1.5"/>
+  </svg>
+</button>
+
+<button class="prop side-window" type="button" data-prop="window" aria-label="a window facing the floor">
+  <svg viewBox="0 0 100 120" aria-hidden="true">
+    <rect x="6" y="6" width="88" height="100" fill="#e6ddc9" stroke="currentColor" stroke-width="3"/>
+    <path d="M14 70 Q30 60 44 68 T78 64" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <path d="M20 40 q8 -10 18 -2 q10 -8 16 2 z" fill="#efe7d6" stroke="currentColor" stroke-width="1.5"/>
+    <path d="M50 6 V106 M6 56 H94" stroke="currentColor" stroke-width="3"/>
+    <rect x="0" y="106" width="100" height="8" fill="url(#hatch)" stroke="currentColor" stroke-width="2"/>
+  </svg>
+</button>
+
+<button class="prop floor-lamp" type="button" data-prop="lamp" aria-label="a lamp hanging up from the floor">
+  <svg viewBox="0 0 60 150" aria-hidden="true">
+    <path d="M30 0 V74" stroke="currentColor" stroke-width="2"/>
+    <path d="M12 106 L20 74 H40 L48 106 Z" fill="url(#hatch)" stroke="currentColor" stroke-width="2.5"/>
+    <circle cx="30" cy="112" r="6" fill="#f7f1e2" stroke="currentColor" stroke-width="2"/>
+    <path d="M14 126 L8 134 M30 128 V138 M46 126 L52 134" stroke="currentColor" stroke-width="1.5"/>
+  </svg>
+</button>
+
+<button class="prop wall-walker" type="button" data-prop="walker" aria-label="someone walking up the wall">
+  <svg viewBox="0 0 40 70" aria-hidden="true">
+    <circle cx="20" cy="9" r="6.5" fill="currentColor"/>
+    <path d="M20 16 V44" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+    <path d="M20 22 L10 34 M20 22 L30 34" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+    <path class="leg" d="M20 44 L20 66" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+    <path class="leg b" d="M20 44 L20 66" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+  </svg>
+</button>
+
+<div class="counter" aria-live="off">
+  floors climbed: <b id="floors">412</b><br>
+  current floor: <b>1</b><br>
+  <span class="hint">drag to look closer</span>
+</div>
+<p class="caption" id="caption" role="status">a staircase. it goes up. all the way around.</p>
+
+<script>
+  // if the 3d module never arrives (blocked cdn, very old browser), say so instead of sitting there blank
+  setTimeout(() => {
+    if (window.__escherReady) return;
+    const c = document.getElementById('caption');
+    if (c) c.textContent = "the staircase didn't arrive. it's probably still climbing. try reloading.";
+  }, 9000);
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
+import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
+import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
+
+const $ = s => document.querySelector(s);
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const INK = '#1c1914';
+const PAPER = '#efe7d6';
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (err) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (err) { /* storage off */ } },
+};
+
+// ---------- captions ----------
+const captionEl = $('#caption');
+let captionTimer = 0;
+let lastSay = performance.now();
+function say(text) {
+  lastSay = performance.now();
+  clearTimeout(captionTimer);
+  captionEl.classList.add('fade');
+  captionTimer = setTimeout(() => {
+    captionEl.textContent = text;
+    captionEl.classList.remove('fade');
+  }, 180);
+}
+const cyclers = {};
+function cycle(key, lines) {
+  const i = cyclers[key] ?? 0;
+  cyclers[key] = i + 1;
+  return lines[i % lines.length];
+}
+
+// ---------- the counter ----------
+const floorsEl = $('#floors');
+let floors = parseInt(store.get('cizole.escher.floors'), 10);
+if (!Number.isFinite(floors) || floors < 412) floors = 412;
+const renderFloors = () => { floorsEl.textContent = floors.toLocaleString('en-US'); };
+renderFloors();
+
+// ---------- pointer, shared by the wall's eyes ----------
+const pointer = { x: innerWidth / 2, y: innerHeight / 2 };
+addEventListener('pointermove', e => { pointer.x = e.clientX; pointer.y = e.clientY; });
+
+// =====================================================================
+// the wall: an original tessellation that slowly turns into eyes.
+// every edge is one shared curve, so neighbouring tiles always fit.
+// =====================================================================
+const wall = $('#wall');
+const wctx = wall.getContext('2d');
+let WW = 0, WH = 0, G = 80;
+let paper = null;
+
+function sizeWall() {
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  WW = innerWidth;
+  WH = innerHeight;
+  wall.width = Math.round(WW * dpr);
+  wall.height = Math.round(WH * dpr);
+  wctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  G = clamp(Math.min(WW, WH) / 8, 52, 96);
+  // paper, drawn once per size: base color, specks, a few fibers
+  paper = document.createElement('canvas');
+  paper.width = wall.width;
+  paper.height = wall.height;
+  const p = paper.getContext('2d');
+  p.setTransform(dpr, 0, 0, dpr, 0, 0);
+  p.fillStyle = PAPER;
+  p.fillRect(0, 0, WW, WH);
+  for (let i = 0; i < (WW * WH) / 500; i++) {
+    p.fillStyle = `rgba(90, 70, 40, ${(0.03 + Math.random() * 0.07).toFixed(3)})`;
+    p.fillRect(Math.random() * WW, Math.random() * WH, 1, 1);
+  }
+  p.strokeStyle = 'rgba(120, 96, 60, 0.07)';
+  p.lineWidth = 1;
+  for (let i = 0; i < 70; i++) {
+    const x = Math.random() * WW, y = Math.random() * WH;
+    p.beginPath();
+    p.moveTo(x, y);
+    p.quadraticCurveTo(x + (Math.random() - 0.5) * 30, y + (Math.random() - 0.5) * 30, x + (Math.random() - 0.5) * 50, y + (Math.random() - 0.5) * 50);
+    p.stroke();
+  }
+}
+
+const TAU = Math.PI * 2;
+const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+// edge shapes: zero at both ends, so every tile keeps its corners
+const fH = t => 0.2 * Math.sin(TAU * t) + 0.08 * Math.sin(2 * TAU * t);
+const fV = t => 0.18 * Math.sin(TAU * t) - 0.09 * Math.sin(3 * TAU * t);
+// how far a spot on the wall has morphed, drifting slowly across it
+function morph(x, y, t) {
+  const phase = (x / WW) * TAU * 0.9 + (y / WH) * 1.3 - t * 0.00009;
+  return smooth(0.15, 0.85, 0.5 + 0.5 * Math.sin(phase));
+}
+const hash = (i, j) => { const s = Math.sin(i * 127.1 + j * 311.7) * 43758.5453; return s - Math.floor(s); };
+const SEG = 10;
+
+function drawWall(now) {
+  if (!paper) return;
+  const t = reduceMotion ? 20000 : now;
+  wctx.drawImage(paper, 0, 0, WW, WH);
+  wctx.lineWidth = 1;
+  wctx.lineJoin = 'round';
+  const cols = Math.ceil(WW / G) + 1;
+  const rows = Math.ceil(WH / G) + 1;
+  for (let j = -1; j < rows; j++) {
+    for (let i = -1; i < cols; i++) {
+      const x0 = i * G, y0 = j * G;
+      const aT = morph(x0 + G / 2, y0, t);
+      const aB = morph(x0 + G / 2, y0 + G, t);
+      const aL = morph(x0, y0 + G / 2, t);
+      const aR = morph(x0 + G, y0 + G / 2, t);
+      wctx.beginPath();
+      for (let s = 0; s <= SEG; s++) { const u = s / SEG; wctx.lineTo(x0 + u * G, y0 + aT * G * fH(u)); }
+      for (let s = 0; s <= SEG; s++) { const u = s / SEG; wctx.lineTo(x0 + G + aR * G * fV(u), y0 + u * G); }
+      for (let s = SEG; s >= 0; s--) { const u = s / SEG; wctx.lineTo(x0 + u * G, y0 + G + aB * G * fH(u)); }
+      for (let s = SEG; s >= 0; s--) { const u = s / SEG; wctx.lineTo(x0 + aL * G * fV(u), y0 + u * G); }
+      wctx.closePath();
+      const dark = ((i + j) & 1) === 1;
+      if (dark) {
+        wctx.fillStyle = 'rgba(28, 25, 20, 0.085)';
+        wctx.fill();
+      }
+      wctx.strokeStyle = 'rgba(28, 25, 20, 0.2)';
+      wctx.stroke();
+
+      // the light tiles that have morphed far enough grow an eye
+      if (!dark) {
+        const cx = x0 + G / 2, cy = y0 + G / 2;
+        const a = morph(cx, cy, t);
+        if (a > 0.72) drawEye(cx, cy, G * 0.2, (a - 0.72) / 0.28, now, hash(i, j));
+      }
+    }
+  }
+}
+
+function drawEye(cx, cy, r, alpha, now, seed) {
+  // blink now and then, each eye on its own schedule
+  const cycleT = ((now / 1000) * (0.11 + seed * 0.05) + seed * 7) % 1;
+  const open = cycleT < 0.025 ? 0.12 : 1;
+  wctx.save();
+  wctx.globalAlpha = alpha * 0.85;
+  wctx.strokeStyle = INK;
+  wctx.lineWidth = 1.4;
+  wctx.beginPath();
+  wctx.moveTo(cx - r, cy);
+  wctx.quadraticCurveTo(cx, cy - r * 0.95 * open, cx + r, cy);
+  wctx.quadraticCurveTo(cx, cy + r * 0.95 * open, cx - r, cy);
+  wctx.closePath();
+  wctx.fillStyle = '#f6f0e2';
+  wctx.fill();
+  wctx.stroke();
+  if (open > 0.5) {
+    const dx = pointer.x - cx, dy = pointer.y - cy;
+    const d = Math.hypot(dx, dy) || 1;
+    const m = Math.min(r * 0.35, d * 0.05);
+    wctx.fillStyle = INK;
+    wctx.beginPath();
+    wctx.arc(cx + (dx / d) * m, cy + (dy / d) * m * 0.6, r * 0.32, 0, TAU);
+    wctx.fill();
+  }
+  wctx.restore();
+}
+
+// =====================================================================
+// the 3d part: a penrose staircase and an impossible triangle.
+// both are real, perfectly ordinary 3d objects that only close up when
+// seen exactly along U, the one direction the camera can't see depth in.
+// =====================================================================
+const U = new THREE.Vector3(1, 2, 1);
+const MAGIC_TH = Math.atan2(U.x, U.z);
+const MAGIC_PH = Math.asin(U.y / U.length());
+
+// the magic view's screen axes (right, up) and depth axis
+const BZ = U.clone().normalize();
+const BX = new THREE.Vector3(0, 1, 0).cross(BZ).normalize();
+const BY = BZ.clone().cross(BX);
+
+// staircase: 6 steps +x, 6 steps +z, 3 steps -x, 3 steps -z. each step rises
+// RISE, so the loop ends exactly 3 * U away from where it began. seen along U,
+// the end lands right on top of the start, one step higher than the last one.
+const SIDES = [[1, 0, 6], [0, 1, 6], [-1, 0, 3], [0, -1, 3]];
+const N = SIDES.reduce((n, s) => n + s[2], 0);
+const D = 3;
+const RISE = (U.y * D) / N;
+const THICK = 1.5;
+const tops = [new THREE.Vector3(0, 0, 0)];
+for (const [dx, dz, n] of SIDES) {
+  for (let k = 0; k < n; k++) {
+    const p = tops[tops.length - 1].clone();
+    p.x += dx;
+    p.z += dz;
+    p.y += RISE;
+    tops.push(p);
+  }
+}
+// tops[N] is a phantom: where step 0 would be if the stairs kept going. it
+// sits exactly D * U from tops[0], so on screen they're the same step.
+
+// triangle: legs of L along x, 2L along y, L along z. the gap is L * U.
+const TRI_L = 2.3;
+const TRI_W = 0.55;
+
+let renderer = null;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas: $('#stage'), antialias: true, alpha: true });
+  renderer.setClearColor(0x000000, 0);
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+} catch (err) {
+  renderer = null;
+}
+
+const scene = new THREE.Scene();
+const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 1000);
+const target = new THREE.Vector3();
+let viewScale = 0.02;
+
+// ink: flat paper where the light hits, hatching where it doesn't, drawn in
+// screen space like an engraving
+const inkMat = new THREE.ShaderMaterial({
+  uniforms: {
+    uPaper: { value: new THREE.Color(PAPER) },
+    uInk: { value: new THREE.Color(INK) },
+    uLight: { value: new THREE.Vector3(0.25, 1, 0.6).normalize() },
+    uPx: { value: 1 },
+  },
+  vertexShader: `
+    varying vec3 vN;
+    void main() {
+      vN = normalize(mat3(modelMatrix) * normal);
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform vec3 uPaper;
+    uniform vec3 uInk;
+    uniform vec3 uLight;
+    uniform float uPx;
+    varying vec3 vN;
+    float hatch(vec2 p, float ang, float spacing) {
+      float v = (p.x * cos(ang) + p.y * sin(ang)) / spacing;
+      float d = abs(fract(v) - 0.5);
+      return smoothstep(0.33, 0.43, d);
+    }
+    void main() {
+      float lum = dot(normalize(vN), uLight);
+      vec2 p = gl_FragCoord.xy / uPx;
+      float ink = 0.0;
+      if (lum < 0.7) ink = max(ink, hatch(p, 0.785, 6.0));
+      if (lum < 0.3) ink = max(ink, hatch(p, -0.785, 6.0));
+      if (lum < -0.2) ink = max(ink, hatch(p, 0.0, 4.0));
+      gl_FragColor = vec4(mix(uPaper, uInk, ink * 0.8), 1.0);
+      #include <colorspace_fragment>
+    }
+  `,
+  polygonOffset: true,
+  polygonOffsetFactor: 1,
+  polygonOffsetUnits: 1,
+});
+const lineMat = new LineMaterial({ color: new THREE.Color(INK), linewidth: 1.7 });
+const figureMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(INK) });
+
+// boxes: { w, h, d, x, y, z } in world units (center + size)
+function addBoxes(parent, boxes, kind) {
+  const edges = [];
+  for (const b of boxes) {
+    const geo = new THREE.BoxGeometry(b.w, b.h, b.d);
+    const mesh = new THREE.Mesh(geo, inkMat);
+    mesh.position.set(b.x, b.y, b.z);
+    mesh.userData.kind = kind;
+    parent.add(mesh);
+    const eg = new THREE.EdgesGeometry(geo);
+    const arr = eg.attributes.position.array;
+    for (let i = 0; i < arr.length; i += 3) edges.push(arr[i] + b.x, arr[i + 1] + b.y, arr[i + 2] + b.z);
+    eg.dispose();
+  }
+  const lg = new LineSegmentsGeometry();
+  lg.setPositions(edges);
+  parent.add(new LineSegments2(lg, lineMat));
+}
+
+const stairs = new THREE.Group();
+addBoxes(stairs, tops.slice(0, N).map(p => ({ w: 1, h: THICK, d: 1, x: p.x, y: p.y - THICK / 2, z: p.z })), 'step');
+scene.add(stairs);
+
+const tri = new THREE.Group();
+{
+  const L = TRI_L, W = TRI_W, h = W / 2;
+  addBoxes(tri, [
+    { w: L + W, h: W, d: W, x: L / 2, y: 0, z: 0 },                 // along +x, corners included
+    { w: W, h: 2 * L, d: W, x: L, y: L + h, z: 0 },                 // up +y from the x corner
+    { w: W, h: W, d: L, x: L, y: 2 * L, z: L / 2 + h },             // out along +z, ending "on" the start
+  ], 'triangle');
+}
+scene.add(tri);
+
+// three small figures who have never reached the top
+function makeFigure() {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.085, 0.26, 4, 10), figureMat);
+  body.position.y = 0.23;
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.095, 12, 10), figureMat);
+  head.position.y = 0.47;
+  const pack = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.16, 0.08), figureMat);
+  pack.position.set(0, 0.28, -0.1);
+  for (const m of [body, head, pack]) m.userData.kind = 'figure';
+  g.add(body, head, pack);
+  g.userData.kind = 'figure';
+  scene.add(g);
+  return g;
+}
+const STEP_TIME = reduceMotion ? 1.9 : 0.95;
+const figures = [0, 6.3, 12.6].map(k => ({ k, mesh: makeFigure() }));
+const fpos = new THREE.Vector3();
+function placeFigure(f) {
+  const i = Math.floor(f.k);
+  const t = f.k - i;
+  const a = tops[i], b = tops[i + 1];
+  fpos.lerpVectors(a, b, t);
+  fpos.y += Math.sin(Math.PI * t) * 0.16;
+  f.mesh.position.copy(fpos);
+  f.mesh.rotation.y = Math.atan2(b.x - a.x, b.z - a.z);
+}
+
+// ---------- layout: fit everything, as seen from the magic angle ----------
+const tmp = new THREE.Vector3();
+function boxCorners(obj, out) {
+  obj.updateMatrixWorld(true);
+  obj.traverse(o => {
+    if (!o.isMesh || o.isLineSegments2 || o.userData.kind === 'figure') return;
+    o.geometry.computeBoundingBox();
+    const bb = o.geometry.boundingBox;
+    for (let c = 0; c < 8; c++) {
+      tmp.set(c & 1 ? bb.max.x : bb.min.x, c & 2 ? bb.max.y : bb.min.y, c & 4 ? bb.max.z : bb.min.z).applyMatrix4(o.matrixWorld);
+      out.push(tmp.clone());
+    }
+  });
+  return out;
+}
+function extent(points) {
+  const e = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity, cz: 0 };
+  for (const p of points) {
+    const x = p.dot(BX), y = p.dot(BY);
+    e.minX = Math.min(e.minX, x); e.maxX = Math.max(e.maxX, x);
+    e.minY = Math.min(e.minY, y); e.maxY = Math.max(e.maxY, y);
+    e.cz += p.dot(BZ) / points.length;
+  }
+  return e;
+}
+
+function placeTriangle(landscape) {
+  tri.position.set(0, 0, 0);
+  const s = extent(boxCorners(stairs, []));
+  const t = extent(boxCorners(tri, []));
+  const tw = t.maxX - t.minX, th = t.maxY - t.minY;
+  let x, y;
+  if (landscape) {
+    x = s.maxX + 1.6 + tw / 2;
+    y = s.maxY - th / 2 - 0.4;
+  } else {
+    x = (s.minX + s.maxX) / 2;
+    y = s.minY - 1.4 - th / 2;
+  }
+  // move it so its projected center lands on (x, y), at the stairs' depth
+  const cx = (t.minX + t.maxX) / 2, cy = (t.minY + t.maxY) / 2;
+  tri.position.copy(BX).multiplyScalar(x - cx).addScaledVector(BY, y - cy).addScaledVector(BZ, s.cz - t.cz);
+}
+
+function propMargins() {
+  const r = sel => { const el = $(sel); return el ? el.getBoundingClientRect() : { left: 0, right: 0, top: 0, bottom: 0, width: 0, height: 0 }; };
+  const wallDoor = r('.wall-door'), win = r('.side-window'), ceiling = r('.ceiling-door');
+  const counter = r('.counter');
+  return {
+    l: Math.max(24, wallDoor.right + 14),
+    r: Math.max(24, innerWidth - Math.min(win.left, counter.left) + 10),
+    t: Math.max(ceiling.bottom + 12, counter.bottom + 8, 56),
+    b: 76,
+  };
+}
+
+function fit() {
+  const W = innerWidth, H = innerHeight;
+  sizeWall();
+  if (!renderer) return;
+  renderer.setSize(W, H, false);
+  lineMat.resolution.set(W, H);
+  inkMat.uniforms.uPx.value = renderer.getPixelRatio();
+  placeTriangle(W / H > 1.05);
+  const pts = boxCorners(stairs, []);
+  boxCorners(tri, pts);
+  // headroom for the figures on the highest steps
+  for (const p of tops) pts.push(p.clone().add(new THREE.Vector3(0, 0.6, 0)));
+  const e = extent(pts);
+  const m = propMargins();
+  const aw = Math.max(80, W - m.l - m.r);
+  const ah = Math.max(80, H - m.t - m.b);
+  viewScale = Math.max((e.maxX - e.minX) / aw, (e.maxY - e.minY) / ah);
+  const dxp = (m.l + aw / 2) - W / 2;
+  const dyp = H / 2 - (m.t + ah / 2);
+  const tx = (e.minX + e.maxX) / 2 - dxp * viewScale;
+  const ty = (e.minY + e.maxY) / 2 - dyp * viewScale;
+  // rotate around a point at the scene's depth, so dragging orbits nicely
+  target.copy(BX).multiplyScalar(tx).addScaledVector(BY, ty).addScaledVector(BZ, e.cz);
+  camera.left = -W / 2 * viewScale;
+  camera.right = W / 2 * viewScale;
+  camera.top = H / 2 * viewScale;
+  camera.bottom = -H / 2 * viewScale;
+  camera.updateProjectionMatrix();
+}
+
+// ---------- the camera, and how badly it's being looked at ----------
+const off = { th: 0, ph: 0 };
+const vel = { th: 0, ph: 0 };
+const dir = new THREE.Vector3();
+let dragging = false;
+let broken = false;
+let drift = null;
+let lastInteract = performance.now();
+let nextDrift = performance.now() + 50000 + Math.random() * 20000;
+const held = new Set();
+
+const BREAK_LINES = [
+  'it only works from here.',
+  "don't look at it like that. it's shy.",
+  "from over there it's just a pile of stairs.",
+  "you've seen how it's done now. please forget.",
+];
+const FIXED_LINES = ['there. fixed.', 'back to normal. normal-ish.', 'there. all the way around again.'];
+
+function applyCamera() {
+  const th = MAGIC_TH + off.th;
+  const ph = clamp(MAGIC_PH + off.ph, 0.08, 1.52);
+  dir.set(Math.cos(ph) * Math.sin(th), Math.sin(ph), Math.cos(ph) * Math.cos(th));
+  camera.position.copy(target).addScaledVector(dir, 200);
+  camera.up.set(0, 1, 0);
+  camera.lookAt(target);
+}
+
+function updateCamera(dt, now) {
+  const keys = held.size > 0;
+  if (keys) {
+    const sx = (held.has('ArrowLeft') ? 1 : 0) - (held.has('ArrowRight') ? 1 : 0);
+    const sy = (held.has('ArrowUp') ? 1 : 0) - (held.has('ArrowDown') ? 1 : 0);
+    off.th = clamp(off.th + sx * dt * 0.9, -1.4, 1.4);
+    off.ph = clamp(off.ph + sy * dt * 0.7, -1.2, 0.8);
+    vel.th = vel.ph = 0;
+  } else if (!dragging) {
+    let goalTh = 0, goalPh = 0;
+    if (drift) {
+      if (now < drift.until) { goalTh = drift.th; goalPh = drift.ph; } else drift.released = true;
+    }
+    const k = drift && !drift.released ? 5 : 36;
+    const c = 2 * Math.sqrt(k);
+    vel.th += (-(off.th - goalTh) * k - vel.th * c) * dt;
+    vel.ph += (-(off.ph - goalPh) * k - vel.ph * c) * dt;
+    off.th += vel.th * dt;
+    off.ph += vel.ph * dt;
+  }
+  const mag = Math.abs(off.th) + Math.abs(off.ph);
+  if (!broken && mag > 0.03) {
+    broken = true;
+    if (dragging || keys) say(cycle('break', BREAK_LINES));
+    else if (drift) say('the room shifted a little. sorry.');
+  }
+  if (broken && !dragging && !keys && mag < 0.002 && Math.abs(vel.th) + Math.abs(vel.ph) < 0.01) {
+    broken = false;
+    off.th = off.ph = vel.th = vel.ph = 0;
+    say(drift ? "fine now. it's fine." : cycle('fixed', FIXED_LINES));
+    drift = null;
+  }
+  // now and then the room slips on its own, then catches itself
+  if (!reduceMotion && !drift && !dragging && !keys && !broken && now > nextDrift && now - lastInteract > 15000) {
+    drift = { th: (Math.random() < 0.5 ? -1 : 1) * 0.09, ph: -0.04, until: now + 2200, released: false };
+    nextDrift = now + 55000 + Math.random() * 25000;
+  }
+  applyCamera();
+}
+
+// ---------- your hands ----------
+const stage = $('#stage');
+const raycaster = new THREE.Raycaster();
+const ndc = new THREE.Vector2();
+let down = null;
+
+stage.addEventListener('pointerdown', e => {
+  down = { x: e.clientX, y: e.clientY, th: off.th, ph: off.ph, id: e.pointerId, moved: false };
+  try { stage.setPointerCapture(e.pointerId); } catch (err) { /* synthetic pointer */ }
+  lastInteract = performance.now();
+});
+stage.addEventListener('pointermove', e => {
+  if (!down || e.pointerId !== down.id) return;
+  const dx = e.clientX - down.x, dy = e.clientY - down.y;
+  if (!down.moved && Math.hypot(dx, dy) < 5) return;
+  down.moved = true;
+  dragging = true;
+  drift = null;
+  stage.classList.add('dragging');
+  off.th = clamp(down.th - dx * 0.006, -1.4, 1.4);
+  off.ph = clamp(down.ph + dy * 0.005, -1.2, 0.8);
+  vel.th = vel.ph = 0;
+  lastInteract = performance.now();
+});
+function release(e) {
+  if (!down || e.pointerId !== down.id) return;
+  if (!down.moved) clickAt(e.clientX, e.clientY);
+  down = null;
+  dragging = false;
+  stage.classList.remove('dragging');
+}
+stage.addEventListener('pointerup', release);
+stage.addEventListener('pointercancel', release);
+
+const ARROWS = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
+stage.addEventListener('keydown', e => {
+  if (!ARROWS.includes(e.key)) return;
+  e.preventDefault();
+  held.add(e.key);
+  drift = null;
+  lastInteract = performance.now();
+});
+stage.addEventListener('keyup', e => { held.delete(e.key); });
+stage.addEventListener('blur', () => held.clear());
+
+const CLICK_LINES = {
+  step: [
+    "a step. it's the first step. it's also the last step.",
+    'every step here is up. check if you want.',
+    "the architect was asked to add an elevator. this was the elevator.",
+  ],
+  figure: [
+    "they're almost at the top. they've been almost at the top for a while.",
+    "don't tell them.",
+    "that one counts every step. it's on step one.",
+    "they don't stop to rest. resting would mean admitting something.",
+  ],
+  triangle: [
+    'a triangle. three corners. all of them right angles. that is more than a triangle is allowed.',
+    "it's solid. it's also not. drag and see.",
+    "it's closed. it has never been closed.",
+  ],
+};
+function clickAt(x, y) {
+  if (!renderer) return;
+  ndc.set((x / innerWidth) * 2 - 1, -(y / innerHeight) * 2 + 1);
+  raycaster.setFromCamera(ndc, camera);
+  const targets = [];
+  scene.traverse(o => { if (o.isMesh && !o.isLineSegments2) targets.push(o); });
+  const hit = raycaster.intersectObjects(targets, false)[0];
+  if (!hit) return;
+  const kind = hit.object.userData.kind;
+  if (CLICK_LINES[kind]) say(cycle(kind, CLICK_LINES[kind]));
+}
+
+// ---------- doors and windows on the wrong walls ----------
+const PROP_LINES = {
+  ceiling: [
+    "that door is on the ceiling. it's a normal door, for someone.",
+    'someone knocks from the other side. from above. from below. from over there.',
+    "it opens. you don't want to know which way.",
+  ],
+  wall: [
+    'that door is a floor now. please wipe your feet on it.',
+    'it leads to this room. every door here does.',
+    'locked. from the ceiling side.',
+  ],
+  window: [
+    'the window faces down. the view is excellent. the view is the floor.',
+    "it's raining sideways out there. that's up, for the rain.",
+    "someone is looking in. it's you, from the other wall.",
+  ],
+  lamp: [
+    "the lamp hangs up from the floor. the light doesn't mind.",
+    'it lights the ceiling from below. from above. it lights the ceiling.',
+  ],
+  walker: [
+    "it's fine. that's its floor.",
+    "it thinks you're the one who's sideways.",
+    "it's been walking up this wall all day. it's also still on floor 1.",
+  ],
+};
+for (const el of document.querySelectorAll('[data-prop]')) {
+  el.addEventListener('click', () => {
+    lastInteract = performance.now();
+    say(cycle('prop-' + el.dataset.prop, PROP_LINES[el.dataset.prop]));
+  });
+}
+
+// the one walking up the right-hand wall
+const wallWalker = $('.wall-walker');
+const ww = { y: 0.8, dir: -1 };
+function updateWallWalker(dt) {
+  const topY = innerHeight * 0.44, botY = innerHeight * 0.86;
+  const speed = (reduceMotion ? 10 : 22) / Math.max(1, botY - topY);
+  ww.y += ww.dir * speed * dt;
+  if (ww.y < 0) { ww.y = 0; ww.dir = 1; }
+  if (ww.y > 1) { ww.y = 1; ww.dir = -1; }
+  const y = topY + ww.y * (botY - topY);
+  // feet on the wall, facing where it's going
+  wallWalker.style.transform = `translateY(${y.toFixed(1)}px) rotate(-90deg) scaleX(${ww.dir < 0 ? 1 : -1})`;
+}
+
+// ---------- idle remarks ----------
+const AMBIENT = [
+  "the stairs don't go anywhere. they're very committed to it.",
+  'three of them have been climbing since before you got here.',
+  "every step is up. you can drag it around and check. it's not.",
+  "the architect was asked to add an elevator. this was the elevator.",
+];
+const pageStart = performance.now();
+let nextAmbient = performance.now() + 24000;
+function ambient(now) {
+  if (now < nextAmbient) return;
+  nextAmbient = now + 26000 + Math.random() * 10000;
+  if (now - lastSay < 15000 || dragging || broken) return;
+  const mins = Math.floor((now - pageStart) / 60000);
+  if (mins >= 1 && Math.random() < 0.45) {
+    say(`you've been watching for ${mins} minute${mins === 1 ? '' : 's'}. everyone is still on the ground floor.`);
+  } else {
+    say(cycle('ambient', AMBIENT));
+  }
+}
+
+// ---------- when you leave the tab (see ../assets/away.js) ----------
+addEventListener('cizole:return', e => {
+  const secs = Math.round(e.detail.awayMs / 1000);
+  if (secs < 3) return;
+  const span = secs < 120 ? `${secs}s` : `${Math.round(secs / 60)} minutes`;
+  say(`you left for ${span}. they kept climbing. still on floor 1.`);
+});
+
+// ---------- the loop ----------
+let running = true;
+let last = performance.now();
+let frameNo = 0;
+function frame(now) {
+  if (!running) return;
+  const dt = Math.min(0.05, (now - last) / 1000);
+  last = now;
+  if (renderer) {
+    updateCamera(dt, now);
+    for (const f of figures) {
+      f.k += dt / STEP_TIME;
+      if (f.k >= N) {
+        f.k -= N;
+        floors++;
+        renderFloors();
+        store.set('cizole.escher.floors', String(floors));
+      }
+      placeFigure(f);
+    }
+    renderer.render(scene, camera);
+  }
+  if (frameNo++ % 3 === 0) drawWall(now);
+  updateWallWalker(dt);
+  ambient(now);
+  requestAnimationFrame(frame);
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    running = false;
+  } else if (!running) {
+    running = true;
+    last = performance.now();
+    requestAnimationFrame(frame);
+  }
+});
+let resizeTimer = 0;
+addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(fit, 120);
+});
+
+fit();
+if (document.fonts) document.fonts.ready.then(fit);
+if (!renderer) say('no 3d here. the stairs are imaginary anyway.');
+requestAnimationFrame(frame);
+window.__escherReady = true;
+</script>
+<script src="../assets/rooms.js"></script>
+<script src="../assets/away.js"></script>
+</body>
+</html>
