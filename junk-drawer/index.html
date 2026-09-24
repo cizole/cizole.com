@@ -950,6 +950,8 @@
     foundSaid = true;
     save('cizole.junk-drawer.found-key', '1');
     say('you found the key to this drawer. the drawer does not have a lock.');
+    // it fits a different drawer, in a different room. it shouldn't.
+    try { localStorage.setItem('cizole.junk.key', '1'); } catch (err) { /* storage off */ }
   }
 
   // ---------- hands ----------

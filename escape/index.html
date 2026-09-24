@@ -812,10 +812,16 @@
     },
     drawer() {
       if (S.drawerOpen) return 'the drawer is empty except for the note: "some things only show up in the dark."';
-      if (!S.key) return "it's locked. there's a tiny keyhole.";
-      S.key = false;
+      let junkKey = false;
+      try { junkKey = localStorage.getItem('cizole.junk.key') === '1'; } catch (err) { /* storage off */ }
+      if (!S.key && !junkKey) return "it's locked. there's a tiny keyhole.";
       S.drawerOpen = true;
       S.flashlight = true;
+      if (!S.key) {
+        // the key from the junk drawer. it was never for that drawer.
+        return 'you still have the key from the junk drawer. it fits. it should not fit. inside: a flashlight with a purple bulb, and a note: "some things only show up in the dark."';
+      }
+      S.key = false;
       return 'the brass key fits (then snaps off in the lock). inside: a flashlight with a purple bulb, and a note: "some things only show up in the dark."';
     },
     painting() {

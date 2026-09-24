@@ -129,11 +129,22 @@
     place(best[0], best[1]);
   }
 
+  // it remembers every time it has given up
+  const memory = {
+    get() { try { return parseInt(localStorage.getItem('cizole.button.tired'), 10) || 0; } catch (err) { return 0; } },
+    set(n) { try { localStorage.setItem('cizole.button.tired', String(n)); } catch (err) { /* storage off */ } },
+  };
+  if (memory.get() > 0) caption.textContent = "it's just a button. it remembers you.";
+
   function giveUp() {
     tired = true;
     btn.classList.add('tired');
     btn.textContent = 'press me (sigh)';
-    sequence([[0, 'fine.'], [900, 'FINE.'], [1800, 'go ahead.']]);
+    const n = memory.get() + 1;
+    memory.set(n);
+    if (n === 1) sequence([[0, 'fine.'], [900, 'FINE.'], [1800, 'go ahead.']]);
+    else if (n < 5) sequence([[0, 'fine.'], [900, `that's ${n} times now.`], [1800, 'go ahead. you always do.']]);
+    else sequence([[0, `${n} times.`], [900, "i don't even run anymore. i just get tired."], [1800, 'go ahead.']]);
   }
 
   function press(cheated) {
