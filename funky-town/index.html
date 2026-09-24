@@ -1,0 +1,727 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>funky town · cizole</title>
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Monoton&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/site.css">
+<style>
+  :root {
+    --pink: #ff2bd6;
+    --cyan: #20f0ff;
+    --orange: #ff8a1f;
+    --purple: #9d4dff;
+    --yellow: #ffe53d;
+  }
+  body {
+    overflow: hidden;
+    background: radial-gradient(ellipse at 50% -10%, #2a0f3d, #07050d 60%);
+    touch-action: manipulation;
+    user-select: none;
+  }
+  body.L3 { --spin: 0.35; }
+
+  /* ---------- disco ball ---------- */
+  .string { position: fixed; left: 50%; top: 0; width: 2px; height: 30px; margin-left: -1px; background: #3a3a44; }
+  .ball {
+    position: fixed;
+    left: 50%;
+    top: 28px;
+    z-index: 2;
+    width: 76px;
+    height: 76px;
+    margin-left: -38px;
+    border-radius: 50%;
+    background:
+      linear-gradient(90deg, rgba(0, 0, 0, 0.35) 1px, transparent 1px) 0 0 / 8px 8px,
+      linear-gradient(rgba(0, 0, 0, 0.35) 1px, transparent 1px) 0 0 / 8px 8px,
+      radial-gradient(circle at 35% 30%, #fff, #c9c9d6 35%, #6d6d7d 70%, #25252e);
+    box-shadow: 0 0 30px rgba(255, 255, 255, 0.12);
+    filter: brightness(0.35);
+    animation: spin calc(6s * var(--spin, 1)) linear infinite;
+    animation-play-state: paused;
+    transition: filter 1s;
+  }
+  body.on .ball { filter: none; animation-play-state: running; box-shadow: 0 0 40px rgba(255, 255, 255, 0.25), 0 0 90px rgba(255, 43, 214, 0.25); }
+  @keyframes spin { to { background-position: 80px 0, 0 0, 0 0; } }
+  .ball::after {
+    content: "";
+    position: absolute;
+    left: 20%;
+    top: 16%;
+    width: 16px;
+    height: 16px;
+    background: radial-gradient(circle, #fff 0 18%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  body.on .ball.glint::after { opacity: 1; transition: none; }
+
+  /* light specks thrown by the ball */
+  .specks { position: fixed; inset: 0; overflow: hidden; pointer-events: none; opacity: 0; transition: opacity 1.5s; }
+  body.on .specks { opacity: 1; }
+  .speck {
+    position: absolute;
+    left: 0;
+    width: var(--s);
+    height: var(--s);
+    border-radius: 50%;
+    background: var(--c);
+    box-shadow: 0 0 8px var(--c);
+    opacity: 0.55;
+    animation: sweep calc(var(--dur) * var(--spin, 1)) linear infinite;
+    animation-delay: var(--dl);
+  }
+  @keyframes sweep {
+    from { transform: translateX(-5vw); }
+    to { transform: translateX(105vw); }
+  }
+
+  /* ---------- neon sign ---------- */
+  .sign-wrap { position: fixed; left: 0; right: 0; top: calc(112px + 2vh); text-align: center; pointer-events: none; }
+  .sign {
+    margin: 0;
+    font-family: "Monoton", cursive;
+    font-size: clamp(34px, 8.5vw, 104px);
+    font-weight: 400;
+    line-height: 1.1;
+    white-space: nowrap;
+    transition: transform 0.08s;
+  }
+  .sign.bump { transform: scale(1.025); transition: none; }
+  body.L3 .sign { animation: hue 3s linear infinite; }
+  @keyframes hue { to { filter: hue-rotate(360deg); } }
+  .gap { display: inline-block; width: 0.45em; }
+  .tube { color: #2b1630; }
+  .tube.lit {
+    color: #ffd6f6;
+    text-shadow: 0 0 2px #fff, 0 0 8px var(--pink), 0 0 18px var(--pink), 0 0 38px var(--pink), 0 0 70px rgba(255, 43, 214, 0.6);
+  }
+  .tube.lit.cyan {
+    color: #d6fdff;
+    text-shadow: 0 0 2px #fff, 0 0 8px var(--cyan), 0 0 18px var(--cyan), 0 0 38px var(--cyan), 0 0 70px rgba(32, 240, 255, 0.6);
+  }
+  .tube.lit.broken { animation: flicker 4.3s infinite; }
+  @keyframes flicker {
+    0%, 18%, 22%, 61%, 64%, 100% { opacity: 1; }
+    20%, 62% { opacity: 0.15; }
+  }
+  .pop { margin: 6px 0 0; color: var(--dim); font-size: 13px; letter-spacing: 0.1em; }
+
+  /* ---------- dance floor ---------- */
+  .floor-wrap {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 64px;
+    height: 46vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    perspective: 700px;
+    perspective-origin: 50% -20%;
+    pointer-events: none;
+  }
+  .floor {
+    width: min(860px, 94vw);
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: min(6px, 0.8vw);
+    transform: rotateX(52deg);
+    transform-origin: 50% 100%;
+    pointer-events: auto;
+  }
+  .tile {
+    aspect-ratio: 1;
+    border-radius: 4px;
+    background: #140f20;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+    transition: background 0.18s, box-shadow 0.18s;
+  }
+  .tile.lit { background: var(--c); box-shadow: 0 0 14px var(--c), inset 0 0 12px rgba(255, 255, 255, 0.5); }
+  .tile.hit { background: var(--h); box-shadow: 0 0 24px var(--h), inset 0 0 14px #fff; transition: none; }
+  body.on .floor { cursor: pointer; }
+
+  .wash {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at 50% 60%, rgba(255, 43, 214, 0.22), transparent 70%);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s;
+  }
+  body.L3 .wash { background: radial-gradient(circle at 50% 60%, rgba(32, 240, 255, 0.22), rgba(255, 43, 214, 0.14) 50%, transparent 75%); }
+  body.L2.beat .wash, body.L3.beat .wash { opacity: 1; transition: none; }
+
+  /* ---------- hud ---------- */
+  .hud {
+    position: fixed;
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    font-size: 13px;
+  }
+  .announcer { margin: 0; min-height: 1.4em; transition: opacity 0.4s; }
+  .announcer.fade { opacity: 0; }
+  .meter { flex: none; display: flex; align-items: center; gap: 10px; color: var(--dim); }
+  .bar { width: 160px; height: 10px; overflow: hidden; border-radius: 5px; background: #1a1424; }
+  .bar i {
+    display: block;
+    width: 0;
+    height: 100%;
+    background: linear-gradient(90deg, var(--cyan), var(--pink) 60%, var(--acid));
+    box-shadow: 0 0 10px var(--pink);
+    transition: width 0.15s linear;
+  }
+  .meter b { min-width: 10em; color: var(--fg); font-weight: 400; }
+  @media (max-width: 600px) {
+    .hud { flex-direction: column-reverse; align-items: flex-start; gap: 6px; }
+  }
+
+  .mute {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    z-index: 100;
+    padding: 6px 12px;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(14, 13, 11, 0.85);
+    color: var(--dim);
+    font: 14px var(--font);
+    cursor: pointer;
+  }
+  .mute:hover { color: var(--pink); }
+  .mute[hidden] { display: none; }
+
+  /* ---------- the breaker ---------- */
+  .breaker {
+    position: fixed;
+    left: 50%;
+    bottom: 22vh;
+    z-index: 20;
+    transform: translateX(-50%);
+    padding: 22px 26px;
+    border: 1px solid #2a2333;
+    border-radius: 12px;
+    background: rgba(10, 8, 14, 0.92);
+    text-align: center;
+    white-space: nowrap;
+  }
+  .breaker[hidden] { display: none; }
+  .breaker p { margin: 0 0 14px; color: var(--dim); }
+  .breaker button {
+    padding: 12px 20px;
+    border: 2px solid #3a3342;
+    border-radius: 8px;
+    background: #1a1620;
+    color: var(--fg);
+    font: 700 16px var(--font);
+    cursor: pointer;
+  }
+  .breaker button:hover { border-color: var(--pink); color: var(--pink); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ball, .speck { animation: none; }
+    body.L3 .sign { animation: none; }
+  }
+</style>
+</head>
+<body class="L0">
+<a class="lobby-link" href="../">&larr; lobby</a>
+<button class="mute" id="mute" type="button" hidden>music: on</button>
+
+<div class="specks" id="specks" aria-hidden="true"></div>
+<div class="wash" aria-hidden="true"></div>
+<div class="string" aria-hidden="true"></div>
+<div class="ball" id="ball" aria-hidden="true"></div>
+
+<div class="sign-wrap">
+  <h1 class="sign" id="sign" aria-label="funky town"></h1>
+  <p class="pop" id="pop">population: 0</p>
+</div>
+
+<div class="floor-wrap"><div class="floor" id="floor" aria-hidden="true"></div></div>
+
+<div class="hud">
+  <p class="announcer" id="announcer" role="status"></p>
+  <div class="meter">
+    <span>funk</span>
+    <div class="bar"><i id="fill"></i></div>
+    <b id="level">barely funky</b>
+  </div>
+</div>
+
+<div class="breaker" id="breaker">
+  <p>the power is off.</p>
+  <button type="button" id="flip">flip the breaker</button>
+</div>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const NEON = ['#ff2bd6', '#20f0ff', '#c8ff3d', '#ff8a1f', '#9d4dff', '#ffe53d'];
+  const COLS = 12;
+  const ROWS = 7;
+
+  // ---------- build the room ----------
+  const sign = $('#sign');
+  [...'FUNKY TOWN'].forEach((ch, i) => {
+    const s = document.createElement('span');
+    s.textContent = ch;
+    s.setAttribute('aria-hidden', 'true');
+    s.className = ch === ' ' ? 'gap' : 'tube' + (i > 5 ? ' cyan' : '') + (ch === 'W' ? ' broken' : '');
+    sign.appendChild(s);
+  });
+
+  const specks = $('#specks');
+  for (let i = 0; i < 38; i++) {
+    const s = document.createElement('i');
+    s.className = 'speck';
+    const dur = 10 + Math.random() * 6;
+    s.style.cssText = `top:${(4 + Math.random() * 70).toFixed(1)}%;--s:${(3 + Math.random() * 6).toFixed(1)}px;` +
+      `--c:${Math.random() < 0.6 ? '#fff' : pick(NEON)};--dur:${dur.toFixed(1)}s;--dl:${(-Math.random() * dur).toFixed(1)}s`;
+    specks.appendChild(s);
+  }
+
+  const floor = $('#floor');
+  const tiles = [];
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const el = document.createElement('div');
+      el.className = 'tile';
+      el.dataset.i = tiles.length;
+      floor.appendChild(el);
+      tiles.push({ el, r, c, hitTimer: 0, lastHover: 0 });
+    }
+  }
+
+  // ---------- announcer ----------
+  const announcerEl = $('#announcer');
+  let announceTimer;
+  function announce(text) {
+    clearTimeout(announceTimer);
+    announcerEl.classList.add('fade');
+    announceTimer = setTimeout(() => {
+      announcerEl.textContent = text;
+      announcerEl.classList.remove('fade');
+    }, 300);
+  }
+
+  // ---------- audio ----------
+  const BPM = 118;
+  const STEP = 60 / BPM / 4; // one 16th note
+  const SWING = 0.14;
+  let ctx, master, noise, wah, wahDepth;
+
+  function initAudio() {
+    ctx = new AudioContext();
+    const comp = ctx.createDynamicsCompressor();
+    comp.threshold.value = -14;
+    comp.ratio.value = 4;
+    master = ctx.createGain();
+    master.gain.value = 0.85;
+    master.connect(comp).connect(ctx.destination);
+
+    noise = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+    const d = noise.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+
+    // the chords run through a filter that starts wobbling at max funk
+    wah = ctx.createBiquadFilter();
+    wah.type = 'lowpass';
+    wah.frequency.value = 2200;
+    wah.Q.value = 6;
+    const lfo = ctx.createOscillator();
+    lfo.frequency.value = BPM / 60 / 2;
+    wahDepth = ctx.createGain();
+    wahDepth.gain.value = 0;
+    lfo.connect(wahDepth).connect(wah.frequency);
+    lfo.start();
+    wah.connect(master);
+  }
+
+  function env(g, t, peak, attack, decay) {
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(peak, t + attack);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + attack + decay);
+  }
+  function kick(t) {
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.frequency.setValueAtTime(150, t);
+    o.frequency.exponentialRampToValueAtTime(45, t + 0.12);
+    env(g, t, 1, 0.003, 0.3);
+    o.connect(g).connect(master);
+    o.start(t);
+    o.stop(t + 0.35);
+  }
+  function noiseHit(t, type, freq, peak, dur, q = 1) {
+    const s = ctx.createBufferSource();
+    s.buffer = noise;
+    const f = ctx.createBiquadFilter();
+    f.type = type;
+    f.frequency.value = freq;
+    f.Q.value = q;
+    const g = ctx.createGain();
+    env(g, t, peak, 0.002, dur);
+    s.connect(f).connect(g).connect(master);
+    s.start(t, Math.random() * 0.5);
+    s.stop(t + dur + 0.05);
+  }
+  function clap(t) {
+    for (let i = 0; i < 3; i++) noiseHit(t + i * 0.012, 'bandpass', 1500, 0.5, i === 2 ? 0.18 : 0.02, 0.8);
+  }
+  const hat = (t, open) => noiseHit(t, 'highpass', 7500, open ? 0.16 : 0.07, open ? 0.14 : 0.035);
+  function bass(t, f) {
+    const o = ctx.createOscillator();
+    o.type = 'sawtooth';
+    o.frequency.value = f;
+    const flt = ctx.createBiquadFilter();
+    flt.type = 'lowpass';
+    flt.Q.value = 8;
+    flt.frequency.setValueAtTime(1600, t);
+    flt.frequency.exponentialRampToValueAtTime(180, t + 0.12);
+    const g = ctx.createGain();
+    env(g, t, 0.45, 0.004, 0.18);
+    o.connect(flt).connect(g).connect(master);
+    o.start(t);
+    o.stop(t + 0.25);
+  }
+  function chord(t, freqs) {
+    for (const f of freqs) {
+      const o = ctx.createOscillator();
+      o.type = 'square';
+      o.frequency.value = f;
+      o.detune.value = (Math.random() - 0.5) * 8;
+      const g = ctx.createGain();
+      env(g, t, 0.05, 0.003, 0.12);
+      o.connect(g).connect(wah);
+      o.start(t);
+      o.stop(t + 0.2);
+    }
+  }
+  function horn(t, f, len) {
+    const flt = ctx.createBiquadFilter();
+    flt.type = 'lowpass';
+    flt.Q.value = 2;
+    flt.frequency.setValueAtTime(600, t);
+    flt.frequency.exponentialRampToValueAtTime(3200, t + 0.06);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.13, t + 0.03);
+    g.gain.setValueAtTime(0.13, t + len * 0.7);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+    for (const detune of [-7, 7]) {
+      const o = ctx.createOscillator();
+      o.type = 'sawtooth';
+      o.frequency.value = f;
+      o.detune.value = detune;
+      o.connect(flt);
+      o.start(t);
+      o.stop(t + len + 0.05);
+    }
+    flt.connect(g).connect(master);
+  }
+  function cowbell(t) {
+    const bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = 800;
+    bp.Q.value = 1.5;
+    const g = ctx.createGain();
+    env(g, t, 0.1, 0.002, 0.25);
+    for (const f of [587, 845]) {
+      const o = ctx.createOscillator();
+      o.type = 'square';
+      o.frequency.value = f;
+      o.connect(bp);
+      o.start(t);
+      o.stop(t + 0.3);
+    }
+    bp.connect(g).connect(master);
+  }
+  function blip(f) {
+    const t = ctx.currentTime;
+    const o = ctx.createOscillator();
+    o.type = 'square';
+    o.frequency.value = f;
+    const flt = ctx.createBiquadFilter();
+    flt.type = 'lowpass';
+    flt.Q.value = 10;
+    flt.frequency.setValueAtTime(4000, t);
+    flt.frequency.exponentialRampToValueAtTime(400, t + 0.2);
+    const g = ctx.createGain();
+    env(g, t, 0.16, 0.003, 0.25);
+    o.connect(flt).connect(g).connect(master);
+    o.start(t);
+    o.stop(t + 0.3);
+  }
+  function buzz() {
+    const t = ctx.currentTime;
+    const o = ctx.createOscillator();
+    o.type = 'square';
+    o.frequency.value = 100;
+    const g = ctx.createGain();
+    env(g, t, 0.04, 0.005, 0.06);
+    o.connect(g).connect(master);
+    o.start(t);
+    o.stop(t + 0.08);
+  }
+
+  // ---------- the groove (E dorian, two bars of 16ths) ----------
+  const N = {
+    E2: 82.41, G2: 98.0, A2: 110.0, B2: 123.47, D3: 146.83, E3: 164.81, G3: 196.0, A3: 220.0,
+    B3: 246.94, Cs4: 277.18, D4: 293.66, E4: 329.63, Fs4: 369.99, G4: 392.0, A4: 440.0,
+    B4: 493.88, D5: 587.33, E5: 659.25, G5: 783.99, A5: 880.0, B5: 987.77, D6: 1174.66, E6: 1318.51, G6: 1567.98,
+  };
+  const EM9 = [N.G3, N.B3, N.D4, N.Fs4];
+  const G6 = [N.B3, N.D4, N.E4, N.G4];
+  const A9 = [N.Cs4, N.E4, N.G4, N.B4];
+  const CHORD_STEPS = [3, 6, 11, 14];
+  const HORNS = { 22: [N.B4, 0.12], 23: [N.D5, 0.12], 24: [N.E5, 0.4], 30: [N.D5, 0.1], 31: [N.B4, 0.1] };
+  const SCALE = [N.E4, N.G4, N.A4, N.B4, N.D5, N.E5, N.G5, N.A5, N.B5, N.D6, N.E6, N.G6];
+
+  function bassNote(s) {
+    if (s === 15) return N.D3; // pickups into the next chord
+    if (s === 31) return N.B2;
+    if (s % 2) return null;
+    const pair = s < 16 ? [N.E2, N.E3] : s < 24 ? [N.G2, N.G3] : [N.A2, N.A3];
+    return pair[(s / 2) % 2]; // octave jumps
+  }
+
+  function playStep(s, t) {
+    if (s % 4 === 0) kick(t);
+    if (s % 8 === 4) clap(t);
+    if (s % 4 === 2) hat(t, true);
+    else if (level >= 1 && s % 2) hat(t, false);
+    const b = bassNote(s);
+    if (b) bass(t, b);
+    if (level >= 1 && CHORD_STEPS.includes(s % 16)) chord(t, s < 16 ? EM9 : s < 24 ? G6 : A9);
+    if (level >= 2 && HORNS[s]) horn(t, ...HORNS[s]);
+    if (level >= 3 && s % 2 === 0) cowbell(t);
+    if (s % 4 === 0) setTimeout(onBeat, Math.max(0, (t - ctx.currentTime) * 1000));
+  }
+
+  let step = 0;
+  let gridTime = 0;
+  let gridOrigin = 0;
+  let scheduler = null;
+  function schedule() {
+    while (gridTime < ctx.currentTime + 0.12) {
+      playStep(step, gridTime + (step % 2 ? STEP * SWING : 0));
+      gridTime += STEP;
+      step = (step + 1) % 32;
+    }
+  }
+  function startClock() {
+    gridTime = ctx.currentTime + 0.08;
+    gridOrigin = gridTime;
+    step = 0;
+    clearInterval(scheduler);
+    scheduler = setInterval(schedule, 25);
+  }
+  // how far (in seconds) the sound you're hearing right now is from the nearest 8th note
+  function offBeat() {
+    const heard = ctx.currentTime - (ctx.outputLatency || 0) - (ctx.baseLatency || 0);
+    const grid = STEP * 2;
+    const phase = (((heard - gridOrigin) % grid) + grid) % grid;
+    return Math.min(phase, grid - phase);
+  }
+
+  // ---------- the funk ----------
+  const TH = [0, 30, 60, 90];
+  const LABELS = ['barely funky', 'funky', 'dangerously funky', 'call someone'];
+  let funk = 30;
+  let level = 1;
+  let started = false;
+  let lastInput = performance.now();
+  let watchingSaid = false;
+  let overloadSince = 0;
+  let complaintFiled = false;
+
+  function levelFor(f, cur) {
+    let L = 0;
+    for (let i = 1; i < TH.length; i++) if (f >= TH[i] - (i <= cur ? 6 : 0)) L = i;
+    return L;
+  }
+  const UP = [
+    '',
+    'chords have arrived. things are funky now.',
+    'horns. nobody called the horns. they came anyway.',
+    'cowbell has been added. this was not a request.',
+  ];
+  const DOWN = [
+    'the dance floor is disappointed in you.',
+    'the horns have left the building.',
+    'the funk is leaving. do something.',
+  ];
+  function setLevel(L) {
+    if (L === level) return;
+    announce(L > level ? UP[L] : DOWN[L]);
+    level = L;
+    document.body.classList.remove('L0', 'L1', 'L2', 'L3');
+    document.body.classList.add('L' + L);
+    $('#level').textContent = LABELS[L];
+    $('#pop').textContent = L === 3 ? 'population: 1 (dancing)' : 'population: 1';
+    if (wahDepth) wahDepth.gain.setTargetAtTime(L === 3 ? 1400 : 0, ctx.currentTime, 0.2);
+    if (L === 3) overloadSince = performance.now();
+  }
+
+  // ---------- the floor ----------
+  let beats = 0;
+  const ball = $('#ball');
+  function onBeat() {
+    beats++;
+    ball.classList.toggle('glint', beats % 2 === 0);
+    sign.classList.add('bump');
+    document.body.classList.add('beat');
+    setTimeout(() => { sign.classList.remove('bump'); document.body.classList.remove('beat'); }, 90);
+    if (reduceMotion && beats % 2) return;
+
+    const cx = (COLS - 1) / 2;
+    const cy = (ROWS - 1) / 2;
+    for (const t of tiles) {
+      let on;
+      let color;
+      if (level === 0) {
+        on = Math.random() < 0.08;
+        color = NEON[beats % 2];
+      } else if (level === 1) {
+        on = (t.r + t.c + beats) % 2 === 0;
+        color = NEON[beats % 2];
+      } else if (level === 2) {
+        on = (t.c + t.r + beats) % 3 === 0;
+        color = NEON[(t.c + beats) % NEON.length];
+      } else {
+        const d = Math.round(Math.hypot(t.c - cx, t.r - cy));
+        on = d % 3 === beats % 3 || Math.random() < 0.1;
+        color = NEON[(d + beats) % NEON.length];
+      }
+      t.el.classList.toggle('lit', on);
+      if (on) t.el.style.setProperty('--c', color);
+    }
+  }
+
+  function flash(t, color, ms) {
+    t.el.style.setProperty('--h', color);
+    t.el.classList.add('hit');
+    clearTimeout(t.hitTimer);
+    t.hitTimer = setTimeout(() => t.el.classList.remove('hit'), ms);
+  }
+  function ripple(from, color) {
+    for (const t of tiles) {
+      const d = Math.hypot(t.c - from.c, t.r - from.r);
+      if (d < 4.5) setTimeout(() => flash(t, color, 180), d * 55);
+    }
+  }
+
+  function stomp(t) {
+    if (!started) return;
+    lastInput = performance.now();
+    watchingSaid = false;
+    const onTime = offBeat() < 0.07;
+    const color = pick(NEON);
+    blip(SCALE[t.c]);
+    if (onTime) ripple(t, color);
+    else flash(t, color, 260);
+    funk = Math.min(100, funk + (onTime ? (level === 3 ? 7 : 9) : 3));
+  }
+
+  floor.addEventListener('pointerdown', e => {
+    const el = e.target.closest('.tile');
+    if (el) stomp(tiles[+el.dataset.i]);
+  });
+  floor.addEventListener('pointerover', e => {
+    const el = e.target.closest('.tile');
+    if (!el || !started || e.pointerType === 'touch') return;
+    const t = tiles[+el.dataset.i];
+    const now = performance.now();
+    if (now - t.lastHover < 400) return;
+    t.lastHover = now;
+    lastInput = now;
+    flash(t, pick(NEON), 180);
+    funk = Math.min(100, funk + 0.4); // shuffling around counts, a little
+  });
+  const KEYS = 'qwertyuiop[]';
+  addEventListener('keydown', e => {
+    const col = KEYS.indexOf(e.key.toLowerCase());
+    if (col < 0 || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+    stomp(tiles[3 * COLS + col]);
+  });
+
+  // ---------- power on ----------
+  $('#flip').addEventListener('click', () => {
+    if (ctx) return;
+    initAudio();
+    ctx.resume();
+    $('#breaker').hidden = true;
+    const tubes = [...document.querySelectorAll('.tube')];
+    tubes.forEach((tube, i) => setTimeout(() => { tube.classList.add('lit'); buzz(); }, 150 + i * 110));
+    setTimeout(() => {
+      started = true;
+      document.body.classList.add('on');
+      document.body.classList.replace('L0', 'L1');
+      $('#pop').textContent = 'population: 1';
+      $('#level').textContent = LABELS[level];
+      $('#mute').hidden = false;
+      lastInput = performance.now();
+      startClock();
+      announce('the power is on. stomp the floor on the beat.');
+      setTimeout(() => { if (level === 1) announce('the funk is not guaranteed.'); }, 7000);
+    }, 150 + tubes.length * 110 + 350);
+  });
+
+  let musicOn = true;
+  $('#mute').addEventListener('click', () => {
+    musicOn = !musicOn;
+    $('#mute').textContent = musicOn ? 'music: on' : 'music: off';
+    master.gain.setTargetAtTime(musicOn ? 0.85 : 0, ctx.currentTime, 0.05);
+  });
+
+  // browsers throttle timers in background tabs, which would wreck the groove
+  document.addEventListener('visibilitychange', () => {
+    if (!started) return;
+    if (document.hidden) {
+      clearInterval(scheduler);
+      ctx.suspend();
+    } else {
+      ctx.resume().then(startClock);
+    }
+  });
+
+  // ---------- main loop ----------
+  const fill = $('#fill');
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.1, (now - last) / 1000);
+    last = now;
+    if (started) {
+      funk = Math.max(0, funk - (level === 3 ? 7 : 3.5) * dt);
+      setLevel(levelFor(funk, level));
+      fill.style.width = funk.toFixed(1) + '%';
+      if (!watchingSaid && now - lastInput > 12000) {
+        watchingSaid = true;
+        announce('the dance floor is watching.');
+      }
+      if (level === 3 && !complaintFiled && now - overloadSince > 20000) {
+        complaintFiled = true;
+        announce('the neighbors have filed a noise complaint. it has been ignored.');
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

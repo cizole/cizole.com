@@ -36,7 +36,6 @@ Room ideas not built yet (numbers continue from the lobby):
 - the light switch: turning the lights off makes something in the room move
 - 404 department: an increasingly unhelpful search party
 - a single checkbox whose label keeps changing after you check it
-- server room: the servers complain when hovered
 - nothing: a page called "nothing" with an absurd amount of hidden interaction
 - uptime: "cizole.com: operational / cole: questionable / motivation: intermittent / cat interference: elevated"
 

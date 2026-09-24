@@ -1,0 +1,1045 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>server room · cizole</title>
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/site.css">
+<style>
+  body { overflow-x: hidden; }
+  .page { padding: 56px 16px 32px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .marker { font-family: "Permanent Marker", cursive; }
+
+  .room { position: relative; width: 680px; margin: 0 auto; }
+
+  /* ---------- wall ---------- */
+  .wall { position: relative; height: 92px; }
+  .sign {
+    position: absolute;
+    left: 8px;
+    top: 16px;
+    padding: 7px 12px;
+    border-radius: 2px;
+    background: #d9d4c7;
+    color: #1b1b1b;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+  }
+  .sign small { display: block; font-size: 10px; font-weight: 400; letter-spacing: 0; }
+  .beacon {
+    position: absolute;
+    left: 50%;
+    top: 24px;
+    width: 26px;
+    height: 16px;
+    margin-left: -13px;
+    border-radius: 13px 13px 2px 2px;
+    background: #3a1311;
+    box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.4);
+  }
+  .beacon::after {
+    content: "";
+    position: absolute;
+    left: -4px;
+    right: -4px;
+    bottom: -5px;
+    height: 5px;
+    border-radius: 1px;
+    background: #2a2b2f;
+  }
+  .thermo {
+    position: absolute;
+    right: 8px;
+    top: 18px;
+    padding: 6px 10px;
+    border: 1px solid #2c2d31;
+    border-radius: 4px;
+    background: #161719;
+    color: var(--dim);
+    font-size: 11px;
+  }
+  .thermo b { color: var(--acid); font-weight: 400; }
+
+  /* ---------- racks ---------- */
+  .racks {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 36px;
+  }
+  .rack {
+    --u: 24px;
+    position: relative;
+    width: 264px;
+    padding: 14px 18px 18px;
+    border: 3px solid #1f2024;
+    border-radius: 4px;
+    background: #0c0c0e;
+    box-shadow: 0 24px 40px rgba(0, 0, 0, 0.55);
+  }
+  .rack::before, .rack::after {
+    content: "";
+    position: absolute;
+    top: 10px;
+    bottom: 10px;
+    width: 9px;
+    background:
+      linear-gradient(90deg, #1d1e22 0 2px, transparent 2px 7px, #1d1e22 7px),
+      repeating-linear-gradient(#1d1e22 0 6px, #050506 6px 10px, #1d1e22 10px 13px);
+  }
+  .rack::before { left: 5px; }
+  .rack::after { right: 5px; }
+  .rack-label { position: absolute; left: 0; top: -24px; }
+  .units {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-height: calc(12 * var(--u) + 11 * 2px);
+    margin: 0 -8px;
+  }
+  .rack-note {
+    position: absolute;
+    left: 40px;
+    bottom: 34px;
+    padding: 2px 10px;
+    background: #e8d9a8;
+    color: #1b1b1b;
+    font-size: 12px;
+    transform: rotate(-3deg);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  }
+
+  /* label-maker tape */
+  .tag {
+    flex: none;
+    padding: 1px 5px;
+    border-radius: 1px;
+    background: #ecebe4;
+    color: #111;
+    font-size: 9px;
+    line-height: 1.4;
+    letter-spacing: 0.03em;
+  }
+
+  /* ---------- one server ---------- */
+  .unit {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    height: calc(var(--u) * var(--h) + (var(--h) - 1) * 2px);
+    padding: 0 14px 0 16px;
+    border: 0;
+    border-radius: 2px;
+    background: linear-gradient(#26282c, #1b1c1f);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), inset 0 -1px 0 rgba(0, 0, 0, 0.6);
+    color: var(--fg);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+  .unit:hover { background: linear-gradient(#2c2e33, #202125); }
+  .unit:focus-visible { outline: 2px solid var(--acid); outline-offset: 1px; }
+  /* rack ears */
+  .unit::before, .unit::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    width: 5px;
+    height: 5px;
+    margin-top: -2.5px;
+    border-radius: 50%;
+    background: #6a6c72;
+    box-shadow: inset 0 0 0 1px #2a2b2f;
+  }
+  .unit::before { left: 4px; }
+  .unit::after { right: 4px; }
+
+  .vent {
+    flex: 1;
+    align-self: stretch;
+    margin: 5px 0;
+    border-radius: 1px;
+    background: repeating-linear-gradient(90deg, #0b0b0c 0 2px, transparent 2px 4px);
+    opacity: 0.8;
+  }
+  .leds { flex: none; display: flex; gap: 4px; }
+  .led { width: 5px; height: 5px; border-radius: 50%; background: #1d2a12; }
+  .led.act {
+    background: var(--acid);
+    box-shadow: 0 0 5px var(--acid);
+    animation: blink calc(var(--d) * var(--speed, 1)) steps(1) infinite;
+    animation-delay: var(--dl);
+  }
+  @keyframes blink { 50% { opacity: 0.15; } }
+  .led.health { background: #4be36a; box-shadow: 0 0 5px #4be36a; }
+
+  .bays {
+    flex: 1;
+    align-self: stretch;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-auto-rows: 1fr;
+    gap: 2px;
+    margin: 4px 0;
+  }
+  .bay {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 3px;
+    border: 1px solid #2f3136;
+    border-radius: 1px;
+    background: #101113;
+  }
+  .bay .led { width: 3px; height: 3px; }
+
+  .lcd {
+    flex: none;
+    min-width: 78px;
+    padding: 2px 6px;
+    border: 1px solid #243320;
+    background: #0d1a0b;
+    color: var(--acid);
+    font-size: 10px;
+    text-shadow: 0 0 4px rgba(200, 255, 61, 0.6);
+  }
+
+  .unit.blank {
+    background: #17181b radial-gradient(circle, #0a0a0b 1px, transparent 1.5px) 0 0 / 6px 6px;
+  }
+  .unit.prod { background: linear-gradient(#2c2f36, #202227); }
+  .tape {
+    position: absolute;
+    left: 34%;
+    top: 3px;
+    padding: 1px 9px;
+    background: #e8d9a8;
+    color: #1b1b1b;
+    font-size: 11px;
+    white-space: nowrap;
+    transform: rotate(-3deg);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+    pointer-events: none;
+  }
+
+  /* moods */
+  .talking { --speed: 0.1; }
+  .warm { --speed: 0.45; }
+  .hot { --speed: 0.15; animation: shiver 0.08s infinite; }
+  @keyframes shiver { 50% { translate: 0.6px 0; } }
+  .warm .led.health, .nodns .unit:not(.blank) .led.health {
+    background: #ffb030;
+    box-shadow: 0 0 6px #ffb030;
+  }
+  .hot .led.health, .alarmed .led.health {
+    background: #ff4a3a;
+    box-shadow: 0 0 7px #ff4a3a;
+    animation: blink 0.3s steps(1) infinite;
+  }
+  .down .led, .down .pled {
+    background: #1a1b1d !important;
+    box-shadow: none !important;
+    animation: none !important;
+  }
+  .unit.down { background: linear-gradient(#1a1b1e, #141517); }
+  .booting .led.act { animation-duration: 0.07s; }
+
+  /* ---------- the raspberry pi, taped into rack b ---------- */
+  .pi {
+    position: absolute;
+    left: 34px;
+    bottom: 26px;
+    z-index: 2;
+    width: 66px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    border-radius: 3px;
+    background: #1f6b3a;
+    box-shadow: inset 0 0 0 1px #154d29, 0 3px 6px rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+    transition: transform 0.4s cubic-bezier(0.3, 1.4, 0.5, 1);
+  }
+  .pi:focus-visible { outline: 2px solid var(--acid); outline-offset: 2px; }
+  .pi .chip { position: absolute; left: 24px; top: 12px; width: 16px; height: 16px; background: #1b1b1b; }
+  .pi .usb { position: absolute; right: -3px; width: 12px; height: 10px; background: #bfc3c8; }
+  .pi .usb.a { top: 6px; }
+  .pi .usb.b { top: 22px; }
+  .pi .pled { position: absolute; left: 6px; top: 6px; width: 4px; height: 4px; border-radius: 50%; background: #ff4a3a; box-shadow: 0 0 4px #ff4a3a; }
+  .pi .led.act { position: absolute; left: 6px; top: 14px; width: 4px; height: 4px; }
+  .pi .duct {
+    position: absolute;
+    left: -12px;
+    right: -12px;
+    top: 27px;
+    height: 10px;
+    background: repeating-linear-gradient(90deg, #9ea3a8 0 3px, #8c9196 3px 5px);
+    opacity: 0.93;
+    transform: rotate(-4deg);
+  }
+  .pi .note { position: absolute; left: 38px; top: -17px; color: #e8d9a8; font-size: 12px; transform: rotate(6deg); }
+  .pi.down { transform: translateY(14px) rotate(-14deg); }
+  .pi.warm { --speed: 0.45; }
+  .pi.hot { animation: shiver 0.08s infinite; }
+
+  /* ---------- the beige tower ---------- */
+  .tower {
+    position: relative;
+    flex: none;
+    width: 104px;
+    height: 188px;
+    margin-left: -12px;
+    padding: 0;
+    border: 0;
+    border-radius: 3px 3px 1px 1px;
+    background: linear-gradient(90deg, #cfc6ab, #e0d8c0 30%, #d4cbb0);
+    box-shadow: inset -4px 0 0 rgba(0, 0, 0, 0.12), 0 14px 30px rgba(0, 0, 0, 0.5);
+    color: #3a3528;
+    font: inherit;
+    cursor: pointer;
+  }
+  .tower:focus-visible { outline: 2px solid var(--acid); outline-offset: 2px; }
+  .tower .bay5 { position: absolute; left: 10px; right: 10px; height: 16px; border: 1px solid #b7ad90; background: linear-gradient(#e6dfca, #cfc6ab); }
+  .tower .bay5.one { top: 12px; }
+  .tower .bay5.two { top: 32px; }
+  .tower .floppy { position: absolute; left: 24px; right: 24px; top: 58px; height: 10px; border: 1px solid #b7ad90; background: #d9d1b8; }
+  .tower .floppy::after { content: ""; position: absolute; left: 8px; right: 8px; top: 3px; height: 2px; background: #3a3528; }
+  .tower .uptime {
+    position: absolute;
+    left: 6px;
+    right: 6px;
+    top: 82px;
+    padding: 3px 0;
+    background: #1c2a14;
+    color: #9fe870;
+    font-size: 8px;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .tower .sticker { position: absolute; left: 12px; top: 112px; transform: rotate(-2deg); }
+  .tower .power { position: absolute; left: 14px; bottom: 24px; width: 13px; height: 13px; border: 1px solid #a89f84; border-radius: 50%; background: #c7bea3; }
+  .tower .pled { position: absolute; left: 36px; bottom: 28px; width: 5px; height: 5px; border-radius: 50%; background: #4be36a; box-shadow: 0 0 5px #4be36a; }
+  .tower .turbo { position: absolute; left: 50px; bottom: 25px; font-size: 7px; letter-spacing: 0.05em; }
+  .tower .turbo::before {
+    content: "";
+    display: inline-block;
+    width: 4px;
+    height: 4px;
+    margin-right: 3px;
+    border-radius: 50%;
+    background: #ffb030;
+    box-shadow: 0 0 4px #ffb030;
+  }
+
+  /* ---------- floor ---------- */
+  .floor {
+    height: 64px;
+    margin-top: -6px;
+    border-radius: 0 0 8px 8px;
+    background:
+      linear-gradient(rgba(0, 0, 0, 0.4), transparent 60%),
+      radial-gradient(circle, #202126 1.2px, transparent 1.7px) 0 0 / 9px 9px,
+      linear-gradient(90deg, #131417 0 99px, #0b0b0c 99px 100px) 0 0 / 100px 100%;
+  }
+
+  /* ---------- the log ---------- */
+  .log-wrap {
+    max-width: 680px;
+    margin: 28px auto 0;
+    border: 1px solid var(--faint);
+    border-radius: 8px;
+    background: #0a0a09;
+  }
+  .log-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--faint);
+    color: var(--dim);
+    font-size: 12px;
+  }
+  .ears {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--dim);
+    font: inherit;
+    cursor: pointer;
+  }
+  .ears:hover, .ears.on { color: var(--acid); }
+  .log { height: 200px; overflow-y: auto; padding: 8px 12px; font-size: 13px; line-height: 1.55; }
+  .line { white-space: pre-wrap; animation: line-in 0.25s ease-out; }
+  @keyframes line-in { from { opacity: 0; } }
+  .line .ts { color: #4a463d; }
+  .line .host { color: var(--dim); }
+  .line.warn .msg { color: #ffb84a; }
+  .line.err .msg { color: #ff6a5a; }
+  .line.quiet .msg { color: var(--dim); }
+
+  /* ---------- incident ---------- */
+  .alarm {
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    background: radial-gradient(circle at 50% 15%, rgba(255, 40, 30, 0.32), rgba(255, 40, 30, 0.07) 60%, transparent);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .incident .alarm { animation: wash 1.2s ease-in-out infinite; }
+  @keyframes wash { 50% { opacity: 1; } }
+  .incident .beacon {
+    background: #ff3b2f;
+    box-shadow: 0 0 18px 6px rgba(255, 59, 47, 0.7);
+    animation: beacon 0.9s linear infinite;
+  }
+  @keyframes beacon { 50% { box-shadow: 0 0 4px 1px rgba(255, 59, 47, 0.3); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hot, .pi.hot { animation: none; }
+    .incident .alarm { animation: none; opacity: 0.6; }
+    .incident .beacon { animation: none; }
+  }
+</style>
+</head>
+<body>
+<a class="lobby-link" href="../">&larr; lobby</a>
+<h1 class="sr-only">server room</h1>
+
+<div class="page">
+  <div class="room" id="room">
+    <div class="wall">
+      <div class="sign">SERVER ROOM<small>authorized personnel only</small></div>
+      <div class="beacon" aria-hidden="true"></div>
+      <div class="thermo">room <b id="thermo">21.0&deg;C</b></div>
+    </div>
+
+    <div class="racks">
+      <div class="rack">
+        <span class="tag rack-label">rack a</span>
+        <div class="units" id="rack-a"></div>
+        <span class="rack-note marker" aria-hidden="true">cable management: soon</span>
+      </div>
+      <div class="rack">
+        <span class="tag rack-label">rack b</span>
+        <div class="units" id="rack-b"></div>
+        <button class="pi" type="button" data-id="dns-pi" aria-label="raspberry pi, taped in">
+          <span class="chip"></span><span class="usb a"></span><span class="usb b"></span>
+          <span class="pled"></span><i class="led act" style="--d:0.7s;--dl:0s"></i>
+          <span class="duct"></span>
+          <span class="note marker">dns?</span>
+        </button>
+      </div>
+      <button class="tower" type="button" data-id="old-reliable" aria-label="old beige tower computer">
+        <span class="bay5 one"></span><span class="bay5 two"></span>
+        <span class="floppy"></span>
+        <span class="uptime" id="uptime">up 0d 00:00:00</span>
+        <span class="tag sticker">old-reliable</span>
+        <span class="power"></span><span class="pled"></span><span class="turbo">TURBO</span>
+      </button>
+    </div>
+    <div class="floor"></div>
+  </div>
+
+  <div class="log-wrap">
+    <div class="log-title">
+      <span>/var/log/server-room</span>
+      <button class="ears" id="ears" type="button">ear protection: on</button>
+    </div>
+    <div class="log" id="log" role="log" aria-live="polite"></div>
+  </div>
+</div>
+
+<div class="alarm" aria-hidden="true"></div>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  const pad = n => String(n).padStart(2, '0');
+  const logEl = $('#log');
+
+  // ---------- the log ----------
+  function log(host, text, level = '') {
+    const d = new Date();
+    const line = document.createElement('div');
+    line.className = 'line ' + level;
+    const ts = document.createElement('span');
+    ts.className = 'ts';
+    ts.textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())} `;
+    const h = document.createElement('span');
+    h.className = 'host';
+    h.textContent = host + ': ';
+    const m = document.createElement('span');
+    m.className = 'msg';
+    m.textContent = text;
+    line.append(ts, h, m);
+    logEl.appendChild(line);
+    while (logEl.childElementCount > 80) logEl.firstElementChild.remove();
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+  // steps: [[delayMs, host, text, level?], ...]
+  const later = steps => steps.map(([ms, ...args]) => setTimeout(() => log(...args), ms));
+
+  // ---------- who lives here ----------
+  const P = {
+    'web-01': {
+      hover: [
+        'oh. hi. is this an inspection?',
+        "i'm serving pages, i promise.",
+        "please don't tell anyone about the 500 errors.",
+        'i can handle maybe four more visitors. max.',
+        "you're the most traffic i've had all week.",
+        'is this a DDoS? is this what a DDoS feels like?',
+      ],
+      poke: ['AH. sorry. reflex. 503.', "please don't do that during business hours.", "that was a request. i didn't like it."],
+      back: "i'm back. i served nothing while i was gone. no change.",
+    },
+    'web-02': {
+      hover: [
+        'sup.',
+        '200 OK.',
+        'web-01 is freaking out again.',
+        "relax. it's just a website.",
+        'honestly i mostly serve the favicon.',
+        "you can stay. i don't mind.",
+      ],
+      poke: ['that tickles. 418.', 'ok.', 'i felt that in my load balancer.'],
+      back: 'back. that was a nice nap.',
+    },
+    'cache-01': {
+      random: true,
+      hover: [
+        'cache miss. who are you?',
+        'have we met?',
+        "sorry. i've already forgotten you.",
+        'you seem familiar. no. gone.',
+        'hello, stranger.',
+        'first time here?',
+      ],
+      poke: ['cache cleared. i remember nothing. so, same as before.'],
+      back: "i'm back. did something happen? i wouldn't know.",
+    },
+    'mail-01': {
+      hover: [
+        'you have 0 new messages.',
+        'you have 0 new messages.',
+        'nobody emails anymore.',
+        'i filter spam. into the inbox.',
+        'you have 0 new messages. i checked twice.',
+      ],
+      poke: ["subscribing you to the newsletter. there's no unsubscribe.", 'you have 1 new message. it says "stop poking the mail server."'],
+      back: "back online. you have 0 new messages. you didn't miss anything.",
+    },
+    'db-01': {
+      hover: [
+        'please stop hovering. i can feel it.',
+        "i'm in the middle of a transaction.",
+        "you're making me lock tables.",
+        'every time you do that i lose an index.',
+        'SELECT * FROM visitors WHERE annoying = true; 1 row returned.',
+        "i'm writing this down.",
+        "i'm telling the backups.",
+      ],
+      poke: ['ow. that was a write.', 'constraint violation: do not touch.', 'rolling back whatever that was.'],
+      back: 'back. replaying the log. you are in it.',
+    },
+    'prod-01': {
+      hover: [
+        "i'm fine.",
+        'everything is fine.',
+        "please don't touch me. i'm fine.",
+        'why are you looking at me like that',
+        "i'm fine.",
+        'the tape is there for a reason.',
+      ],
+    },
+    'build-01': {
+      hover: [
+        'compiling.',
+        'still compiling.',
+        "it's a big project.",
+        '99%. almost.',
+        'the last 1% is the hardest 99%.',
+        'i started this build in 2019.',
+      ],
+      back: 'back. the build survived. 99%.',
+    },
+    'backup-01': {
+      delay: 2400,
+      heatRate: 0.5,
+      hover: [
+        '...hello.',
+        '...sorry. i was restoring.',
+        '...i remember everything. slowly.',
+        '...i have eleven copies of your last visit.',
+        '...i will get back to you on that.',
+        '...still here. still backing up.',
+      ],
+      poke: ["...ow. i'll feel that on thursday.", '...noted. archived. never to be seen again.'],
+      back: '...back. did i miss anything. no. i have a copy.',
+    },
+    'dns-pi': {
+      heatRate: 1.8,
+      hover: [
+        "hi. i'm dns.",
+        "nobody knows i'm here.",
+        'i resolve names for all of them.',
+        'if i go down, everything goes down.',
+        'the tape is structural.',
+        "please don't tell cole i'm still running on the sd card from 2016.",
+      ],
+    },
+    'old-reliable': {
+      immortal: true,
+      heatRate: 0.7,
+      hover: [
+        'i was here before the racks.',
+        'uptime: longer than your phone has been alive.',
+        'i run one cron job. nobody knows what it does.',
+        'if you turn me off, something somewhere stops working.',
+        "i have a floppy drive and i'm not afraid to use it.",
+        'the turbo button does nothing. i press it anyway.',
+      ],
+      poke: ['please. my capacitors are original.', 'careful. i am load-bearing.', 'i remember windows xp. do not test me.'],
+    },
+    blank: {
+      heatRate: 0,
+      hover: [
+        '(this space intentionally left blank)',
+        '(this space intentionally left blank)',
+        '...',
+        'hi.',
+        "i'm not a server. i just want to be included.",
+        'thank you for noticing me.',
+        '(this space intentionally left blank, but happier)',
+      ],
+      poke: ['(a blanking panel. it wobbles slightly.)', 'please. i am just a piece of metal.'],
+    },
+  };
+
+  const RACKS = {
+    'rack-a': [
+      ['web-01', 'std', 1], ['web-02', 'std', 1], ['cache-01', 'std', 1], ['blank-1', 'blank', 1],
+      ['mail-01', 'std', 1], ['db-01', 'disks', 2], ['blank-2', 'blank', 1],
+    ],
+    'rack-b': [
+      ['prod-01', 'prod', 2], ['build-01', 'lcd', 1], ['blank-3', 'blank', 1], ['backup-01', 'array', 4],
+    ],
+  };
+
+  // ---------- build the racks ----------
+  function el(tag, cls, text) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text) e.textContent = text;
+    return e;
+  }
+  function blinkers(n, parent) {
+    for (let i = 0; i < n; i++) {
+      const led = el('i', 'led act');
+      led.style.setProperty('--d', (0.25 + Math.random() * 1.8).toFixed(2) + 's');
+      led.style.setProperty('--dl', (-Math.random() * 2).toFixed(2) + 's');
+      parent.appendChild(led);
+    }
+  }
+  function buildUnit(id, kind, h) {
+    const b = el('button', 'unit ' + kind);
+    b.type = 'button';
+    b.dataset.id = id;
+    b.style.setProperty('--h', h);
+    b.setAttribute('aria-label', kind === 'blank' ? 'blanking panel' : 'server ' + id);
+    if (kind === 'blank') return b;
+    const leds = el('span', 'leds');
+    leds.appendChild(el('i', 'led health'));
+    blinkers(2, leds);
+    b.appendChild(leds);
+    if (kind === 'disks' || kind === 'array') {
+      const bays = el('span', 'bays');
+      for (let i = 0; i < (kind === 'array' ? 12 : 8); i++) {
+        const bay = el('span', 'bay');
+        blinkers(1, bay);
+        bays.appendChild(bay);
+      }
+      b.appendChild(bays);
+    } else {
+      if (kind === 'lcd') b.appendChild(el('span', 'lcd', 'BUILD 99%'));
+      b.appendChild(el('span', 'vent'));
+    }
+    b.appendChild(el('span', 'tag', id));
+    if (kind === 'prod') b.appendChild(el('span', 'tape marker', 'PROD - DO NOT TOUCH'));
+    return b;
+  }
+
+  const S = {};
+  function register(id, node, persona, host) {
+    S[id] = { id, el: node, persona, host, heat: 0, level: 0, hovers: 0, pokes: 0, state: 'up', lastEnter: -1e9, touchLook: -1e9 };
+  }
+  for (const [rackId, units] of Object.entries(RACKS)) {
+    const rack = document.getElementById(rackId);
+    for (const [id, kind, h] of units) {
+      const node = buildUnit(id, kind, h);
+      rack.appendChild(node);
+      register(id, node, kind === 'blank' ? 'blank' : id, kind === 'blank' ? 'blank panel' : id);
+    }
+  }
+  register('dns-pi', $('.pi'), 'dns-pi', 'dns-pi');
+  register('old-reliable', $('.tower'), 'old-reliable', 'old-reliable');
+
+  // ---------- talking ----------
+  function nextLine(s, kind) {
+    const p = P[s.persona];
+    const lines = p[kind];
+    if (!lines) return null;
+    const n = kind === 'hover' ? s.hovers++ : s.pokes++;
+    if (p.random) return pick(lines);
+    return n < lines.length ? lines[n] : pick(lines.slice(-3));
+  }
+  function talk(s) {
+    s.el.classList.add('talking');
+    clearTimeout(s.talkTimer);
+    s.talkTimer = setTimeout(() => s.el.classList.remove('talking'), 700);
+  }
+  function say(s, text, level) {
+    if (!text) return;
+    const go = () => { log(s.host, text, level); talk(s); };
+    const delay = P[s.persona].delay;
+    if (delay) setTimeout(go, delay);
+    else go();
+  }
+
+  // ---------- hover, poke ----------
+  let hovered = null;
+  let lastHoverLog = -1e9;
+  let lastPointerType = null;
+
+  function enter(id, viaTouch) {
+    const s = S[id];
+    activity();
+    if (!viaTouch) hovered = s;
+    const now = performance.now();
+    const recent = now - s.lastEnter < 700 || now - lastHoverLog < 350;
+    s.lastEnter = now;
+    if (recent || s.state === 'booting') return;
+    lastHoverLog = now;
+    if (s.state === 'down') log(s.host, 'not responding.', 'quiet');
+    else say(s, nextLine(s, 'hover'));
+  }
+  function leave(id) {
+    if (hovered === S[id]) hovered = null;
+  }
+
+  function poke(id) {
+    const s = S[id];
+    activity();
+    if (s.state !== 'up') { log(s.host, 'not responding.', 'quiet'); return; }
+    if (id === 'prod-01') return incident();
+    if (id === 'dns-pi') return dnsOutage('unplugged');
+    if (id === 'build-01') return restartBuild();
+    say(s, nextLine(s, 'poke'));
+    s.heat += 20 * (P[s.persona].heatRate ?? 1);
+  }
+
+  for (const [id, s] of Object.entries(S)) {
+    const node = s.el;
+    node.addEventListener('pointerenter', e => { if (e.pointerType !== 'touch') enter(id); });
+    node.addEventListener('pointerleave', e => { if (e.pointerType !== 'touch') leave(id); });
+    node.addEventListener('pointerdown', e => { lastPointerType = e.pointerType; });
+    node.addEventListener('focus', () => { if (node.matches(':focus-visible')) enter(id); });
+    node.addEventListener('blur', () => leave(id));
+    node.addEventListener('click', e => {
+      const touch = lastPointerType === 'touch' && e.detail !== 0;
+      lastPointerType = null;
+      // on touch there's no hover: first tap looks, a quick second tap pokes
+      if (touch && performance.now() - s.touchLook > 3000) {
+        s.touchLook = performance.now();
+        enter(id, true);
+        if (s.state === 'up') s.heat += 18 * (P[s.persona].heatRate ?? 1);
+        return;
+      }
+      if (touch) s.touchLook = performance.now();
+      poke(id);
+    });
+  }
+
+  // ---------- heat ----------
+  const WARM_LINES = ["you're standing very close.", "it's getting warm in here.", 'personal space, please.'];
+  const HOT_LINES = ['fans at 100%. please.', 'i can smell my own dust.', 'this is how servers die.'];
+  const tempOf = s => Math.round(34 + s.heat * 0.55);
+
+  function updateHeat(s) {
+    const level = s.heat >= 78 ? 2 : s.heat >= 50 ? 1 : 0;
+    if (level > s.level && s.persona !== 'blank') {
+      if (level === 1) log(s.host, `temp ${tempOf(s)}°C. ${pick(WARM_LINES)}`, 'warn');
+      else log(s.host, `temp ${tempOf(s)}°C. ${pick(HOT_LINES)}`, 'err');
+    }
+    s.level = level;
+    s.el.classList.toggle('warm', level === 1);
+    s.el.classList.toggle('hot', level === 2);
+    if (s.heat >= 100) overheat(s);
+  }
+
+  function overheat(s) {
+    const p = P[s.persona];
+    if (p.immortal) {
+      s.heat = 45;
+      log(s.host, 'i have survived worse.');
+      return;
+    }
+    if (s.id === 'prod-01') { s.heat = 30; incident(); return; }
+    if (s.id === 'dns-pi') { dnsOutage('overheated'); return; }
+    s.state = 'down';
+    s.heat = 0;
+    s.level = 0;
+    s.el.classList.remove('warm', 'hot');
+    s.el.classList.add('down');
+    log('kernel', `${s.host}: thermal shutdown.`, 'err');
+    setTimeout(() => {
+      s.state = 'booting';
+      s.el.classList.replace('down', 'booting');
+      log(s.host, 'POST... memory ok. fans ok. dignity: degraded.', 'quiet');
+    }, 2800);
+    setTimeout(() => {
+      s.state = 'up';
+      s.el.classList.remove('booting');
+      if (p.back) log(s.host, p.back);
+    }, 5000);
+  }
+
+  // ---------- special events ----------
+  let incidentOn = false;
+  function incident() {
+    if (incidentOn) { log('prod-01', "i'm fine."); return; }
+    incidentOn = true;
+    const prod = S['prod-01'];
+    document.body.classList.add('incident');
+    prod.el.classList.add('alarmed');
+    const n = 4400 + Math.floor(Math.random() * 600);
+    later([
+      [0, 'pager', `INCIDENT #${n} opened: someone touched prod.`, 'err'],
+      [1000, 'pager', 'paging on-call: cole', 'err'],
+      [2000, 'cole', 'status: questionable', 'warn'],
+      [3000, 'prod-01', "i'm fine."],
+      [4600, 'pager', `#${n} resolved. root cause: a visitor. action items: none.`, 'quiet'],
+    ]);
+    setTimeout(() => {
+      incidentOn = false;
+      document.body.classList.remove('incident');
+      prod.el.classList.remove('alarmed');
+    }, 4600);
+  }
+
+  let dnsDown = false;
+  function dnsOutage(reason) {
+    if (dnsDown) return;
+    dnsDown = true;
+    const pi = S['dns-pi'];
+    pi.state = 'down';
+    pi.heat = 0;
+    pi.level = 0;
+    pi.el.classList.remove('warm', 'hot');
+    pi.el.classList.add('down');
+    document.body.classList.add('nodns');
+    log('dns-pi', reason === 'unplugged'
+      ? 'you knocked the tape loose. i am on the floor of the rack now.'
+      : 'thermal shutdown. i was never meant to do this much.', 'err');
+    const victims = ['web-01', 'web-02', 'mail-01', 'db-01', 'build-01', 'cache-01', 'backup-01'];
+    const steps = victims.map((v, i) => [700 + i * 280, v, 'could not resolve host.', 'err']);
+    const end = 700 + victims.length * 280;
+    steps.push([end + 300, 'old-reliable', 'i use a hosts file.']);
+    steps.push([end + 1300, 'everyone', "it's always dns.", 'warn']);
+    later(steps);
+    setTimeout(() => {
+      pi.state = 'up';
+      pi.el.classList.remove('down');
+      document.body.classList.remove('nodns');
+      dnsDown = false;
+      log('dns-pi', "back. somebody re-taped me. you're welcome, everyone.");
+    }, 8000);
+  }
+
+  let build = 99;
+  let buildTimer;
+  function restartBuild() {
+    const lcd = S['build-01'].el.querySelector('.lcd');
+    clearInterval(buildTimer);
+    build = 0;
+    lcd.textContent = 'BUILD 0%';
+    log('build-01', 'you restarted the build. 0%.', 'warn');
+    buildTimer = setInterval(() => {
+      build = Math.min(99, build + 1 + Math.floor(Math.random() * 6));
+      lcd.textContent = `BUILD ${build}%`;
+      if (build >= 99) {
+        clearInterval(buildTimer);
+        log('build-01', '99%.');
+      }
+    }, 120);
+  }
+
+  // old-reliable has been on since 2009
+  const BORN = new Date(2009, 2, 14, 3, 14, 15).getTime();
+  const uptimeEl = $('#uptime');
+  function tickUptime() {
+    let s = Math.floor((Date.now() - BORN) / 1000);
+    const d = Math.floor(s / 86400);
+    s %= 86400;
+    uptimeEl.textContent = `up ${d}d ${pad(Math.floor(s / 3600))}:${pad(Math.floor((s % 3600) / 60))}:${pad(s % 60)}`;
+  }
+  setInterval(tickUptime, 1000);
+  tickUptime();
+
+  // ---------- gossip when you stop moving ----------
+  const GOSSIP = [
+    [['web-02', 'is it gone?'], ['db-01', "don't move."], ['web-01', "i think it's still there."], ['backup-01', '...what are we talking about.']],
+    [['web-01', 'did anyone else get hovered?'], ['db-01', 'i got hovered.'], ['cache-01', "i don't remember."], ['web-02', 'classic cache.']],
+    [['build-01', '99%.'], ['web-02', 'you said that in 2021.'], ['build-01', '99%.']],
+    [['mail-01', 'anyone want to see a newsletter?'], ['everyone', 'no.']],
+    [['prod-01', "i'm fine."], ['db-01', 'nobody asked.'], ['prod-01', "just so everyone knows. i'm fine."]],
+    [['dns-pi', 'hey guys.'], ['web-01', 'who said that'], ['dns-pi', 'nevermind.']],
+    [['old-reliable', 'back in my day we had one server.'], ['web-02', 'and it was you.'], ['old-reliable', 'and it was me.']],
+    [['blank panel', 'hi everyone.'], ['db-01', 'the panels can talk?'], ['blank panel', '(this space intentionally left blank)']],
+  ];
+  let gossipQueue = [];
+  let gossiping = null;
+  let lastActivity = performance.now();
+  let lastGossipEnd = performance.now();
+
+  function activity() {
+    lastActivity = performance.now();
+    if (!gossiping) return;
+    gossiping.forEach(clearTimeout);
+    gossiping = null;
+    lastGossipEnd = performance.now();
+    log(pick(['web-02', 'db-01', 'mail-01']), pick(['act natural.', "shh. it's back.", '...anyway. 200 OK.']));
+    Object.values(S).forEach(talk);
+  }
+  addEventListener('pointermove', activity);
+  addEventListener('keydown', activity);
+
+  function startGossip() {
+    if (!gossipQueue.length) gossipQueue = [...GOSSIP].sort(() => Math.random() - 0.5);
+    const script = gossipQueue.pop();
+    gossiping = script.map(([host, text], i) => setTimeout(() => {
+      log(host, text);
+      if (S[host]) talk(S[host]);
+      if (i === script.length - 1) {
+        gossiping = null;
+        lastGossipEnd = performance.now();
+      }
+    }, i * 1900));
+  }
+
+  // ---------- optional fan noise ----------
+  const fans = (() => {
+    const btn = $('#ears');
+    let a = null;
+    let on = false;
+    function build() {
+      const ctx = new AudioContext();
+      // brown noise, looped
+      const len = ctx.sampleRate * 2;
+      const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+      const data = buf.getChannelData(0);
+      let last = 0;
+      for (let i = 0; i < len; i++) {
+        last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02;
+        data[i] = last * 3.5;
+      }
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.loop = true;
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 700;
+      const hum = ctx.createOscillator();
+      hum.frequency.value = 120;
+      const humGain = ctx.createGain();
+      humGain.gain.value = 0.03;
+      const master = ctx.createGain();
+      master.gain.value = 0;
+      src.connect(filter).connect(master);
+      hum.connect(humGain).connect(master);
+      master.connect(ctx.destination);
+      src.start();
+      hum.start();
+      return { ctx, filter, master };
+    }
+    btn.addEventListener('click', async () => {
+      on = !on;
+      btn.textContent = on ? 'ear protection: off' : 'ear protection: on';
+      btn.classList.toggle('on', on);
+      if (!a) a = build();
+      if (on) await a.ctx.resume();
+      a.master.gain.setTargetAtTime(on ? 0.4 : 0, a.ctx.currentTime, 0.4);
+    });
+    return {
+      spin(total) {
+        if (!on || !a) return;
+        a.filter.frequency.setTargetAtTime(700 + Math.min(total, 400) * 4, a.ctx.currentTime, 0.3);
+      },
+    };
+  })();
+
+  // ---------- main loop ----------
+  const thermo = $('#thermo');
+  let lastTick = performance.now();
+  setInterval(() => {
+    const now = performance.now();
+    const dt = Math.min(0.5, (now - lastTick) / 1000);
+    lastTick = now;
+    let total = 0;
+    for (const s of Object.values(S)) {
+      if (s.state === 'up') {
+        const rate = P[s.persona].heatRate ?? 1;
+        s.heat = Math.max(0, s.heat + (s === hovered ? 13 * rate : -7) * dt);
+        updateHeat(s);
+      }
+      total += s.heat;
+    }
+    thermo.textContent = (21 + total / 120).toFixed(1) + '°C';
+    fans.spin(total);
+    if (!gossiping && !incidentOn && now - lastActivity > 15000 && now - lastGossipEnd > 15000) startGossip();
+  }, 100);
+
+  // ---------- shrink the room on small screens ----------
+  const room = $('#room');
+  function fit() { room.style.zoom = Math.min(1, (innerWidth - 32) / 680).toFixed(3); }
+  addEventListener('resize', fit);
+  fit();
+
+  // ---------- they remember you ----------
+  let visits = 1;
+  try {
+    visits = (parseInt(localStorage.getItem('cizole.server-room.visits'), 10) || 0) + 1;
+    localStorage.setItem('cizole.server-room.visits', visits);
+  } catch (err) { /* private mode: every visit is the first */ }
+
+  log('boot', 'server room online. all systems nominal.', 'quiet');
+  if (visits === 1) {
+    later([
+      [700, 'auth', 'unknown visitor entered the server room.', 'warn'],
+      [1700, 'db-01', 'who let them in.'],
+    ]);
+  } else {
+    later([
+      [700, 'auth', `visitor returned (visit #${visits}).`, 'warn'],
+      [1700, 'db-01', visits > 4 ? 'this is becoming a pattern.' : "oh no. it's back."],
+      [2600, 'cache-01', 'first time here?'],
+    ]);
+  }
+})();
+</script>
+</body>
+</html>
