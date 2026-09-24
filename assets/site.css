@@ -1,0 +1,36 @@
+:root {
+  --bg: #0e0d0b;
+  --fg: #ebe5d6;
+  --dim: #8a8475;
+  --faint: #2a2823;
+  --acid: #c8ff3d;
+  --font: "Space Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body { margin: 0; height: 100%; }
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--acid); }
+
+/* "back to the lobby" link used on every exhibit page */
+.lobby-link {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 100;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(14, 13, 11, 0.85);
+  color: var(--dim);
+  font-size: 14px;
+  text-decoration: none;
+}
+.lobby-link:hover { color: var(--acid); }

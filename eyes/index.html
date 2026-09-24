@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>eyes · cizole</title>
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/site.css">
+<style>
+  body { overflow: hidden; cursor: crosshair; touch-action: none; }
+  #field { position: fixed; inset: 0; }
+
+  .eye {
+    position: absolute;
+    overflow: hidden;
+    border-radius: 50%;
+    background: radial-gradient(circle at 38% 32%, #fffdf6, #e6dccb 60%, #c9b99f);
+    box-shadow: inset 0 0 14px rgba(170, 45, 30, 0.35);
+    clip-path: ellipse(50% 50% at 50% 50%);
+    transition: clip-path 90ms ease-in;
+  }
+  .eye.shut, .eye.asleep { clip-path: ellipse(50% 3% at 50% 50%); }
+  .eye.asleep { transition: clip-path 1.4s ease-in-out; }
+  .eye.nervous { animation: jitter 90ms steps(2) infinite; }
+  @keyframes jitter {
+    0% { translate: -1px 0; }
+    50% { translate: 1px -1px; }
+    100% { translate: 0 1px; }
+  }
+
+  .iris {
+    position: absolute;
+    left: 27%;
+    top: 27%;
+    width: 46%;
+    height: 46%;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--iris) 40%, color-mix(in srgb, var(--iris) 55%, #000) 100%);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4);
+  }
+  .iris::after {
+    content: "";
+    position: absolute;
+    left: 20%;
+    top: 16%;
+    width: 22%;
+    height: 22%;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.8);
+  }
+  .pupil {
+    position: absolute;
+    inset: 28%;
+    border-radius: 50%;
+    background: #050505;
+    transition: transform 0.35s;
+  }
+  .eye.nervous .pupil { transform: scale(0.55); }
+  .eye.startled .pupil { transform: scale(0.3); }
+
+  #caption {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    z-index: 10;
+    transform: translateX(-50%);
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: rgba(14, 13, 11, 0.85);
+    font-size: 14px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.6s;
+  }
+  #caption.show { opacity: 1; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .eye.nervous { animation: none; }
+  }
+</style>
+</head>
+<body>
+<a class="lobby-link" href="../">&larr; lobby</a>
+<div id="field" aria-hidden="true"></div>
+<div id="caption" role="status"></div>
+<script>
+(() => {
+  const field = document.getElementById('field');
+  const caption = document.getElementById('caption');
+  const IRIS = ['#4f7f4e', '#3a6aa3', '#7d5128', '#5e4029', '#6f8894', '#9c7330', '#467874'];
+  const RARE = ['#c8ff3d', '#b3261e', '#e8e8e8'];
+  const SLEEP_AFTER = 7000;
+
+  let eyes = [];
+  let px = 0, py = 0, pointerKnown = false;
+  let lastMove = performance.now();
+  let asleep = false;
+  let blinkAllUntil = 0;
+  let captionTimer;
+
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+
+  function say(text, ms) {
+    clearTimeout(captionTimer);
+    caption.textContent = text;
+    caption.classList.add('show');
+    if (ms) captionTimer = setTimeout(() => caption.classList.remove('show'), ms);
+  }
+
+  function makeEye(x, y, r) {
+    const el = document.createElement('div');
+    el.className = 'eye';
+    el.style.left = (x - r) + 'px';
+    el.style.top = (y - r) + 'px';
+    el.style.width = el.style.height = (2 * r) + 'px';
+    const iris = document.createElement('div');
+    iris.className = 'iris';
+    iris.style.setProperty('--iris', Math.random() < 0.04 ? pick(RARE) : pick(IRIS));
+    const pupil = document.createElement('div');
+    pupil.className = 'pupil';
+    iris.appendChild(pupil);
+    el.appendChild(iris);
+    field.appendChild(el);
+    const now = performance.now();
+    return {
+      el, iris, x, y, r,
+      cx: 0, cy: 0,
+      wx: Math.random() * innerWidth, wy: Math.random() * innerHeight, nextWander: now,
+      nextBlink: now + 1000 + Math.random() * 8000, blinkUntil: 0,
+      shut: false, nervous: false, sleepTimer: 0,
+    };
+  }
+
+  // Scatter eyes by dart-throwing: big ones first, then smaller ones fill the gaps.
+  function layout() {
+    field.textContent = '';
+    eyes = [];
+    const W = innerWidth, H = innerHeight;
+    const s = Math.min(W, H);
+    const maxR = Math.max(34, s * 0.12);
+    const minR = Math.max(12, s * 0.025);
+    const want = Math.min(160, Math.round(W * H / 7000));
+    const maxTries = want * 40;
+    for (let tries = 0; eyes.length < want && tries < maxTries; tries++) {
+      const t = tries / maxTries;
+      const r = (maxR + (minR - maxR) * Math.sqrt(t)) * (0.75 + Math.random() * 0.5);
+      const x = r + Math.random() * (W - 2 * r);
+      const y = r + Math.random() * (H - 2 * r);
+      if (x - r < 130 && y - r < 50) continue; // keep the lobby link clear
+      if (eyes.some(e => Math.hypot(e.x - x, e.y - y) < e.r + r + 5)) continue;
+      eyes.push(makeEye(x, y, r));
+    }
+  }
+
+  function sleep() {
+    asleep = true;
+    say("shh. they're asleep.");
+    for (const e of eyes) {
+      e.sleepTimer = setTimeout(() => e.el.classList.add('asleep'), Math.random() * 2500);
+    }
+  }
+
+  function wake() {
+    asleep = false;
+    for (const e of eyes) {
+      clearTimeout(e.sleepTimer);
+      e.el.classList.remove('asleep');
+      e.el.classList.add('startled');
+      setTimeout(() => e.el.classList.remove('startled'), 900);
+    }
+    say('you woke them.', 2500);
+  }
+
+  function frame(now) {
+    if (!asleep && pointerKnown && now - lastMove > SLEEP_AFTER) sleep();
+
+    for (const e of eyes) {
+      let tx = px, ty = py;
+      if (!pointerKnown) {
+        // nobody to stare at, so look around
+        if (now > e.nextWander) {
+          e.wx = Math.random() * innerWidth;
+          e.wy = Math.random() * innerHeight;
+          e.nextWander = now + 1200 + Math.random() * 3000;
+        }
+        tx = e.wx;
+        ty = e.wy;
+      }
+
+      const dx = tx - e.x, dy = ty - e.y;
+      const d = Math.hypot(dx, dy) || 1;
+      const reach = e.r * 0.46 * (1 - Math.exp(-d / (e.r * 2.5)));
+      e.cx += (dx / d * reach - e.cx) * 0.3;
+      e.cy += (dy / d * reach - e.cy) * 0.3;
+      e.iris.style.transform = `translate(${e.cx.toFixed(1)}px, ${e.cy.toFixed(1)}px)`;
+
+      const watching = pointerKnown && !asleep;
+      const flinch = watching && d < e.r * 0.95;
+      const nervous = watching && !flinch && d < e.r * 2.2;
+      if (nervous !== e.nervous) {
+        e.nervous = nervous;
+        e.el.classList.toggle('nervous', nervous);
+      }
+
+      if (!asleep && now > e.nextBlink) {
+        e.blinkUntil = now + 140;
+        // sometimes a double blink
+        e.nextBlink = now + (Math.random() < 0.2 ? 280 : 2500 + Math.random() * 9000);
+      }
+      const shut = flinch || now < e.blinkUntil || now < blinkAllUntil;
+      if (shut !== e.shut) {
+        e.shut = shut;
+        e.el.classList.toggle('shut', shut);
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function track(e) {
+    px = e.clientX;
+    py = e.clientY;
+    pointerKnown = true;
+    lastMove = performance.now();
+  }
+
+  addEventListener('pointermove', e => {
+    track(e);
+    if (asleep) wake();
+  });
+  addEventListener('pointerdown', e => {
+    track(e);
+    if (asleep) wake();
+    else blinkAllUntil = performance.now() + 160;
+  });
+  document.documentElement.addEventListener('pointerleave', e => {
+    if (e.pointerType === 'mouse') pointerKnown = false;
+  });
+
+  let resizeTimer;
+  addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(layout, 150);
+  });
+
+  layout();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

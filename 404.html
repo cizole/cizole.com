@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>404 · cizole</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<!-- styles are inline because this page is served from any missing path -->
+<style>
+  html, body { margin: 0; height: 100%; }
+  body {
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    box-sizing: border-box;
+    background: #0e0d0b;
+    color: #ebe5d6;
+    font-family: "Space Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+    text-align: center;
+  }
+  h1 { margin: 0; font-size: clamp(72px, 22vw, 180px); line-height: 1; letter-spacing: -0.04em; }
+  p { color: #8a8475; }
+  #late { min-height: 1.5em; }
+  a { color: #c8ff3d; }
+</style>
+</head>
+<body>
+<main>
+  <h1>404</h1>
+  <p>there's nothing here.</p>
+  <p id="late"></p>
+  <p><a href="/">back to the lobby</a></p>
+</main>
+<script>
+(() => {
+  const late = document.getElementById('late');
+  const LINES = [
+    [6000, "...you're still here?"],
+    [14000, "there's really nothing. i checked."],
+    [26000, 'ok this is kind of nice actually.'],
+    [45000, "i'll leave the light on for you."],
+  ];
+  for (const [ms, text] of LINES) setTimeout(() => { late.textContent = text; }, ms);
+})();
+</script>
+</body>
+</html>

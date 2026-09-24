@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>the button · cizole</title>
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/site.css">
+<style>
+  body { overflow: hidden; }
+
+  #caption {
+    position: fixed;
+    top: 22%;
+    left: 0;
+    right: 0;
+    padding: 0 16px;
+    color: var(--dim);
+    font-size: 18px;
+    text-align: center;
+  }
+
+  #btn {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    padding: 18px 34px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--acid);
+    color: #10120a;
+    font: 700 22px var(--font);
+    white-space: nowrap;
+    cursor: pointer;
+    box-shadow: 0 6px 0 #6f8f1f;
+    transition: left 0.28s cubic-bezier(0.2, 0.9, 0.3, 1.2), top 0.28s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  }
+  #btn:active { transform: translate(-50%, calc(-50% + 5px)); box-shadow: 0 1px 0 #6f8f1f; }
+  #btn.tired {
+    background: #a7ad96;
+    box-shadow: 0 6px 0 #676c5a;
+    transition-duration: 1.2s;
+    transition-timing-function: ease-in-out;
+  }
+  #btn.tired:active, #btn.pressed {
+    transform: translate(-50%, calc(-50% + 5px));
+    box-shadow: 0 1px 0 #676c5a;
+  }
+  #btn.pressed { background: #6d7162; cursor: default; }
+
+  #again {
+    position: fixed;
+    bottom: 32px;
+    left: 0;
+    right: 0;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<a class="lobby-link" href="../">&larr; lobby</a>
+<p id="caption" role="status">it's just a button.</p>
+<button id="btn" type="button">press me</button>
+<p id="again" hidden><a href="">again?</a></p>
+<script>
+(() => {
+  const btn = document.getElementById('btn');
+  const caption = document.getElementById('caption');
+  const again = document.getElementById('again');
+  const LINES = [
+    'no.',
+    'nope.',
+    'not like that.',
+    'absolutely not.',
+    'why would you do that',
+    "i'm faster than you.",
+    'please.',
+    'i have a family.',
+    "(they're also buttons.)",
+    'stop it.',
+    "this isn't fun for me.",
+    "ok it's a little fun.",
+    "no it isn't.",
+    "you're relentless.",
+    'have you considered not pressing me',
+    "i'm getting tired.",
+    "i can't keep doing this.",
+    "my legs hurt. i don't have legs.",
+  ];
+  const MARGIN = 36;
+
+  let attempts = 0;
+  let lastFlee = 0;
+  let tired = false;
+  let done = false;
+  let timers = [];
+
+  // steps: [[delayMs, text], ...]
+  function sequence(steps) {
+    timers.forEach(clearTimeout);
+    timers = steps.map(([ms, text]) => setTimeout(() => { caption.textContent = text; }, ms));
+  }
+
+  function place(x, y) {
+    const w = btn.offsetWidth, h = btn.offsetHeight, pad = 16;
+    x = Math.min(Math.max(x, pad + w / 2), innerWidth - pad - w / 2);
+    y = Math.min(Math.max(y, pad + h / 2), innerHeight - pad - h / 2);
+    btn.style.left = x + 'px';
+    btn.style.top = y + 'px';
+  }
+
+  function flee(px, py) {
+    lastFlee = performance.now();
+    const w = btn.offsetWidth, h = btn.offsetHeight;
+    let best, bestD = -1;
+    for (let i = 0; i < 12; i++) {
+      const x = w / 2 + Math.random() * (innerWidth - w);
+      const y = h / 2 + Math.random() * (innerHeight - h);
+      const d = Math.hypot(x - px, y - py);
+      if (d > bestD) { bestD = d; best = [x, y]; }
+    }
+    attempts++;
+    if (attempts > LINES.length) giveUp();
+    else sequence([[0, LINES[attempts - 1]]]);
+    place(best[0], best[1]);
+  }
+
+  function giveUp() {
+    tired = true;
+    btn.classList.add('tired');
+    btn.textContent = 'press me (sigh)';
+    sequence([[0, 'fine.'], [900, 'FINE.'], [1800, 'go ahead.']]);
+  }
+
+  function press(cheated) {
+    done = true;
+    btn.classList.add('pressed');
+    btn.textContent = 'pressed';
+    btn.disabled = true;
+    const steps = cheated
+      ? [[0, 'the keyboard? really?'], [1600, '...ugh. fine. that counts.'], [3400, "that's it. that's all it does."]]
+      : [[0, '...'], [1400, "that's it."], [2800, "that's all it does."]];
+    sequence(steps);
+    setTimeout(() => { again.hidden = false; }, steps[steps.length - 1][0] + 800);
+  }
+
+  // Mouse: run away before the cursor even gets there.
+  addEventListener('pointermove', e => {
+    if (tired || done || e.pointerType === 'touch') return;
+    if (performance.now() - lastFlee < 180) return;
+    const r = btn.getBoundingClientRect();
+    const dx = Math.max(r.left - e.clientX, 0, e.clientX - r.right);
+    const dy = Math.max(r.top - e.clientY, 0, e.clientY - r.bottom);
+    if (Math.hypot(dx, dy) < MARGIN) flee(e.clientX, e.clientY);
+  });
+
+  // Touch (or a very fast mouse): dodge on contact.
+  btn.addEventListener('pointerdown', e => {
+    if (tired || done) return;
+    e.preventDefault();
+    flee(e.clientX, e.clientY);
+  });
+
+  btn.addEventListener('click', e => {
+    if (done) return;
+    if (e.detail === 0) return press(!tired); // keyboard activation
+    if (!tired) {
+      if (performance.now() - lastFlee > 400) flee(e.clientX, e.clientY);
+      return;
+    }
+    press(false);
+  });
+
+  addEventListener('resize', () => {
+    if (btn.style.left) place(parseFloat(btn.style.left), parseFloat(btn.style.top));
+  });
+})();
+</script>
+</body>
+</html>
