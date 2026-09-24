@@ -10,8 +10,9 @@ The identity: **a weird little personal internet museum made by a programmer who
 
 ## Look and tone
 
-- Keep the restrained dark/off-black palette, monospace character, slightly sickly acid-green accent, understated presentation, and deadpan writing style.
-- The weirdness should come mostly from **behavior** rather than visual clutter. A page can initially look almost normal and then reveal that something is slightly wrong with it. Objects can notice the visitor, resist them, get annoyed, become tired, hide, remember things, behave irrationally, or otherwise act like they have personalities. Tiny details and unexpected interactions matter more than flashy animation.
+- The default look is the restrained dark/off-black palette, monospace character, slightly sickly acid-green accent, understated presentation, and deadpan writing style. The lobby and shared chrome stay this way.
+- Loud is allowed on purpose. Cole loves neon colors and bright, playful snowboard/streetwear brands like Neff. A room can go full neon, colorful, and flashy when the idea calls for it or when he asks for it (the trip room is the example). What to avoid is flashiness as default decoration. When a room goes loud, commit to it.
+- Most rooms get their weirdness from **behavior** rather than visual clutter. A page can initially look almost normal and then reveal that something is slightly wrong with it. Objects can notice the visitor, resist them, get annoyed, become tired, hide, remember things, behave irrationally, or otherwise act like they have personalities. In those rooms, tiny details and unexpected interactions matter more than animation.
 - Use weirdness sparingly. The lobby is mostly typography and whitespace, and then the letters dodge your mouse. Each room commits fully to one stupid idea. Don't make every page generically "wacky."
 - Humor is dry and delivered completely straight. The site behaves strangely while the writing calmly pretends everything is normal ("it's just a button," then the button refuses to be pressed). Avoid "lol so random," meme overload, excessive profanity, and constant jokes.
 - Handmade over impressive. Clever vanilla HTML/CSS/JS beats introducing a framework because one exists. Complexity is welcome when the result is interesting, not for architecture's sake.
