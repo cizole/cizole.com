@@ -1,0 +1,1485 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>fish tank · cizole</title>
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/site.css">
+<style>
+  body { overflow-x: hidden; }
+  .page { max-width: 960px; margin: 0 auto; padding: 56px 16px 32px; }
+  .page.wobble { filter: url(#underwater); }
+  .page.shake { animation: shake 0.3s ease-in-out; }
+  @keyframes shake {
+    20% { translate: -6px 2px; }
+    45% { translate: 5px -2px; }
+    70% { translate: -3px 1px; }
+  }
+
+  /* ---------- the tank ---------- */
+  .tank {
+    padding: 0 10px 10px;
+    border-radius: 6px 6px 3px 3px;
+    background: #161513;
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+  }
+  .hood {
+    position: relative;
+    height: 20px;
+    margin: 0 -10px;
+    border-radius: 6px 6px 0 0;
+    background: linear-gradient(#292825, #121110);
+  }
+  .light {
+    position: absolute;
+    left: 8%;
+    right: 8%;
+    bottom: -2px;
+    height: 4px;
+    border-radius: 2px;
+    background: #eaf6ff;
+    box-shadow: 0 0 14px 4px rgba(200, 235, 255, 0.35);
+  }
+  .light.flicker { animation: flicker 1s steps(1) 1; }
+  @keyframes flicker {
+    10%, 30%, 55% { opacity: 0.15; }
+    20%, 40%, 70% { opacity: 1; }
+  }
+  .glass { position: relative; }
+  #tank { display: block; width: 100%; height: auto; cursor: pointer; touch-action: manipulation; }
+  .stand {
+    position: relative;
+    height: 84px;
+    margin: 0 18px;
+    border-radius: 0 0 4px 4px;
+    background: linear-gradient(#2a241e, #1c1814);
+  }
+  .stand::before, .stand::after {
+    content: "";
+    position: absolute;
+    top: 12px;
+    bottom: 12px;
+    width: calc(50% - 18px);
+    border: 1px solid rgba(0, 0, 0, 0.35);
+    border-radius: 2px;
+  }
+  .stand::before { left: 12px; }
+  .stand::after { right: 12px; }
+  .sign {
+    position: absolute;
+    z-index: 1;
+    left: 50%;
+    top: 24px;
+    padding: 3px 12px;
+    background: #e8d9a8;
+    color: #1b1b1b;
+    font-family: "Permanent Marker", cursive;
+    font-size: 14px;
+    white-space: nowrap;
+    transform: translateX(-50%) rotate(-1.5deg);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  }
+  .caption { min-height: 1.5em; margin: 16px 0 0; font-size: 15px; transition: opacity 0.25s; }
+  .caption.fade { opacity: 0; }
+
+  /* aquarium placard that follows whatever you hover */
+  .tag-card {
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 2;
+    max-width: 240px;
+    padding: 5px 9px;
+    border-radius: 3px;
+    background: #ecebe4;
+    color: #161513;
+    font-size: 12px;
+    line-height: 1.35;
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-50%, -100%);
+    transition: opacity 0.15s;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35);
+  }
+  .tag-card.show { opacity: 1; }
+
+  /* ---------- the twist ---------- */
+  .flood {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    width: 100%;
+    height: 100%;
+    display: none;
+    pointer-events: none;
+  }
+  .flood.on { display: block; }
+  .giant {
+    position: fixed;
+    top: 50%;
+    right: 0;
+    z-index: 60;
+    width: min(82vmin, 760px);
+    height: min(82vmin, 760px);
+    pointer-events: none;
+    transform: translate(110%, -50%);
+    transition: transform 1.8s cubic-bezier(0.25, 0.7, 0.2, 1);
+    filter: blur(0.6px);
+  }
+  .giant.in { transform: translate(30%, -50%); }
+  .giant.tapping { animation: lunge 0.42s ease-in-out 2; }
+  @keyframes lunge { 40% { translate: -5vmin 0; } }
+  .giant .lid { transform: scaleY(0); transform-box: fill-box; transform-origin: center; transition: transform 0.09s; }
+  .giant.blink .lid { transform: scaleY(1); }
+  .giant .mouth { transform-box: fill-box; transform-origin: center; animation: gulp 2.4s ease-in-out infinite; }
+  @keyframes gulp { 50% { transform: scaleY(0.35); } }
+  .you-tag {
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 70;
+    padding: 5px 9px;
+    border-radius: 3px;
+    background: #ecebe4;
+    color: #161513;
+    font-size: 12px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.4s;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35);
+  }
+  .you-tag.show { opacity: 1; }
+  .flood-caption {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    z-index: 80;
+    margin: 0;
+    padding: 8px 16px;
+    border-radius: 999px;
+    background: rgba(14, 13, 11, 0.8);
+    font-size: 15px;
+    white-space: nowrap;
+    transform: translateX(-50%);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+  .flood-caption.show { opacity: 1; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .giant .mouth, .light.flicker { animation: none; }
+  }
+</style>
+</head>
+<body>
+<a class="lobby-link" href="../">&larr; lobby</a>
+
+<div class="page" id="page">
+  <div class="tank">
+    <div class="hood"><span class="light" id="light"></span></div>
+    <div class="glass">
+      <canvas id="tank" width="960" height="460" aria-label="a fish tank with nine fish, some plants, a snail on the glass, and a treasure chest"></canvas>
+      <div class="tag-card" id="tag"></div>
+    </div>
+  </div>
+  <div class="stand"><span class="sign" id="sign">please do not tap the glass.</span></div>
+  <p class="caption" id="caption" role="status"></p>
+</div>
+
+<canvas class="flood" id="flood" aria-hidden="true"></canvas>
+
+<svg class="giant" id="giant" viewBox="0 0 600 600" aria-hidden="true" focusable="false">
+  <defs>
+    <radialGradient id="giant-skin" cx="30%" cy="40%" r="80%">
+      <stop offset="0" stop-color="#f7a852"/>
+      <stop offset="0.55" stop-color="#e27a26"/>
+      <stop offset="1" stop-color="#9c4a12"/>
+    </radialGradient>
+    <clipPath id="giant-eyeclip"><circle cx="0" cy="0" r="70"/></clipPath>
+  </defs>
+  <path d="M 64 300 C 64 150 250 58 470 66 L 640 60 L 640 540 L 470 534 C 250 542 64 450 64 300 Z" fill="url(#giant-skin)"/>
+  <path d="M 340 140 C 395 240 395 360 340 460" fill="none" stroke="#9c4a12" stroke-width="7" opacity="0.55"/>
+  <g fill="none" stroke="#b85c1a" stroke-width="4" opacity="0.35">
+    <path d="M 430 170 q 24 24 0 48"/>
+    <path d="M 430 250 q 24 24 0 48"/>
+    <path d="M 430 330 q 24 24 0 48"/>
+    <path d="M 490 210 q 24 24 0 48"/>
+    <path d="M 490 290 q 24 24 0 48"/>
+    <path d="M 490 370 q 24 24 0 48"/>
+  </g>
+  <path d="M 360 430 C 410 480 470 520 540 500 C 490 470 430 440 360 430 Z" fill="#f2a064" opacity="0.85"/>
+  <ellipse class="mouth" cx="86" cy="330" rx="15" ry="20" fill="#4a1c06"/>
+  <g transform="translate(228 250)">
+    <circle r="75" fill="#9c4a12" opacity="0.5"/>
+    <circle r="70" fill="#f3ede0"/>
+    <g clip-path="url(#giant-eyeclip)">
+      <g id="giant-iris">
+        <circle r="44" fill="#c38d1c"/>
+        <circle r="44" fill="none" stroke="#7a5510" stroke-width="4"/>
+        <circle r="25" fill="#0b0b0b"/>
+        <circle cx="-13" cy="-15" r="8" fill="#fff" opacity="0.85"/>
+      </g>
+    </g>
+    <circle class="lid" r="75" fill="url(#giant-skin)"/>
+  </g>
+</svg>
+
+<div class="you-tag" id="you-tag">you. 1 visitor. has seen things.</div>
+<p class="flood-caption" id="flood-caption" aria-hidden="true"></p>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <filter id="underwater" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence id="underwater-noise" type="fractalNoise" baseFrequency="0.007 0.02" numOctaves="2" seed="7" result="noise"/>
+    <feDisplacementMap in="SourceGraphic" in2="noise" scale="9" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<script>
+(() => {
+  const W = 960;
+  const H = 460;
+  const SURFACE = 30;
+  const GRAVEL = H - 62;
+  const TAU = Math.PI * 2;
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const MOTION = reduceMotion ? 0.6 : 1;
+  const FLOOD_RISE = reduceMotion ? 4.5 : 3.2;
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const ease = x => x * x * (3 - 2 * x);
+  const gravelTop = x => GRAVEL + Math.sin(x * 0.013) * 5 + Math.sin(x * 0.041 + 1) * 2;
+
+  const $ = id => document.getElementById(id);
+  const canvas = $('tank');
+  const page = $('page');
+  const captionEl = $('caption');
+  const floodCap = $('flood-caption');
+  const tagEl = $('tag');
+  const signEl = $('sign');
+  const lightEl = $('light');
+  const giant = $('giant');
+  const giantIris = $('giant-iris');
+  const youTag = $('you-tag');
+  const floodCanvas = $('flood');
+  const noise = $('underwater-noise');
+
+  const g = canvas.getContext('2d');
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  g.scale(dpr, dpr);
+
+  // ---------- captions ----------
+  let floodActive = false;
+  let captionTimer;
+  function say(text) {
+    clearTimeout(captionTimer);
+    captionEl.classList.add('fade');
+    captionTimer = setTimeout(() => {
+      captionEl.textContent = text;
+      captionEl.classList.remove('fade');
+    }, 220);
+    floodCap.textContent = text;
+    floodCap.classList.toggle('show', floodActive && !!text);
+  }
+
+  // ---------- static layers, drawn once ----------
+  function layer(paint) {
+    const c = document.createElement('canvas');
+    c.width = W * dpr;
+    c.height = H * dpr;
+    const x = c.getContext('2d');
+    x.scale(dpr, dpr);
+    paint(x);
+    return c;
+  }
+
+  const bg = layer(b => {
+    const water = b.createLinearGradient(0, SURFACE, 0, H);
+    water.addColorStop(0, '#3a7f8c');
+    water.addColorStop(0.55, '#1f5563');
+    water.addColorStop(1, '#10323c');
+    b.fillStyle = water;
+    b.fillRect(0, SURFACE, W, H - SURFACE);
+    const air = b.createLinearGradient(0, 0, 0, SURFACE);
+    air.addColorStop(0, '#2b3a3e');
+    air.addColorStop(1, '#1b2629');
+    b.fillStyle = air;
+    b.fillRect(0, 0, W, SURFACE);
+    const glow = b.createLinearGradient(0, SURFACE, 0, SURFACE + 130);
+    glow.addColorStop(0, 'rgba(230, 245, 255, 0.12)');
+    glow.addColorStop(1, 'rgba(230, 245, 255, 0)');
+    b.fillStyle = glow;
+    b.fillRect(0, SURFACE, W, 130);
+    // far plants, for depth
+    b.fillStyle = 'rgba(12, 40, 44, 0.55)';
+    for (let i = 0; i < 26; i++) {
+      const x = rand(0, W);
+      const h = rand(60, 190);
+      const w = rand(6, 14);
+      b.beginPath();
+      b.moveTo(x - w, GRAVEL + 4);
+      b.quadraticCurveTo(x + rand(-30, 30), GRAVEL - h * 0.6, x + rand(-12, 12), GRAVEL - h);
+      b.quadraticCurveTo(x + rand(-20, 20), GRAVEL - h * 0.5, x + w, GRAVEL + 4);
+      b.fill();
+    }
+    // back rocks
+    b.fillStyle = 'rgba(22, 38, 40, 0.85)';
+    for (const [x, r] of [[560, 46], [610, 30], [880, 38]]) {
+      b.beginPath();
+      b.ellipse(x, GRAVEL + 6, r, r * 0.8, 0, Math.PI, TAU);
+      b.fill();
+    }
+  });
+
+  const gravelImg = layer(c => {
+    c.beginPath();
+    c.moveTo(0, H);
+    for (let x = 0; x <= W; x += 8) c.lineTo(x, gravelTop(x));
+    c.lineTo(W, H);
+    c.closePath();
+    const grad = c.createLinearGradient(0, GRAVEL, 0, H);
+    grad.addColorStop(0, '#6f6553');
+    grad.addColorStop(1, '#3c362c');
+    c.fillStyle = grad;
+    c.fill();
+    c.save();
+    c.clip();
+    const STONES = ['#8a7f6a', '#6f6656', '#a39a86', '#5b5447', '#7d735f', '#958a74'];
+    for (let i = 0; i < 1400; i++) {
+      c.fillStyle = pick(STONES);
+      c.beginPath();
+      c.ellipse(rand(0, W), rand(GRAVEL - 6, H), rand(1.5, 3.8), rand(1.2, 2.8), rand(0, TAU), 0, TAU);
+      c.fill();
+    }
+    c.restore();
+  });
+
+  const sheen = g.createLinearGradient(0, 0, W * 0.9, H);
+  sheen.addColorStop(0, 'rgba(255, 255, 255, 0)');
+  sheen.addColorStop(0.2, 'rgba(255, 255, 255, 0.05)');
+  sheen.addColorStop(0.28, 'rgba(255, 255, 255, 0)');
+  sheen.addColorStop(0.62, 'rgba(255, 255, 255, 0)');
+  sheen.addColorStop(0.7, 'rgba(255, 255, 255, 0.035)');
+  sheen.addColorStop(0.76, 'rgba(255, 255, 255, 0)');
+
+  // ---------- scenery ----------
+  const PLANTS = [
+    { x: 60, blades: 7, h: 170, color: '#3f7f45', front: false },
+    { x: 250, blades: 5, h: 120, color: '#4d8f3f', front: false },
+    { x: 470, blades: 9, h: 210, color: '#2f6f4a', front: false },
+    { x: 820, blades: 6, h: 150, color: '#4a8a3c', front: false },
+    { x: 905, blades: 5, h: 110, color: '#5c9a45', front: true },
+    { x: 355, blades: 4, h: 90, color: '#5c9a45', front: true },
+  ].map(p => ({
+    ...p,
+    bl: Array.from({ length: p.blades }, () => ({
+      dx: rand(-14, 14), h: p.h * rand(0.55, 1), phase: rand(0, TAU), lean: rand(-0.4, 0.4), w: rand(4, 7),
+    })),
+  }));
+
+  const BUBBLER = { x: 150, y: gravelTop(150) - 3 };
+  const CHEST = { x: 700, w: 56, h: 30, tag: 'a treasure chest. empty. it burps sometimes.' };
+  CHEST.y = gravelTop(CHEST.x) - CHEST.h + 6;
+  const snail = {
+    x: rand(120, 840), y: rand(250, 330), dir: Math.random() < 0.5 ? -1 : 1,
+    tag: 'gerald. snail. has been on this side of the glass since tuesday.',
+  };
+
+  let bubbles = [];
+  let flakes = [];
+  let tankRipples = [];
+  let bubblerAcc = 0;
+  let chestLid = 0;
+  let chestOpenUntil = 0;
+  let nextBurp = rand(10, 20);
+
+  function spawnBubble(x, y, r) {
+    bubbles.push({ x, y, r, vy: rand(38, 70), ph: rand(0, TAU) });
+  }
+
+  // ---------- the fish ----------
+  const DEFS = [
+    { short: 'gary', tag: 'gary. 3 years old. has seen things.', len: 58, tall: 0.62, body: '#e8872e', belly: '#f6c27a', fin: 'rgba(240, 150, 70, 0.8)', tail: 'fan', speed: 36, eye: 5 },
+    { short: 'no name', tag: "no name. the one that doesn't blink.", len: 46, tall: 0.5, body: '#cfd5da', belly: '#f1f1ec', fin: 'rgba(225, 232, 238, 0.55)', tail: 'fork', speed: 28, eye: 7, noBlink: true },
+    { short: 'steve', tag: 'steve. angelfish. thinks he is in charge. he is not.', len: 50, tall: 1, body: '#cfc8b2', belly: '#ece6d2', fin: 'rgba(205, 198, 176, 0.7)', tail: 'fork', stripes: 'rgba(40, 36, 30, 0.75)', angel: true, speed: 24, eye: 4.5 },
+    { short: 'princess', tag: 'princess. betta. does not share the tank emotionally.', len: 48, tall: 0.46, body: '#6f2a86', belly: '#9c46b3', fin: 'rgba(176, 40, 96, 0.78)', tail: 'flowing', speed: 22, eye: 4.2 },
+    { short: 'barb', tag: 'barb. has never finished a thought.', len: 38, tall: 0.6, body: '#dcb23c', belly: '#f1da8c', fin: 'rgba(206, 72, 42, 0.85)', tail: 'fork', stripes: 'rgba(30, 27, 22, 0.8)', speed: 52, eye: 4, erratic: true },
+    { short: 'doug', tag: 'doug. bottom feeder. prefers not to be perceived.', len: 70, tall: 0.3, body: '#4b4538', belly: '#6c6452', fin: 'rgba(72, 66, 52, 0.9)', tail: 'fork', spots: '#29251d', speed: 9, eye: 3.2, bottom: true },
+    ...[0, 1, 2].map(i => ({
+      short: 'tetra', tag: 'the tetras. three of them. one opinion.', len: 24, tall: 0.42, body: '#8fa2b3', belly: '#c9d3dc',
+      fin: 'rgba(210, 225, 240, 0.4)', tail: 'fork', neon: true, speed: 58, eye: 3, school: true, schoolIndex: i,
+    })),
+  ];
+  const fish = DEFS.map(d => ({
+    ...d,
+    x: rand(80, W - 80),
+    y: d.bottom ? GRAVEL - 12 : rand(SURFACE + 60, GRAVEL - 60),
+    vx: 0, vy: 0,
+    face: Math.random() < 0.5 ? -1 : 1,
+    turn: 0, turnTo: 0,
+    tx: 0, ty: 0, retarget: 0,
+    phase: rand(0, TAU),
+    alpha: 1,
+    mode: 'normal',
+    slotX: 0, slotY: 0, rememberUntil: 0,
+  }));
+  const tetraLead = fish.find(f => f.school && f.schoolIndex === 0);
+
+  // ---------- state ----------
+  const pointer = { x: 0, y: 0, known: false };
+  let rect = canvas.getBoundingClientRect();
+  let pageTime = 0;
+  let phase = 'normal';
+  let phaseT = 0;
+  let twistAt = rand(45, 60);
+  let lastTwistEnd = -999;
+  let twistCount = 0;
+  let taps = 0;
+  let feeds = 0;
+  let lastFeedSay = 0;
+  let flood = 0;
+  let nextBlink = 3;
+  let blinkUntil = 0;
+  let blinkNow = false;
+  let saidNoticed = false;
+  let saidDoug = false;
+  let flickered = false;
+  let eventIdx = 0;
+  let hover = null;
+  let hoverFromTouch = false;
+  let touchTagUntil = 0;
+  let lastInsideTap = 0;
+
+  // ---------- fish behavior ----------
+  function newTarget(f) {
+    if (f.bottom) {
+      f.tx = Math.random() < 0.4 ? f.x : rand(60, W - 60); // doug often just stays put
+      f.ty = gravelTop(f.tx) - f.len * f.tall * 0.5 - 5;
+      f.retarget = pageTime + rand(8, 22);
+      return;
+    }
+    f.tx = rand(60, W - 60);
+    f.ty = rand(SURFACE + 50, GRAVEL - 50);
+    f.retarget = pageTime + rand(3, 9) * (f.erratic ? 0.35 : f.school ? 0.6 : 1);
+  }
+
+  function steer(f, tx, ty, maxSpeed, accel, dt) {
+    const dx = tx - f.x;
+    const dy = ty - f.y;
+    const d = Math.hypot(dx, dy) || 1;
+    const slow = Math.min(1, d / 60);
+    const k = Math.min(1, accel * dt);
+    f.vx += ((dx / d) * maxSpeed * slow - f.vx) * k;
+    f.vy += ((dy / d) * maxSpeed * slow * 0.7 - f.vy) * k;
+  }
+
+  // used once a fish has turned to face you: stop swimming, hang there
+  function hold(f, x, y, dt) {
+    const k = Math.min(1, dt * 2);
+    const damp = Math.pow(0.02, dt);
+    f.vx *= damp;
+    f.vy *= damp;
+    f.x += (x - f.x) * k;
+    f.y += (y - f.y) * k;
+  }
+
+  function findFlake(f) {
+    let best = null;
+    let bd = f.bottom ? 400 : 320;
+    for (const fl of flakes) {
+      if (f.bottom ? fl.y < GRAVEL - 50 : fl.rest) continue;
+      const d = Math.hypot(fl.x - f.x, fl.y - f.y);
+      if (d < bd) { bd = d; best = fl; }
+    }
+    return best;
+  }
+
+  function updateFish(f, dt) {
+    f.turn += clamp(f.turnTo - f.turn, -dt * 1.4, dt * 1.4);
+
+    if (f.mode === 'line') {
+      if (f.turnTo === 1) { hold(f, f.slotX, f.slotY + Math.sin(pageTime * 1.2) * 3, dt); return; }
+      steer(f, f.slotX, f.slotY, Math.max(60, f.speed * 2), 1.8, dt);
+      if ((phaseT > 1.6 && Math.hypot(f.slotX - f.x, f.slotY - f.y) < 18) || phaseT > 5) f.turnTo = 1;
+    } else if (f.mode === 'remember') {
+      const tx = W / 2;
+      const ty = H * 0.45;
+      if (pageTime < f.rememberUntil) {
+        if (f.turnTo === 1) { hold(f, tx, ty + Math.sin(pageTime * 1.2) * 3, dt); return; }
+        steer(f, tx, ty, f.speed * 2 + 20, 1.8, dt);
+        if (Math.hypot(tx - f.x, ty - f.y) < 16) f.turnTo = 1;
+      } else {
+        f.turnTo = 0;
+        if (f.turn > 0) { hold(f, f.x, f.y, dt); return; }
+        f.mode = 'normal';
+        f.retarget = 0;
+      }
+    } else {
+      let tx;
+      let ty;
+      let speed = f.speed;
+      let accel = 1.2;
+      const flake = findFlake(f);
+      if (flake) {
+        const dir = Math.sign(flake.x - f.x) || Math.sign(f.face) || 1;
+        tx = flake.x - dir * f.len * 0.45;
+        ty = flake.y;
+        speed = f.speed * (f.bottom ? 3 : 2.2) + 20;
+        accel = 2.4;
+      } else if (f.school && f.schoolIndex > 0) {
+        const dir = Math.sign(tetraLead.vx) || Math.sign(tetraLead.face) || 1;
+        tx = tetraLead.x - dir * 22 * f.schoolIndex;
+        ty = tetraLead.y + (f.schoolIndex === 1 ? -12 : 12);
+        speed = f.speed * 1.3;
+        accel = 2.5;
+      } else {
+        if (pageTime > f.retarget || Math.hypot(f.tx - f.x, f.ty - f.y) < 14) newTarget(f);
+        tx = f.tx;
+        ty = f.ty;
+      }
+      steer(f, tx, ty, speed, accel, dt);
+
+      // eat whatever is in front of the mouth
+      const mouthX = f.x + (f.face >= 0 ? 1 : -1) * f.len * 0.48;
+      flakes = flakes.filter(fl => Math.hypot(fl.x - mouthX, fl.y - f.y) > 10);
+    }
+
+    const max = f.speed * 4 + 40;
+    const sp = Math.hypot(f.vx, f.vy);
+    if (sp > max) { f.vx *= max / sp; f.vy *= max / sp; }
+    f.x += f.vx * dt * MOTION;
+    f.y += f.vy * dt * MOTION;
+    const hh = f.len * f.tall * 0.5;
+    const minX = f.len * 0.55;
+    const maxX = W - f.len * 0.55;
+    if (f.x < minX) { f.x = minX; f.vx = Math.abs(f.vx) * 0.3; }
+    if (f.x > maxX) { f.x = maxX; f.vx = -Math.abs(f.vx) * 0.3; }
+    const minY = SURFACE + hh + 6;
+    const maxY = gravelTop(f.x) - hh - 4;
+    if (f.y < minY) { f.y = minY; f.vy = Math.abs(f.vy) * 0.3; }
+    if (f.y > maxY) { f.y = maxY; f.vy = -Math.abs(f.vy) * 0.3; }
+    if (Math.abs(f.vx) > 4) f.face += ((f.vx > 0 ? 1 : -1) - f.face) * Math.min(1, dt * 5);
+  }
+
+  // ---------- the twist ----------
+  function setPhase(p) {
+    phase = p;
+    phaseT = 0;
+  }
+
+  function startNoticing() {
+    setPhase('noticing');
+    twistCount++;
+    saidNoticed = false;
+    saidDoug = false;
+    flickered = false;
+    hover = null;
+    const order = [...fish].sort((a, b) => a.x - b.x);
+    order.forEach((f, i) => {
+      f.mode = 'line';
+      f.turnTo = 0;
+      f.slotX = 110 + (i * (W - 220)) / (order.length - 1);
+      f.slotY = H * 0.46 + (i % 2 ? 14 : -10);
+    });
+  }
+
+  const fdpr = Math.min(devicePixelRatio || 1, 1.5);
+  const fg = floodCanvas.getContext('2d');
+  let floodBubbles = [];
+  let floodRipples = [];
+  let floodAcc = 0;
+  function resizeFlood() {
+    floodCanvas.width = Math.round(innerWidth * fdpr);
+    floodCanvas.height = Math.round(innerHeight * fdpr);
+    fg.setTransform(fdpr, 0, 0, fdpr, 0, 0);
+  }
+  addEventListener('resize', () => { if (floodActive) resizeFlood(); });
+
+  function startFlood() {
+    floodActive = true;
+    resizeFlood();
+    floodCanvas.classList.add('on');
+    if (!reduceMotion) page.classList.add('wobble');
+    floodCap.textContent = '';
+    floodCap.classList.remove('show');
+  }
+  function stopFlood() {
+    floodActive = false;
+    floodCanvas.classList.remove('on');
+    page.classList.remove('wobble', 'shake');
+    floodCap.classList.remove('show');
+    giant.classList.remove('in', 'tapping', 'blink');
+    youTag.classList.remove('show');
+    floodBubbles = [];
+    floodRipples = [];
+    fg.clearRect(0, 0, innerWidth, innerHeight);
+  }
+
+  function tapTap() {
+    say('tap. tap.');
+    if (!reduceMotion) {
+      giant.classList.remove('tapping');
+      void giant.getBoundingClientRect();
+      giant.classList.add('tapping');
+      setTimeout(() => giant.classList.remove('tapping'), 1000);
+    }
+    for (const ms of [160, 580]) {
+      setTimeout(() => {
+        if (!floodActive) return;
+        if (!reduceMotion) {
+          page.classList.remove('shake');
+          void page.offsetWidth;
+          page.classList.add('shake');
+        }
+        const r = giant.getBoundingClientRect();
+        floodRipples.push({ x: r.left + (70 / 600) * r.width, y: r.top + r.height * 0.52, r: 6, a: 0.7 });
+      }, ms);
+    }
+  }
+
+  const FLOODED_EVENTS = [
+    [0.2, () => { giant.classList.add('in'); youTag.classList.add('show'); }],
+    [4.2, tapTap],
+    [8.6, () => say('someone should put up a sign.')],
+    [12, () => { giant.classList.remove('in'); youTag.classList.remove('show'); }],
+  ];
+  const FLOODED_LENGTH = 14;
+
+  function resetFish() {
+    for (const f of fish) {
+      f.mode = 'normal';
+      f.turn = 0;
+      f.turnTo = 0;
+      f.vx = 0;
+      f.vy = 0;
+      f.retarget = 0;
+      f.face = Math.random() < 0.5 ? -1 : 1;
+      f.alpha = 0;
+    }
+  }
+
+  function phaseUpdate(dt) {
+    if (phase === 'normal') {
+      if (pageTime >= twistAt && pageTime - lastTwistEnd > 20 && !fish.some(f => f.mode === 'remember')) startNoticing();
+      return;
+    }
+    phaseT += dt;
+    if (phase === 'noticing') {
+      if (!saidNoticed && phaseT > 2) {
+        saidNoticed = true;
+        say(twistCount > 1 ? 'the fish have noticed you. again.' : 'the fish have noticed you.');
+      }
+      if (fish.every(f => f.turn >= 0.99) || phaseT > 8) setPhase('staring');
+    } else if (phase === 'staring') {
+      if (!flickered && phaseT > 1) {
+        flickered = true;
+        if (!reduceMotion) {
+          lightEl.classList.add('flicker');
+          setTimeout(() => lightEl.classList.remove('flicker'), 1100);
+        }
+      }
+      if (!saidDoug && phaseT > 2.4) {
+        saidDoug = true;
+        say('even doug.');
+      }
+      if (phaseT > 5.5) {
+        setPhase('flooding');
+        startFlood();
+      }
+    } else if (phase === 'flooding') {
+      flood = ease(Math.min(1, phaseT / FLOOD_RISE)) * 1.08;
+      const gone = clamp((phaseT - FLOOD_RISE * 0.7) / (FLOOD_RISE * 0.3), 0, 1);
+      for (const f of fish) f.alpha = 1 - gone;
+      if (phaseT >= FLOOD_RISE) {
+        setPhase('flooded');
+        eventIdx = 0;
+        say('you are in the tank now.');
+      }
+    } else if (phase === 'flooded') {
+      while (eventIdx < FLOODED_EVENTS.length && phaseT >= FLOODED_EVENTS[eventIdx][0]) FLOODED_EVENTS[eventIdx++][1]();
+      if (phaseT >= FLOODED_LENGTH) {
+        setPhase('draining');
+        resetFish();
+      }
+    } else if (phase === 'draining') {
+      flood = 1.08 * (1 - ease(Math.min(1, phaseT / 3)));
+      const back = clamp((phaseT - 1.2) / 1.2, 0, 1);
+      for (const f of fish) f.alpha = back;
+      if (phaseT >= 3) {
+        flood = 0;
+        setPhase('normal');
+        stopFlood();
+        lastTwistEnd = pageTime;
+        twistAt = pageTime + rand(150, 210);
+        say('anyway.');
+      }
+    }
+  }
+
+  // ---------- update ----------
+  function update(dt) {
+    if (pageTime > nextBlink) {
+      blinkUntil = pageTime + 0.15;
+      nextBlink = pageTime + rand(2.5, 4.5);
+    }
+    blinkNow = pageTime < blinkUntil;
+
+    bubblerAcc += dt * 5;
+    while (bubblerAcc > 1) {
+      bubblerAcc--;
+      spawnBubble(BUBBLER.x + rand(-3, 3), BUBBLER.y - 5, rand(1.4, 3.2));
+    }
+    if (pageTime > nextBurp) {
+      nextBurp = pageTime + rand(15, 30);
+      chestOpenUntil = pageTime + 1.1;
+      for (let i = 0; i < 5; i++) spawnBubble(CHEST.x - CHEST.w * 0.2 + rand(-6, 6), CHEST.y - 4 - i * 7, rand(2.5, 5));
+    }
+    chestLid += clamp((pageTime < chestOpenUntil ? 0.5 : 0) - chestLid, -dt * 2.5, dt * 2.5);
+
+    bubbles = bubbles.filter(b => {
+      b.y -= b.vy * dt * MOTION;
+      b.x += Math.sin(pageTime * 3 + b.ph) * 10 * dt;
+      return b.y > SURFACE + 2;
+    });
+    flakes = flakes.filter(fl => {
+      if (fl.rest) {
+        fl.rest += dt;
+        return fl.rest < 25;
+      }
+      fl.y += fl.vy * dt * MOTION;
+      fl.x += Math.sin(pageTime * 2 + fl.ph) * 8 * dt;
+      fl.rot += dt;
+      const floor = gravelTop(fl.x) - 2;
+      if (fl.y >= floor) {
+        fl.y = floor;
+        fl.rest = 0.001;
+      }
+      return true;
+    });
+
+    snail.x += snail.dir * 2.4 * dt * MOTION;
+    if (snail.x < 40) { snail.x = 40; snail.dir = 1; }
+    if (snail.x > W - 40) { snail.x = W - 40; snail.dir = -1; }
+
+    tankRipples = tankRipples.filter(r => {
+      r.r += 110 * dt;
+      r.a -= dt * 1.1;
+      return r.a > 0;
+    });
+
+    phaseUpdate(dt);
+    if (phase !== 'flooded') for (const f of fish) updateFish(f, dt);
+  }
+
+  // ---------- drawing the tank ----------
+  function drawBeams(t) {
+    g.save();
+    g.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < 5; i++) {
+      const x = 90 + i * 200 + Math.sin(t * 0.25 * MOTION + i * 1.7) * 30;
+      const grad = g.createLinearGradient(0, SURFACE, 0, GRAVEL);
+      grad.addColorStop(0, 'rgba(190, 235, 245, 0.07)');
+      grad.addColorStop(1, 'rgba(190, 235, 245, 0)');
+      g.fillStyle = grad;
+      g.beginPath();
+      g.moveTo(x - 18, SURFACE);
+      g.lineTo(x + 26, SURFACE);
+      g.lineTo(x + 110, GRAVEL);
+      g.lineTo(x + 30, GRAVEL);
+      g.closePath();
+      g.fill();
+    }
+    g.restore();
+  }
+
+  function drawCaustics(t) {
+    g.save();
+    g.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < 46; i++) {
+      const x = (i * 97.3) % W;
+      const y = GRAVEL + 4 + ((i * 31) % 40);
+      const a = 0.05 + 0.05 * Math.sin(t * 1.3 * MOTION + i * 1.7 + x * 0.02);
+      if (a <= 0.02) continue;
+      g.fillStyle = `rgba(210, 240, 230, ${a.toFixed(3)})`;
+      g.beginPath();
+      g.ellipse(x + Math.sin(t * 0.7 + i) * 6, y, 12, 3, 0, 0, TAU);
+      g.fill();
+    }
+    g.restore();
+  }
+
+  function drawPlant(p, t) {
+    const base = gravelTop(p.x) + 4;
+    g.lineCap = 'round';
+    for (const b of p.bl) {
+      const sway = Math.sin(t * 0.9 * MOTION + b.phase) * 10 + Math.sin(t * 0.37 * MOTION + b.phase * 2) * 6;
+      const x0 = p.x + b.dx;
+      g.beginPath();
+      g.moveTo(x0, base);
+      g.quadraticCurveTo(x0 + sway * 0.3 + b.lean * 20, base - b.h * 0.55, x0 + b.lean * b.h * 0.5 + sway, base - b.h);
+      g.strokeStyle = p.color;
+      g.lineWidth = b.w;
+      g.stroke();
+      g.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+      g.lineWidth = b.w * 0.35;
+      g.stroke();
+    }
+  }
+
+  function drawBubbler() {
+    g.strokeStyle = 'rgba(210, 230, 235, 0.25)';
+    g.lineWidth = 3;
+    g.beginPath();
+    g.moveTo(BUBBLER.x - 8, BUBBLER.y - 2);
+    g.quadraticCurveTo(BUBBLER.x - 30, BUBBLER.y - 60, BUBBLER.x - 34, 0);
+    g.stroke();
+    g.fillStyle = '#7d8388';
+    g.beginPath();
+    g.ellipse(BUBBLER.x, BUBBLER.y, 13, 6, 0, 0, TAU);
+    g.fill();
+    g.fillStyle = 'rgba(0, 0, 0, 0.25)';
+    g.beginPath();
+    g.ellipse(BUBBLER.x, BUBBLER.y + 2, 13, 3, 0, 0, TAU);
+    g.fill();
+  }
+
+  function drawChest() {
+    const { x, y, w, h } = CHEST;
+    const left = x - w / 2;
+    if (chestLid > 0.02) {
+      g.fillStyle = '#1a100a';
+      g.beginPath();
+      g.moveTo(left + w, y);
+      g.lineTo(left, y);
+      g.lineTo(left + w - w * Math.cos(chestLid), y - w * Math.sin(chestLid));
+      g.closePath();
+      g.fill();
+    }
+    g.fillStyle = '#5c3a1e';
+    g.fillRect(left, y, w, h);
+    g.fillStyle = 'rgba(0, 0, 0, 0.25)';
+    g.fillRect(left, y + h * 0.55, w, 1.5);
+    g.fillStyle = '#c9a24a';
+    g.fillRect(left, y + 4, w, 3);
+    g.fillRect(x - 3, y, 6, h);
+    // lid, hinged at the back edge
+    g.save();
+    g.translate(left + w, y);
+    g.rotate(chestLid);
+    g.fillStyle = '#6b4423';
+    g.beginPath();
+    g.moveTo(0, 0);
+    g.lineTo(-w, 0);
+    g.quadraticCurveTo(-w, -14, -w / 2, -15);
+    g.quadraticCurveTo(0, -14, 0, 0);
+    g.fill();
+    g.fillStyle = '#c9a24a';
+    g.fillRect(-w / 2 - 3, -15, 6, 15);
+    g.restore();
+  }
+
+  function drawSnail() {
+    g.save();
+    g.translate(snail.x, snail.y);
+    g.scale(snail.dir, 1);
+    g.fillStyle = 'rgba(200, 186, 150, 0.9)';
+    g.beginPath();
+    g.ellipse(0, 5, 15, 4.5, 0, 0, TAU);
+    g.fill();
+    g.strokeStyle = 'rgba(200, 186, 150, 0.95)';
+    g.lineWidth = 2;
+    g.lineCap = 'round';
+    g.beginPath();
+    g.moveTo(12, 2);
+    g.lineTo(18, -6);
+    g.moveTo(10, 2);
+    g.lineTo(13, -7);
+    g.stroke();
+    g.fillStyle = '#2b241a';
+    for (const [ex, ey] of [[18, -6], [13, -7]]) {
+      g.beginPath();
+      g.arc(ex, ey, 1.6, 0, TAU);
+      g.fill();
+    }
+    g.fillStyle = '#8a5a2e';
+    g.beginPath();
+    g.arc(-3, -3, 9.5, 0, TAU);
+    g.fill();
+    g.strokeStyle = '#5a3a1c';
+    g.lineWidth = 1.6;
+    g.beginPath();
+    for (let a = 0; a < TAU * 2.2; a += 0.25) {
+      const r = 0.8 + a * 0.62;
+      const px = -3 + Math.cos(a) * r;
+      const py = -3 + Math.sin(a) * r;
+      if (a === 0) g.moveTo(px, py);
+      else g.lineTo(px, py);
+    }
+    g.stroke();
+    g.restore();
+  }
+
+  function bodyPath(L, hh) {
+    g.beginPath();
+    g.moveTo(L * 0.5, 0);
+    g.bezierCurveTo(L * 0.46, -hh * 1.05, -L * 0.18, -hh * 1.1, -L * 0.48, -hh * 0.16);
+    g.lineTo(-L * 0.48, hh * 0.16);
+    g.bezierCurveTo(-L * 0.18, hh * 1.1, L * 0.46, hh * 1.05, L * 0.5, 0);
+    g.closePath();
+  }
+
+  // side view, nose pointing +x
+  function drawSide(f, t) {
+    const L = f.len;
+    const hh = (L * f.tall) / 2;
+    const sp = Math.hypot(f.vx, f.vy);
+    const wag = Math.sin(t * (5 + sp * 0.12) * MOTION + f.phase) * (0.18 + Math.min(sp, 80) * 0.004);
+
+    g.fillStyle = f.fin;
+    g.save();
+    g.translate(-L * 0.46, 0);
+    g.rotate(wag);
+    g.beginPath();
+    if (f.tail === 'fan') {
+      g.moveTo(0, 0);
+      g.bezierCurveTo(-L * 0.2, -hh * 0.3, -L * 0.45, -hh * 1.3, -L * 0.42, -hh * 0.9);
+      g.quadraticCurveTo(-L * 0.3, 0, -L * 0.42, hh * 0.9);
+      g.bezierCurveTo(-L * 0.45, hh * 1.3, -L * 0.2, hh * 0.3, 0, 0);
+    } else if (f.tail === 'flowing') {
+      g.moveTo(0, 0);
+      g.bezierCurveTo(-L * 0.3, -hh * 1.6, -L * 0.75, -hh * 1.2 + wag * 20, -L * 0.7, wag * 10);
+      g.bezierCurveTo(-L * 0.75, hh * 1.2 + wag * 20, -L * 0.3, hh * 1.6, 0, 0);
+    } else {
+      g.moveTo(0, 0);
+      g.lineTo(-L * 0.3, -hh * 0.85);
+      g.quadraticCurveTo(-L * 0.18, 0, -L * 0.3, hh * 0.85);
+      g.closePath();
+    }
+    g.fill();
+    g.restore();
+
+    g.beginPath();
+    if (f.angel) {
+      g.moveTo(L * 0.1, -hh * 0.8);
+      g.quadraticCurveTo(-L * 0.2, -hh * 1.9, -L * 0.55, -hh * 1.7);
+      g.quadraticCurveTo(-L * 0.3, -hh * 0.9, -L * 0.3, -hh * 0.4);
+      g.moveTo(L * 0.05, hh * 0.8);
+      g.quadraticCurveTo(-L * 0.2, hh * 1.9, -L * 0.5, hh * 1.8);
+      g.quadraticCurveTo(-L * 0.3, hh * 0.9, -L * 0.3, hh * 0.4);
+    } else if (f.tail === 'flowing') {
+      g.moveTo(L * 0.05, -hh * 0.8);
+      g.bezierCurveTo(-L * 0.2, -hh * 1.8, -L * 0.45, -hh * 1.5 + wag * 8, -L * 0.46, -hh * 0.3);
+      g.moveTo(L * 0.15, hh * 0.7);
+      g.bezierCurveTo(-L * 0.1, hh * 2, -L * 0.45, hh * 1.7 + wag * 8, -L * 0.46, hh * 0.3);
+    } else {
+      g.moveTo(L * 0.1, -hh * 0.85);
+      g.quadraticCurveTo(-L * 0.08, -hh * 1.45, -L * 0.2, -hh * 0.7);
+      g.closePath();
+    }
+    g.fill();
+
+    bodyPath(L, hh);
+    const grad = g.createLinearGradient(0, -hh, 0, hh);
+    grad.addColorStop(0, f.body);
+    grad.addColorStop(1, f.belly);
+    g.fillStyle = grad;
+    g.fill();
+
+    if (f.stripes || f.neon || f.spots) {
+      g.save();
+      bodyPath(L, hh);
+      g.clip();
+      if (f.stripes) {
+        g.fillStyle = f.stripes;
+        const n = f.angel ? 3 : 4;
+        const gap = f.angel ? 0.28 : 0.2;
+        for (let i = 0; i < n; i++) g.fillRect(L * 0.25 - i * L * gap - L * 0.04, -hh, L * 0.07, hh * 2);
+      }
+      if (f.neon) {
+        g.fillStyle = '#39d3ff';
+        g.fillRect(-L * 0.35, -hh * 0.35, L * 0.75, hh * 0.35);
+        g.fillStyle = '#e0443a';
+        g.fillRect(-L * 0.45, hh * 0.05, L * 0.45, hh * 0.9);
+      }
+      if (f.spots) {
+        g.fillStyle = f.spots;
+        for (let i = 0; i < 14; i++) {
+          g.beginPath();
+          g.arc((((i * 37) % 100) / 100) * L - L / 2, ((((i * 53) % 100) / 100) - 0.5) * hh * 1.6, 1.8, 0, TAU);
+          g.fill();
+        }
+      }
+      g.restore();
+    }
+
+    g.fillStyle = f.fin;
+    g.beginPath();
+    g.ellipse(L * 0.08, hh * 0.35, L * 0.1, hh * 0.22, 0.6 + wag * 0.5, 0, TAU);
+    g.fill();
+
+    g.strokeStyle = 'rgba(0, 0, 0, 0.18)';
+    g.lineWidth = 1.2;
+    g.beginPath();
+    g.arc(L * 0.4, 0, hh * 0.6, Math.PI - 0.8, Math.PI + 0.8);
+    g.stroke();
+
+    const ex = L * 0.3;
+    const ey = -hh * 0.18;
+    g.fillStyle = '#f2efe6';
+    g.beginPath();
+    g.arc(ex, ey, f.eye, 0, TAU);
+    g.fill();
+    g.fillStyle = '#0c0c0c';
+    g.beginPath();
+    g.arc(ex + f.eye * 0.2, ey, f.eye * 0.55, 0, TAU);
+    g.fill();
+  }
+
+  // head-on view: both eyes on you
+  function drawFront(f, t, look, blink) {
+    const bw = f.len * 0.13 + 4;
+    const bh = f.len * f.tall * 0.5 + 2;
+    const flap = Math.sin(t * 4) * 0.25;
+    g.fillStyle = f.fin;
+    for (const s of [-1, 1]) {
+      g.beginPath();
+      g.ellipse(s * (bw + bh * 0.25), bh * 0.25, bh * 0.35, bh * 0.14, s * (0.5 + flap), 0, TAU);
+      g.fill();
+    }
+    g.beginPath();
+    g.moveTo(-bw * 0.25, -bh * 0.7);
+    g.lineTo(0, -bh * (f.angel ? 2 : 1.35));
+    g.lineTo(bw * 0.25, -bh * 0.7);
+    if (f.angel) {
+      g.moveTo(-bw * 0.25, bh * 0.7);
+      g.lineTo(0, bh * 2);
+      g.lineTo(bw * 0.25, bh * 0.7);
+    }
+    g.fill();
+
+    const grad = g.createRadialGradient(0, bh * 0.2, 1, 0, 0, Math.max(bw, bh));
+    grad.addColorStop(0, f.belly);
+    grad.addColorStop(1, f.body);
+    g.fillStyle = grad;
+    g.beginPath();
+    g.ellipse(0, 0, bw, bh, 0, 0, TAU);
+    g.fill();
+
+    const er = f.eye * 1.15;
+    for (const s of [-1, 1]) {
+      const ex = s * bw * 0.85;
+      const ey = -bh * 0.25;
+      g.fillStyle = '#f2efe6';
+      g.beginPath();
+      g.arc(ex, ey, er, 0, TAU);
+      g.fill();
+      if (blink) {
+        g.fillStyle = f.body;
+        g.beginPath();
+        g.arc(ex, ey, er + 0.5, 0, TAU);
+        g.fill();
+        g.strokeStyle = 'rgba(0, 0, 0, 0.4)';
+        g.lineWidth = 1;
+        g.beginPath();
+        g.moveTo(ex - er, ey);
+        g.lineTo(ex + er, ey);
+        g.stroke();
+      } else {
+        g.fillStyle = '#0c0c0c';
+        g.beginPath();
+        g.arc(ex + look.x * er * 0.45, ey + look.y * er * 0.45, er * 0.55, 0, TAU);
+        g.fill();
+      }
+    }
+    // the mouths open and close together
+    const m = 0.5 + 0.5 * Math.sin(t * 2.2);
+    g.fillStyle = '#1a0f0c';
+    g.beginPath();
+    g.ellipse(0, bh * 0.35, bw * 0.28, 1 + bw * 0.16 * m, 0, 0, TAU);
+    g.fill();
+  }
+
+  function lookAt(cx, cy, range) {
+    if (!pointer.known) return { x: 0, y: 0 };
+    const dx = pointer.x - cx;
+    const dy = pointer.y - cy;
+    const d = Math.hypot(dx, dy) || 1;
+    const k = Math.min(1, d / range);
+    return { x: (dx / d) * k, y: (dy / d) * k };
+  }
+
+  function drawFish(f, t) {
+    if (f.alpha <= 0.01) return;
+    g.save();
+    g.globalAlpha = f.alpha;
+    g.translate(f.x, f.y);
+    if (f.turn < 0.5) {
+      const sgn = f.face >= 0 ? 1 : -1;
+      const tilt = clamp(Math.atan2(f.vy, Math.abs(f.vx) + 10) * 0.6, -0.5, 0.5);
+      g.rotate(tilt * sgn);
+      g.scale(f.face * (1 - f.turn * 2), 1);
+      drawSide(f, t);
+    } else {
+      g.scale((f.turn - 0.5) * 2, 1);
+      const cx = rect.left + (f.x / W) * rect.width;
+      const cy = rect.top + (f.y / H) * rect.height;
+      drawFront(f, t, lookAt(cx, cy, 140), blinkNow && !f.noBlink);
+    }
+    g.restore();
+  }
+
+  function draw(t) {
+    rect = canvas.getBoundingClientRect();
+    g.drawImage(bg, 0, 0, W, H);
+    drawBeams(t);
+    for (const p of PLANTS) if (!p.front) drawPlant(p, t);
+    g.drawImage(gravelImg, 0, 0, W, H);
+    drawCaustics(t);
+    drawBubbler();
+    drawChest();
+
+    for (const fl of flakes) {
+      g.save();
+      g.translate(fl.x, fl.y);
+      g.rotate(fl.rot);
+      g.fillStyle = fl.c;
+      g.fillRect(-2, -1.5, 4, 3);
+      g.restore();
+    }
+
+    for (const f of fish) drawFish(f, t);
+
+    g.strokeStyle = 'rgba(225, 245, 255, 0.55)';
+    g.lineWidth = 1;
+    for (const b of bubbles) {
+      g.beginPath();
+      g.arc(b.x, b.y, b.r, 0, TAU);
+      g.stroke();
+    }
+
+    for (const p of PLANTS) if (p.front) drawPlant(p, t);
+
+    for (const r of tankRipples) {
+      g.strokeStyle = `rgba(235, 250, 255, ${r.a.toFixed(3)})`;
+      g.lineWidth = 2;
+      g.beginPath();
+      g.arc(r.x, r.y, r.r, 0, TAU);
+      g.stroke();
+    }
+
+    drawSnail();
+
+    g.strokeStyle = 'rgba(220, 245, 255, 0.4)';
+    g.lineWidth = 1.5;
+    g.beginPath();
+    for (let x = 0; x <= W; x += 12) {
+      const y = SURFACE + Math.sin(x * 0.03 + t * 1.6 * MOTION) * 1.6;
+      if (x === 0) g.moveTo(x, y);
+      else g.lineTo(x, y);
+    }
+    g.stroke();
+
+    g.fillStyle = sheen;
+    g.fillRect(0, 0, W, H);
+  }
+
+  // ---------- drawing the flood (the whole viewport) ----------
+  const wave = (x, t) => Math.sin(x * 0.015 + t * 2) * 7 + Math.sin(x * 0.006 - t * 1.3) * 5;
+
+  function drawFlood(t, dt) {
+    const fw = innerWidth;
+    const fh = innerHeight;
+    fg.clearRect(0, 0, fw, fh);
+    if (flood <= 0) return;
+    const level = fh * (1 - flood);
+
+    fg.beginPath();
+    fg.moveTo(0, fh);
+    for (let x = 0; x <= fw + 16; x += 16) fg.lineTo(x, level + wave(x, t));
+    fg.lineTo(fw, fh);
+    fg.closePath();
+    const grad = fg.createLinearGradient(0, 0, 0, fh);
+    grad.addColorStop(0, 'rgba(70, 160, 180, 0.2)');
+    grad.addColorStop(1, 'rgba(10, 55, 75, 0.45)');
+    fg.fillStyle = grad;
+    fg.fill();
+
+    if (level > -20) {
+      fg.beginPath();
+      for (let x = 0; x <= fw + 16; x += 16) {
+        const y = level + wave(x, t);
+        if (x === 0) fg.moveTo(x, y);
+        else fg.lineTo(x, y);
+      }
+      fg.strokeStyle = 'rgba(215, 245, 255, 0.6)';
+      fg.lineWidth = 2;
+      fg.stroke();
+    }
+
+    if (flood >= 1) {
+      fg.save();
+      fg.globalCompositeOperation = 'lighter';
+      for (let i = 0; i < 6; i++) {
+        const x = (fw / 6) * i + Math.sin(t * 0.3 + i * 1.9) * 40;
+        const beam = fg.createLinearGradient(0, 0, 0, fh);
+        beam.addColorStop(0, 'rgba(200, 240, 250, 0.06)');
+        beam.addColorStop(1, 'rgba(200, 240, 250, 0)');
+        fg.fillStyle = beam;
+        fg.beginPath();
+        fg.moveTo(x - 30, 0);
+        fg.lineTo(x + 40, 0);
+        fg.lineTo(x + fh * 0.35, fh);
+        fg.lineTo(x + fh * 0.2, fh);
+        fg.closePath();
+        fg.fill();
+      }
+      fg.restore();
+    }
+
+    if (flood > 0.05) {
+      floodAcc += dt * (fw / 90);
+      while (floodAcc > 1) {
+        floodAcc--;
+        floodBubbles.push({ x: rand(0, fw), y: fh + 10, r: rand(2, 7), vy: rand(50, 130), ph: rand(0, TAU) });
+      }
+    }
+    fg.strokeStyle = 'rgba(220, 245, 255, 0.5)';
+    fg.lineWidth = 1.2;
+    floodBubbles = floodBubbles.filter(b => {
+      b.y -= b.vy * dt * MOTION;
+      b.x += Math.sin(t * 3 + b.ph) * 15 * dt;
+      if (b.y < level + wave(b.x, t)) return false;
+      fg.beginPath();
+      fg.arc(b.x, b.y, b.r, 0, TAU);
+      fg.stroke();
+      return true;
+    });
+
+    floodRipples = floodRipples.filter(r => {
+      r.r += 260 * dt;
+      r.a -= dt * 0.9;
+      if (r.a <= 0) return false;
+      fg.strokeStyle = `rgba(230, 250, 255, ${r.a.toFixed(3)})`;
+      fg.lineWidth = 3;
+      fg.beginPath();
+      fg.arc(r.x, r.y, r.r, 0, TAU);
+      fg.stroke();
+      return true;
+    });
+  }
+
+  let giantBlinkAt = 0;
+  function updateGiant() {
+    const r = giant.getBoundingClientRect();
+    const look = lookAt(r.left + (228 / 600) * r.width, r.top + (250 / 600) * r.height, 400);
+    giantIris.setAttribute('transform', `translate(${(look.x * 24).toFixed(1)} ${(look.y * 24).toFixed(1)})`);
+    if (pageTime > giantBlinkAt) {
+      giantBlinkAt = pageTime + rand(2.2, 4.5);
+      giant.classList.add('blink');
+      setTimeout(() => giant.classList.remove('blink'), 160);
+    }
+  }
+
+  function updateYouTag() {
+    const x = pointer.known ? pointer.x + 16 : innerWidth / 2 - 120;
+    const y = pointer.known ? pointer.y + 20 : innerHeight / 2;
+    youTag.style.transform = `translate(${Math.max(8, Math.min(x, innerWidth - 260))}px, ${Math.max(8, Math.min(y, innerHeight - 40))}px)`;
+  }
+
+  // ---------- placards ----------
+  function hitTest(p) {
+    let best = null;
+    let bd = Infinity;
+    for (const f of fish) {
+      if (f.alpha < 0.5) continue;
+      const rx = f.turn > 0.5 ? f.len * 0.25 + 8 : f.len * 0.6;
+      const ry = f.len * f.tall * 0.6 + 6;
+      const dx = (p.x - f.x) / rx;
+      const dy = (p.y - f.y) / ry;
+      const d = dx * dx + dy * dy;
+      if (d < 1 && d < bd) { bd = d; best = f; }
+    }
+    if (best) return best;
+    if (Math.hypot(p.x - snail.x, p.y - snail.y) < 20) return snail;
+    if (Math.abs(p.x - CHEST.x) < CHEST.w / 2 + 4 && p.y > CHEST.y - 16 && p.y < CHEST.y + CHEST.h) return CHEST;
+    return null;
+  }
+
+  function updateTag() {
+    if (hover && hoverFromTouch && performance.now() > touchTagUntil) hover = null;
+    if (!hover || floodActive || phase === 'flooding') {
+      tagEl.classList.remove('show');
+      return;
+    }
+    let text = hover.tag;
+    let y;
+    if (hover.len) {
+      y = hover.y - hover.len * hover.tall * (hover.angel ? 1.1 : 0.6) - 8;
+      if (hover.turn > 0.5) text = hover.noBlink ? 'no name. has not blinked. will not.' : `${hover.short}. looking at you.`;
+    } else {
+      y = hover.y - (hover === CHEST ? 20 : 16);
+    }
+    if (tagEl.textContent !== text) tagEl.textContent = text;
+    tagEl.style.left = (clamp(hover.x, W * 0.12, W * 0.88) / W) * 100 + '%';
+    tagEl.style.top = (clamp(y, 34, H) / H) * 100 + '%';
+    tagEl.classList.add('show');
+  }
+
+  // ---------- your hands ----------
+  const TAP_LINES = [
+    'tap. the fish are startled.',
+    'the sign says not to do that.',
+    'they heard you. they are fish, not deaf.',
+    'the fish are discussing you.',
+    'gary is writing this down.',
+    'please.',
+    'the sign has been updated.',
+    'they will remember this.',
+    'okay.',
+  ];
+  const FEED_LINES = [
+    "they eat like they've never seen food. they saw food this morning.",
+    'gary would like it noted that he got the most.',
+    'doug will get the leftovers. doug always gets the leftovers.',
+    'you are a good fish owner. probably.',
+  ];
+
+  function feed(x) {
+    if (flakes.length > 60) {
+      say('there is already a lot of food in here. they will not stop. that is fish.');
+      return;
+    }
+    for (let i = 0; i < 8; i++) {
+      flakes.push({
+        x: clamp(x + rand(-22, 22), 10, W - 10), y: SURFACE + rand(0, 6), vy: rand(10, 18), ph: rand(0, TAU),
+        rot: rand(0, TAU), c: pick(['#c9652e', '#d9a441', '#8e4a2a', '#b3532b']), rest: 0,
+      });
+    }
+    feeds++;
+    const now = performance.now();
+    if (feeds === 1) {
+      lastFeedSay = now;
+      say('food. the fish are thrilled. well, gary is.');
+    } else if (now - lastFeedSay > 6000) {
+      lastFeedSay = now;
+      say(pick(FEED_LINES));
+    }
+  }
+
+  function tapGlass(p) {
+    taps++;
+    tankRipples.push({ x: p.x, y: p.y, r: 4, a: 0.6 });
+    for (const f of fish) {
+      if (f.mode !== 'normal') continue;
+      const dx = f.x - p.x;
+      const dy = f.y - p.y;
+      const d = Math.hypot(dx, dy) || 1;
+      if (d > 320) continue;
+      const kick = (1 - d / 320) * f.speed * 5 + 60;
+      f.vx += (dx / d) * kick;
+      f.vy += (dy / d) * kick * 0.6;
+      f.retarget = 0;
+    }
+    say(taps <= TAP_LINES.length ? TAP_LINES[taps - 1] : pick(['okay.', 'they are ignoring you now.', '...']));
+    if (taps === 7) signEl.textContent = 'please stop tapping the glass.';
+    if (taps === 11) signEl.textContent = 'we are not asking again.';
+    twistAt -= 5;
+    if (taps >= 8) twistAt = Math.min(twistAt, pageTime + 2.5);
+  }
+
+  function toTank(e) {
+    const r = canvas.getBoundingClientRect();
+    return { x: ((e.clientX - r.left) / r.width) * W, y: ((e.clientY - r.top) / r.height) * H };
+  }
+
+  addEventListener('pointermove', e => {
+    pointer.x = e.clientX;
+    pointer.y = e.clientY;
+    pointer.known = true;
+  });
+  addEventListener('pointerdown', e => {
+    pointer.x = e.clientX;
+    pointer.y = e.clientY;
+    pointer.known = true;
+    if (phase !== 'flooding' && phase !== 'flooded' && phase !== 'draining') return;
+    if (e.target.closest && e.target.closest('.lobby-link')) return;
+    if (performance.now() - lastInsideTap > 1500) {
+      lastInsideTap = performance.now();
+      say('you tap on the glass. from the inside.');
+    }
+  });
+
+  canvas.addEventListener('pointermove', e => {
+    if (e.pointerType === 'touch') return;
+    hover = hitTest(toTank(e));
+    hoverFromTouch = false;
+  });
+  canvas.addEventListener('pointerleave', () => { if (!hoverFromTouch) hover = null; });
+  canvas.addEventListener('pointerdown', e => {
+    const p = toTank(e);
+    if (e.pointerType === 'touch') {
+      const h = hitTest(p);
+      if (h) {
+        hover = h;
+        hoverFromTouch = true;
+        touchTagUntil = performance.now() + 2500;
+      }
+    }
+    if (phase === 'noticing' || phase === 'staring') {
+      say(p.y < SURFACE + 55 ? 'they are not hungry. they are busy.' : 'they do not flinch.');
+      return;
+    }
+    if (phase !== 'normal') return; // taps from inside the flood are handled above
+    if (p.y < SURFACE + 55) feed(p.x);
+    else tapGlass(p);
+  });
+
+  // ---------- they remember you ----------
+  let visits = 1;
+  try {
+    visits = (parseInt(localStorage.getItem('cizole.fish-tank.visits'), 10) || 0) + 1;
+    localStorage.setItem('cizole.fish-tank.visits', String(visits));
+  } catch (err) { /* no storage: every visit is the first */ }
+
+  if (visits > 1) {
+    const gary = fish[0];
+    gary.mode = 'remember';
+    gary.rememberUntil = 11;
+    say('one of them remembers you.');
+  } else {
+    say('a fish tank. very relaxing.');
+  }
+
+  // ---------- go ----------
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    pageTime += dt;
+    update(dt);
+    draw(pageTime);
+    if (floodActive) {
+      drawFlood(pageTime, dt);
+      updateGiant();
+      updateYouTag();
+      if (!reduceMotion) {
+        noise.setAttribute('baseFrequency',
+          `${(0.007 + Math.sin(pageTime * 0.9) * 0.002).toFixed(4)} ${(0.02 + Math.sin(pageTime * 1.3) * 0.006).toFixed(4)}`);
+      }
+    }
+    updateTag();
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
