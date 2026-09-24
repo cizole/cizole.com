@@ -117,6 +117,15 @@
   document.fonts.ready.then(measure);
   measure();
 
+  // back from another tab: the letters were not where they're supposed to be
+  addEventListener('cizole:return', e => {
+    if (e.detail.awayMs < 4000) return;
+    for (const l of letters) {
+      l.x = (Math.random() - 0.5) * 400;
+      l.y = (Math.random() - 0.5) * 240;
+    }
+  });
+
   const RANGE = 150;
   function tick(t) {
     for (const l of letters) {
@@ -168,6 +177,10 @@
     }, 38);
   }
 
+  addEventListener('cizole:return', e => {
+    if (e.detail.awayMs > 4000) type("welcome back. we didn't touch anything.");
+  });
+
   tag.addEventListener('click', () => {
     idx = (idx + 1 + Math.floor(Math.random() * (LINES.length - 1))) % LINES.length;
     type(LINES[idx]);
@@ -175,5 +188,6 @@
   type(LINES[idx]);
 })();
 </script>
+<script src="assets/away.js"></script>
 </body>
 </html>

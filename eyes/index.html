@@ -190,6 +190,10 @@
         tx = e.wx;
         ty = e.wy;
       }
+      if (now < watchDoorUntil) {
+        tx = e.x;
+        ty = -400;
+      }
 
       const dx = tx - e.x, dy = ty - e.y;
       const d = Math.hypot(dx, dy) || 1;
@@ -246,9 +250,20 @@
     resizeTimer = setTimeout(layout, 150);
   });
 
+  // back from another tab: they were all watching the door you left through
+  let watchDoorUntil = 0;
+  addEventListener('cizole:return', e => {
+    lastMove = performance.now();
+    if (asleep) wake();
+    if (e.detail.awayMs < 4000) return;
+    watchDoorUntil = performance.now() + 1800;
+    say('they were watching the door.', 2600);
+  });
+
   layout();
   requestAnimationFrame(frame);
 })();
 </script>
+<script src="../assets/away.js"></script>
 </body>
 </html>

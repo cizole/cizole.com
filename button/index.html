@@ -178,7 +178,15 @@
   addEventListener('resize', () => {
     if (btn.style.left) place(parseFloat(btn.style.left), parseFloat(btn.style.top));
   });
+
+  // back from another tab: it used the time to relocate
+  addEventListener('cizole:return', e => {
+    if (tired || done || e.detail.awayMs < 4000) return;
+    place(Math.random() * innerWidth, Math.random() * innerHeight);
+    sequence([[0, "you left. i moved. it's not personal."]]);
+  });
 })();
 </script>
+<script src="../assets/away.js"></script>
 </body>
 </html>

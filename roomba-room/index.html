@@ -846,9 +846,20 @@
     draw(now);
     requestAnimationFrame(frame);
   }
+  // back from another tab
+  addEventListener('cizole:return', e => {
+    if (e.detail.awayMs < 4000) return;
+    say(bot.cat ? "oh. you're back. the cat and i have been talking." : pick([
+      "oh. you're back. i cleaned while you were gone.",
+      "you were gone. i didn't notice. i noticed.",
+      "welcome back. the floor missed you. i didn't.",
+    ]));
+  });
+
   say('hello. i am dustin. i clean.');
   requestAnimationFrame(frame);
 })();
 </script>
+<script src="../assets/away.js"></script>
 </body>
 </html>

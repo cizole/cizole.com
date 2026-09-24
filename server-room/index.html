@@ -1026,6 +1026,18 @@
     localStorage.setItem('cizole.server-room.visits', visits);
   } catch (err) { /* private mode: every visit is the first */ }
 
+  // back from another tab
+  addEventListener('cizole:return', e => {
+    const secs = Math.round(e.detail.awayMs / 1000);
+    if (secs < 4) return;
+    const span = secs < 120 ? `${secs}s` : `${Math.round(secs / 60)}m`;
+    later([
+      [0, 'auth', `visitor returned from another tab after ${span}.`, 'warn'],
+      [900, 'db-01', 'where did you go.'],
+      [1900, 'web-02', "we didn't do anything weird while you were gone."],
+    ]);
+  });
+
   log('boot', 'server room online. all systems nominal.', 'quiet');
   if (visits === 1) {
     later([
@@ -1041,5 +1053,6 @@
   }
 })();
 </script>
+<script src="../assets/away.js"></script>
 </body>
 </html>
