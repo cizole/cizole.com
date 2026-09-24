@@ -30,7 +30,6 @@ Room ideas not built yet (numbers continue from the lobby):
 - snowology: apparently weather needed more software
 - projects: things that escaped localhost
 - about: regrettably, a person
-- junk drawer: no organizational guarantees
 - guestbook: the internet used to have these
 - links: leave while you still can
 - the light switch: turning the lights off makes something in the room move
@@ -41,13 +40,17 @@ Room ideas not built yet (numbers continue from the lobby):
 
 ## How the repo works
 
-- Static HTML/CSS/JS. No build step, no framework, no npm. The only external dependency is the Space Mono font from Google Fonts.
+- Static HTML/CSS/JS. No build step, no framework, no npm. Fonts come from Google Fonts.
+- Libraries are fine when they unlock something new (physics, 3D, face tracking, and so on), not for convenience; skip jQuery. Load them from cdn.jsdelivr.net with exact pinned versions (an import map for ES modules). Use browser APIs directly when they're enough.
 - Each room is its own folder with a self-contained `index.html` (inline `<style>` and `<script>`). Shared color tokens (`--bg`, `--fg`, `--dim`, `--faint`, `--acid`, `--font`) and the `.lobby-link` style live in `assets/site.css`.
 - Every room links back to the lobby with `<a class="lobby-link" href="../">&larr; lobby</a>`.
+- Every page includes `assets/away.js` right before `</body>`. While the tab is hidden it changes the title and favicon, and it fires `cizole:leave` and `cizole:return` (with `detail.awayMs`) on `window`. Rooms can listen for `cizole:return` and react in a small, deadpan way.
+- Camera or other sensitive input is always opt-in behind a clear button, processed locally, and never uploaded.
 - Add each new room to the list in `index.html` with the next number and a short deadpan blurb.
 - Use relative paths (`../assets/site.css`). The exception is `404.html`, which is served at any missing URL, so it uses root paths and inline styles.
 - Respect `prefers-reduced-motion`.
 - Preview with a local server, since folder links like `eyes/` don't work over `file://`: `python -m http.server 8765 --bind 127.0.0.1`, then open http://127.0.0.1:8765/.
+- The 3D basement (`basement/`) has a door for every room, listed in one array at the top of its script. Add new rooms there too.
 
 ## Deploying
 

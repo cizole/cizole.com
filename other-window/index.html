@@ -1,0 +1,764 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>the other window · cizole</title>
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/site.css">
+<style>
+  html, body { overflow: hidden; }
+  #world {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+  }
+  .label {
+    position: fixed;
+    top: 14px;
+    right: 16px;
+    z-index: 10;
+    margin: 0;
+    color: var(--dim);
+    font-size: 13px;
+    text-align: right;
+    pointer-events: none;
+  }
+  .label b { color: var(--fg); font-weight: 400; }
+  .caption {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 18px;
+    z-index: 10;
+    margin: 0;
+    padding: 0 16px;
+    color: var(--fg);
+    font-size: 14px;
+    text-align: center;
+    pointer-events: none;
+    transition: opacity 0.5s;
+  }
+  .caption.fade { opacity: 0; }
+  .alone {
+    position: fixed;
+    left: 50%;
+    top: 46%;
+    z-index: 20;
+    width: min(440px, calc(100vw - 32px));
+    padding: 24px;
+    border: 1px solid var(--faint);
+    border-radius: 12px;
+    background: rgba(14, 13, 11, 0.86);
+    text-align: center;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+  .alone[hidden] { display: none; }
+  .alone h1 { margin: 0 0 10px; font-size: 18px; }
+  .alone p { margin: 0 0 16px; color: var(--dim); font-size: 13px; line-height: 1.55; }
+  .alone p:last-child { margin-bottom: 0; }
+  .alone button {
+    padding: 10px 18px;
+    border: 1px solid var(--acid);
+    border-radius: 999px;
+    background: none;
+    color: var(--acid);
+    font: 700 14px var(--font);
+    cursor: pointer;
+    pointer-events: auto;
+  }
+  .alone button:hover { background: rgba(200, 255, 61, 0.08); }
+  .alone button[hidden] { display: none; }
+</style>
+</head>
+<body>
+<a class="lobby-link" href="../">&larr; lobby</a>
+<canvas id="world" aria-label="a room that continues into your other browser windows. a ball, a paper airplane and a moth live here."></canvas>
+<p class="label" id="label">window <b>1</b> of <b>1</b></p>
+<p class="caption" id="caption" role="status"></p>
+<div class="alone" id="alone" hidden>
+  <h1>this room is bigger than one window.</h1>
+  <p id="alone-text">open another window and put it next to this one. drag the windows around. things will notice.</p>
+  <button type="button" id="open-window">open another window</button>
+</div>
+
+<script>
+(() => {
+  const TAU = Math.PI * 2;
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const angleDiff = (a, b) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const touchOnly = matchMedia('(pointer: coarse)').matches && !matchMedia('(pointer: fine)').matches;
+  const SPEED = reduceMotion ? 0.5 : 1;
+
+  const canvas = document.getElementById('world');
+  const g = canvas.getContext('2d');
+  const labelEl = document.getElementById('label');
+  const captionEl = document.getElementById('caption');
+  const aloneEl = document.getElementById('alone');
+  const aloneText = document.getElementById('alone-text');
+  const openBtn = document.getElementById('open-window');
+
+  const me = { id: Math.random().toString(36).slice(2, 10), born: Date.now() + Math.random() };
+
+  // ---------- where this window's page sits on the screen ----------
+  // screenX/Y is the outer window; assume equal side borders and put the rest of the chrome on top.
+  // (browser zoom other than 100% throws this off a little. so do some multi-monitor setups.)
+  function measure() {
+    const border = Math.max(0, (outerWidth - innerWidth) / 2);
+    const top = Math.max(0, outerHeight - innerHeight - border);
+    return { x: Math.round(screenX + border), y: Math.round(screenY + top), w: innerWidth, h: innerHeight };
+  }
+  let rect = measure();
+
+  // ---------- the other windows ----------
+  const peers = new Map(); // id -> { id, born, vis, rect, seen }
+  let chan = null;
+  try { chan = new BroadcastChannel('cizole-other-window'); } catch (err) { chan = null; }
+  function send(msg) {
+    if (!chan) return;
+    try { chan.postMessage(msg); } catch (err) { /* closing */ }
+  }
+  let lastBeat = 0;
+  function heartbeat() {
+    lastBeat = Date.now();
+    send({ t: 'geo', id: me.id, born: me.born, vis: !document.hidden, rect });
+  }
+  function livePeers() {
+    const now = Date.now();
+    const list = [{ id: me.id, born: me.born, vis: !document.hidden, rect }];
+    for (const p of peers.values()) if (now - p.seen < 3000) list.push(p);
+    list.sort((a, b) => a.born - b.born || (a.id < b.id ? -1 : 1));
+    return list;
+  }
+  // the oldest visible window runs the world (hidden tabs barely get animation frames)
+  function leaderOf(list) {
+    const visible = list.filter(p => p.vis);
+    return (visible.length ? visible : list)[0];
+  }
+
+  let world = null; // { objs: [...], ropes: [...] }
+  let isLeader = true;
+  let leaderId = me.id;
+  let stateRecvAt = 0;
+
+  if (chan) {
+    chan.onmessage = e => {
+      const m = e.data;
+      if (!m || typeof m !== 'object') return;
+      if (m.t === 'geo') {
+        const known = peers.has(m.id);
+        peers.set(m.id, { id: m.id, born: m.born, vis: m.vis, rect: m.rect, seen: Date.now() });
+        if (!known) heartbeat(); // say hi back right away
+      } else if (m.t === 'bye') {
+        peers.delete(m.id);
+      } else if (m.t === 'state') {
+        if (!isLeader && (m.from === leaderId || !world)) applyState(m);
+      } else if (m.t === 'ptr' || m.t === 'grab' || m.t === 'drag' || m.t === 'release') {
+        if (isLeader) handleInput(m);
+      }
+    };
+  }
+  setInterval(() => {
+    heartbeat();
+    const now = Date.now();
+    for (const [id, p] of peers) if (now - p.seen > 6000) peers.delete(id);
+  }, 500);
+  document.addEventListener('visibilitychange', heartbeat);
+  addEventListener('pagehide', () => send({ t: 'bye', id: me.id }));
+  addEventListener('pageshow', e => { if (e.persisted) heartbeat(); });
+
+  // ---------- the world, in screen coordinates ----------
+  const RADIUS = { ball: 18, plane: 16, moth: 8 };
+  const HIT = { ball: 28, plane: 28, moth: 24 };
+
+  function spawnWorld() {
+    const cx = rect.x + rect.w / 2;
+    const cy = rect.y + rect.h / 2;
+    return {
+      objs: [
+        { k: 'ball', x: cx - 140, y: cy - 60, vx: 250, vy: 160, a: 0, win: null, prev: null, held: null },
+        { k: 'plane', x: cx + 120, y: cy + 80, vx: -210, vy: -30, a: 0, win: null, prev: null, held: null },
+        { k: 'moth', x: cx, y: rect.y + 90, vx: 0, vy: 0, a: 0, win: null, prev: null, held: null },
+      ],
+      ropes: [],
+    };
+  }
+
+  let pointer = null; // the most recent cursor in any window: the moth thinks it's a lamp
+
+  function handleInput(m) {
+    const now = Date.now();
+    if (m.t === 'ptr') {
+      if (!pointer || m.at >= pointer.at) pointer = { x: m.x, y: m.y, at: m.at };
+      return;
+    }
+    if (!world) return;
+    const o = world.objs[m.o];
+    if (!o) return;
+    if (m.t === 'grab') {
+      if (o.k === 'moth') return;
+      o.held = m.id;
+      o.heldAt = now;
+      o.x = m.x;
+      o.y = m.y;
+      o.vx = 0;
+      o.vy = 0;
+    } else if (m.t === 'drag' && o.held === m.id) {
+      o.x = m.x;
+      o.y = m.y;
+      o.heldAt = now;
+    } else if (m.t === 'release' && o.held === m.id) {
+      o.held = null;
+      const sp = Math.hypot(m.vx, m.vy);
+      if (sp < 60) {
+        const a = Math.random() * TAU;
+        o.vx = Math.cos(a) * 200;
+        o.vy = Math.sin(a) * 200;
+      } else {
+        const k = sp > 1600 ? 1600 / sp : 1;
+        o.vx = m.vx * k;
+        o.vy = m.vy * k;
+      }
+    }
+  }
+
+  function simulate(dt, list) {
+    const now = Date.now();
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const p of list) {
+      minX = Math.min(minX, p.rect.x);
+      minY = Math.min(minY, p.rect.y);
+      maxX = Math.max(maxX, p.rect.x + p.rect.w);
+      maxY = Math.max(maxY, p.rect.y + p.rect.h);
+    }
+    const pointerFresh = pointer && now - pointer.at < 4000;
+
+    for (const o of world.objs) {
+      if (o.held && now - (o.heldAt || 0) > 1500) o.held = null;
+      if (!o.held) {
+        if (o.k === 'ball') {
+          // cruises at one speed, eases back to it after being thrown
+          const sp = Math.hypot(o.vx, o.vy) || 1;
+          const cruise = 260 * SPEED;
+          const ns = sp + (cruise - sp) * Math.min(1, dt * 0.8);
+          o.vx *= ns / sp;
+          o.vy *= ns / sp;
+          o.a += (dt * ns) / 18;
+        } else if (o.k === 'plane') {
+          // always looking for another window
+          if (!o.target || now > (o.retarget || 0) || Math.hypot(o.target.x - o.x, o.target.y - o.y) < 60) {
+            const others = list.filter(p => p.id !== o.win);
+            const w = pick(others.length ? others : list);
+            o.target = { x: w.rect.x + w.rect.w * (0.2 + Math.random() * 0.6), y: w.rect.y + w.rect.h * (0.25 + Math.random() * 0.5) };
+            o.retarget = now + 7000;
+          }
+          const cur = Math.atan2(o.vy, o.vx);
+          const want = Math.atan2(o.target.y - o.y, o.target.x - o.x);
+          const turn = clamp(angleDiff(want, cur), -1.7 * dt, 1.7 * dt) + Math.sin(now / 700) * 0.5 * dt;
+          const sp = Math.hypot(o.vx, o.vy);
+          const cs = sp + (230 * SPEED - sp) * Math.min(1, dt);
+          o.vx = Math.cos(cur + turn) * cs;
+          o.vy = Math.sin(cur + turn) * cs;
+          o.a += dt;
+        } else {
+          // the moth: goes to whichever cursor moved last, in whichever window
+          let tx, ty;
+          if (pointerFresh) {
+            tx = pointer.x;
+            ty = pointer.y;
+          } else {
+            if (!o.wander || now > (o.rewander || 0)) {
+              const w = pick(list);
+              o.wander = { x: w.rect.x + Math.random() * w.rect.w, y: w.rect.y + Math.random() * w.rect.h };
+              o.rewander = now + 2500 + Math.random() * 2500;
+            }
+            tx = o.wander.x;
+            ty = o.wander.y;
+          }
+          const dx = tx - o.x, dy = ty - o.y;
+          const d = Math.hypot(dx, dy) || 1;
+          const pull = (pointerFresh ? 950 : 450) * SPEED;
+          const jitter = 1500 * SPEED;
+          o.vx += ((dx / d) * pull + (Math.random() - 0.5) * jitter) * dt;
+          o.vy += ((dy / d) * pull + (Math.random() - 0.5) * jitter) * dt;
+          if (pointerFresh && d < 45) {
+            // circle the lamp instead of landing on it
+            o.vx += (-dy / d) * 700 * dt;
+            o.vy += (dx / d) * 700 * dt;
+          }
+          const sp = Math.hypot(o.vx, o.vy);
+          const max = 340 * SPEED;
+          if (sp > max) { o.vx *= max / sp; o.vy *= max / sp; }
+          const drag = Math.pow(0.55, dt);
+          o.vx *= drag;
+          o.vy *= drag;
+          o.a += dt * 32;
+        }
+        o.x += o.vx * dt;
+        o.y += o.vy * dt;
+      }
+
+      // bounce inside the bounding box of every window
+      const r = RADIUS[o.k];
+      if (o.x < minX + r) { o.x = minX + r; o.vx = Math.abs(o.vx); }
+      if (o.x > maxX - r) { o.x = maxX - r; o.vx = -Math.abs(o.vx); }
+      if (o.y < minY + r) { o.y = minY + r; o.vy = Math.abs(o.vy); }
+      if (o.y > maxY - r) { o.y = maxY - r; o.vy = -Math.abs(o.vy); }
+
+      // which window can see it right now
+      const w = list.find(p => o.x > p.rect.x && o.x < p.rect.x + p.rect.w && o.y > p.rect.y && o.y < p.rect.y + p.rect.h);
+      const id = w ? w.id : null;
+      if (id !== o.win) {
+        if (o.win) o.prev = o.win;
+        o.win = id;
+      }
+    }
+  }
+
+  // ---------- string between the windows (verlet rope) ----------
+  const SEGS = 18;
+  function anchor(from, to) {
+    // a point just inside `from`'s edge, facing `to`
+    const cx = from.rect.x + from.rect.w / 2, cy = from.rect.y + from.rect.h / 2;
+    const dx = to.rect.x + to.rect.w / 2 - cx, dy = to.rect.y + to.rect.h / 2 - cy;
+    const hw = Math.max(1, from.rect.w / 2 - 18), hh = Math.max(1, from.rect.h / 2 - 18);
+    const s = Math.min(dx ? hw / Math.abs(dx) : Infinity, dy ? hh / Math.abs(dy) : Infinity, 1);
+    return { x: cx + dx * s, y: cy + dy * s };
+  }
+  function updateRopes(list, dt) {
+    const keep = [];
+    for (let i = 0; i + 1 < list.length; i++) {
+      const A = list[i], B = list[i + 1];
+      const p0 = anchor(A, B), p1 = anchor(B, A);
+      const dist = Math.hypot(p1.x - p0.x, p1.y - p0.y);
+      let rope = world.ropes.find(r => r.a === A.id && r.b === B.id);
+      if (!rope) {
+        rope = { a: A.id, b: B.id, pts: [], old: null, rest: dist * 1.12 + 40 };
+        for (let j = 0; j <= SEGS; j++) {
+          const t = j / SEGS;
+          rope.pts.push(p0.x + (p1.x - p0.x) * t, p0.y + (p1.y - p0.y) * t);
+        }
+      }
+      if (!rope.old || rope.old.length !== rope.pts.length) rope.old = rope.pts.slice();
+      // the slack catches up slowly, so yanking a window pulls the string tight for a moment
+      rope.rest += (dist * 1.12 + 40 - rope.rest) * Math.min(1, dt * 1.5);
+      const n = rope.pts.length;
+      const gravity = 1500 * dt * dt;
+      for (let j = 2; j < n - 2; j += 2) {
+        const x = rope.pts[j], y = rope.pts[j + 1];
+        const vx = (x - rope.old[j]) * 0.985, vy = (y - rope.old[j + 1]) * 0.985;
+        rope.old[j] = x;
+        rope.old[j + 1] = y;
+        rope.pts[j] = x + vx;
+        rope.pts[j + 1] = y + vy + gravity;
+      }
+      rope.pts[0] = p0.x; rope.pts[1] = p0.y;
+      rope.pts[n - 2] = p1.x; rope.pts[n - 1] = p1.y;
+      const L = rope.rest / SEGS;
+      for (let it = 0; it < 14; it++) {
+        for (let j = 0; j < n - 2; j += 2) {
+          const dx = rope.pts[j + 2] - rope.pts[j], dy = rope.pts[j + 3] - rope.pts[j + 1];
+          const d = Math.hypot(dx, dy) || 0.001;
+          const diff = ((d - L) / d) * 0.5;
+          const fixedA = j === 0, fixedB = j + 2 === n - 2;
+          const ox = dx * diff, oy = dy * diff;
+          if (!fixedA) { rope.pts[j] += fixedB ? ox * 2 : ox; rope.pts[j + 1] += fixedB ? oy * 2 : oy; }
+          if (!fixedB) { rope.pts[j + 2] -= fixedA ? ox * 2 : ox; rope.pts[j + 3] -= fixedA ? oy * 2 : oy; }
+        }
+      }
+      keep.push(rope);
+    }
+    world.ropes = keep;
+  }
+
+  // ---------- sharing the world ----------
+  let lastStateSent = 0;
+  function broadcastState() {
+    lastStateSent = Date.now();
+    send({
+      t: 'state',
+      from: me.id,
+      objs: world.objs.map(o => ({
+        k: o.k, x: Math.round(o.x), y: Math.round(o.y), vx: Math.round(o.vx), vy: Math.round(o.vy),
+        a: Math.round(o.a * 100) / 100, win: o.win, prev: o.prev, held: o.held || null,
+      })),
+      ropes: world.ropes.map(r => ({ a: r.a, b: r.b, rest: Math.round(r.rest), pts: r.pts.map(v => Math.round(v)) })),
+    });
+  }
+  function applyState(m) {
+    world = {
+      objs: m.objs.map(o => ({ ...o })),
+      ropes: m.ropes.map(r => ({ ...r, old: null })),
+    };
+    stateRecvAt = performance.now();
+    detectEvents();
+  }
+
+  // ---------- captions ----------
+  let captionTimer;
+  let lastSay = 0;
+  function say(text, force) {
+    const now = Date.now();
+    if (!force && now - lastSay < 2500) return;
+    lastSay = now;
+    clearTimeout(captionTimer);
+    captionEl.classList.remove('fade');
+    captionEl.textContent = text;
+    captionTimer = setTimeout(() => captionEl.classList.add('fade'), 5000);
+  }
+
+  const ARRIVE = {
+    ball: ["the ball has arrived. it's colder in this window.", "the ball is here now. it didn't knock.", 'incoming ball.'],
+    plane: ['the paper airplane made it.', 'a paper airplane, from the other window. no message on it.', 'the paper airplane is lost. it is also here.'],
+    moth: ['the moth followed the light.', "the moth is here. it thinks you're a lamp.", 'moth.'],
+  };
+  const GAP = {
+    ball: "the ball is in the gap. it'll come back.",
+    plane: "the paper airplane is between windows. it's fine. probably.",
+    moth: "the moth is in the gap. it's dark in there.",
+  };
+  const lastWin = {};
+  function detectEvents() {
+    for (const o of world.objs) {
+      const before = lastWin[o.k];
+      if (before === undefined) { lastWin[o.k] = o.win; continue; }
+      if (o.win === before) continue;
+      if (o.win === me.id && o.prev && o.prev !== me.id) say(pick(ARRIVE[o.k]));
+      if (before === me.id && o.win === null) {
+        setTimeout(() => {
+          const now = world && world.objs.find(x => x.k === o.k);
+          if (now && now.win === null) say(GAP[o.k]);
+        }, 900);
+      }
+      lastWin[o.k] = o.win;
+    }
+  }
+
+  // ---------- window count ----------
+  const graceUntil = Date.now() + 900;
+  let greeted = false;
+  let lastCount = 1;
+  let lastLabel = '';
+  function updateHud(list) {
+    const n = list.length;
+    const idx = list.findIndex(p => p.id === me.id) + 1;
+    const text = `window <b>${idx}</b> of <b>${n}</b>` + (isLeader && n > 1 ? '<br>(this one is in charge)' : '');
+    if (text !== lastLabel) { labelEl.innerHTML = text; lastLabel = text; }
+
+    const settled = Date.now() > graceUntil;
+    aloneEl.hidden = !(settled && n === 1);
+    if (!settled) { lastCount = n; return; }
+    if (!greeted) {
+      greeted = true;
+      lastCount = n;
+      if (n > 1) say(`this is window ${idx} of ${n}. it's the same room.`, true);
+      return;
+    }
+    if (n === lastCount) return;
+    if (n > lastCount) {
+      if (lastCount === 1) say('there is another window now. drag the windows around. things will notice.', true);
+      else if (n === 4) say('4 windows. this is getting out of hand.', true);
+      else if (n >= 6) say(`${n} windows. nobody needs this many windows.`, true);
+      else say(`a window opened. there are ${n} now.`, true);
+    } else {
+      say('a window closed. everything in it is now nowhere.', true);
+    }
+    lastCount = n;
+  }
+
+  if (!chan) {
+    aloneText.textContent = "your browser can't see its other windows. this is the whole room.";
+    openBtn.hidden = true;
+  } else if (touchOnly) {
+    aloneText.textContent = "this room needs windows. your phone has tabs. it's not the same. the ball doesn't mind.";
+    openBtn.hidden = true;
+  }
+
+  openBtn.addEventListener('click', () => {
+    const w = Math.min(outerWidth, 720);
+    const h = outerHeight;
+    const availLeft = screen.availLeft ?? 0;
+    let left = screenX + outerWidth + 12;
+    if (left + w > availLeft + screen.availWidth) left = Math.max(availLeft, screenX - w - 12);
+    const opened = window.open(
+      location.href,
+      '_blank',
+      `popup,left=${Math.round(left)},top=${Math.round(screenY)},width=${Math.round(w)},height=${Math.round(h)}`,
+    );
+    if (!opened) say('the browser blocked the other window. it does that.', true);
+  });
+
+  // moving a window around
+  let moveBudget = 0;
+  let lastMoveSay = 0;
+  function noticeMove(dist) {
+    moveBudget = moveBudget * 0.9 + dist;
+    const now = Date.now();
+    if (moveBudget > 400 && now - lastMoveSay > 8000) {
+      lastMoveSay = now;
+      moveBudget = 0;
+      say(pick(['the room felt that.', 'you moved the window. everything in it moved too. relatively.', 'careful. the string.']));
+    }
+  }
+
+  addEventListener('cizole:return', e => {
+    const secs = Math.round((e.detail?.awayMs ?? 0) / 1000);
+    if (secs >= 3) say(`you were gone for ${secs} seconds. the ball kept going. it always keeps going.`, true);
+  });
+
+  // ---------- your hands ----------
+  let dragging = null; // { o, hist: [{x, y, t}] }
+  let localPointer = null; // { x, y, at } in this window's page coords
+  let lastPtrSent = 0;
+
+  function sendInput(m) {
+    if (isLeader) handleInput(m);
+    else send(m);
+  }
+  function extrapolation() {
+    return isLeader ? 0 : clamp((performance.now() - stateRecvAt) / 1000, 0, 0.06);
+  }
+  function renderPos(o, i) {
+    if (dragging && dragging.o === i && localPointer) return { x: rect.x + localPointer.x, y: rect.y + localPointer.y };
+    const e = extrapolation();
+    return { x: o.x + o.vx * e, y: o.y + o.vy * e };
+  }
+  function hitIndex(gx, gy) {
+    if (!world) return -1;
+    return world.objs.findIndex((o, i) => {
+      const p = renderPos(o, i);
+      return Math.hypot(p.x - gx, p.y - gy) < HIT[o.k];
+    });
+  }
+
+  canvas.addEventListener('pointerdown', e => {
+    localPointer = { x: e.clientX, y: e.clientY, at: Date.now() };
+    const gx = rect.x + e.clientX, gy = rect.y + e.clientY;
+    sendInput({ t: 'ptr', id: me.id, x: gx, y: gy, at: Date.now() });
+    const i = hitIndex(gx, gy);
+    if (i < 0) return;
+    if (world.objs[i].k === 'moth') { say('the moth does not want to be held.'); return; }
+    dragging = { o: i, hist: [{ x: gx, y: gy, t: performance.now() }] };
+    try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* synthetic pointer */ }
+    canvas.style.cursor = 'grabbing';
+    sendInput({ t: 'grab', id: me.id, o: i, x: gx, y: gy });
+  });
+  canvas.addEventListener('pointermove', e => {
+    localPointer = { x: e.clientX, y: e.clientY, at: Date.now() };
+    const gx = rect.x + e.clientX, gy = rect.y + e.clientY;
+    const now = Date.now();
+    if (now - lastPtrSent > 50) {
+      lastPtrSent = now;
+      sendInput({ t: 'ptr', id: me.id, x: gx, y: gy, at: now });
+    }
+    if (dragging) {
+      const t = performance.now();
+      dragging.hist.push({ x: gx, y: gy, t });
+      while (dragging.hist.length > 2 && t - dragging.hist[0].t > 100) dragging.hist.shift();
+      sendInput({ t: 'drag', id: me.id, o: dragging.o, x: gx, y: gy });
+    } else {
+      canvas.style.cursor = hitIndex(gx, gy) >= 0 ? 'grab' : 'default';
+    }
+  });
+  function endDrag() {
+    if (!dragging) return;
+    const h = dragging.hist;
+    const a = h[0], b = h[h.length - 1];
+    const secs = Math.max(0.016, (b.t - a.t) / 1000);
+    sendInput({ t: 'release', id: me.id, o: dragging.o, vx: (b.x - a.x) / secs, vy: (b.y - a.y) / secs });
+    dragging = null;
+    canvas.style.cursor = 'default';
+  }
+  canvas.addEventListener('pointerup', endDrag);
+  canvas.addEventListener('pointercancel', endDrag);
+  canvas.addEventListener('pointerleave', e => { if (e.pointerType !== 'mouse') localPointer = null; });
+
+  // ---------- drawing ----------
+  let dpr = 1;
+  function fitCanvas() {
+    dpr = Math.min(devicePixelRatio || 1, 2);
+    const w = Math.round(innerWidth * dpr), h = Math.round(innerHeight * dpr);
+    if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+  }
+
+  function drawBall(x, y, a) {
+    g.save();
+    g.translate(x, y);
+    const grad = g.createRadialGradient(-6, -6, 2, 0, 0, 18);
+    grad.addColorStop(0, '#f1ffc9');
+    grad.addColorStop(0.35, '#c8ff3d');
+    grad.addColorStop(1, '#6f8f1f');
+    g.fillStyle = grad;
+    g.beginPath();
+    g.arc(0, 0, 18, 0, TAU);
+    g.fill();
+    g.rotate(a);
+    g.strokeStyle = 'rgba(20, 30, 5, 0.5)';
+    g.lineWidth = 2;
+    g.beginPath();
+    g.ellipse(0, 0, 7, 17, 0, 0, TAU);
+    g.stroke();
+    g.restore();
+  }
+  function drawPlane(x, y, heading, t) {
+    g.save();
+    g.translate(x, y);
+    g.rotate(heading);
+    g.scale(1, 0.75 + 0.25 * Math.cos(t * 2.2));
+    g.fillStyle = '#ebe5d6';
+    g.strokeStyle = '#8a8475';
+    g.lineWidth = 1;
+    g.lineJoin = 'round';
+    g.beginPath();
+    g.moveTo(20, 0);
+    g.lineTo(-16, -13);
+    g.lineTo(-9, 0);
+    g.lineTo(-16, 13);
+    g.closePath();
+    g.fill();
+    g.stroke();
+    g.beginPath();
+    g.moveTo(20, 0);
+    g.lineTo(-9, 0);
+    g.stroke();
+    g.restore();
+  }
+  function drawMoth(x, y, heading, phase) {
+    g.save();
+    g.translate(x, y);
+    g.rotate(heading);
+    const flap = 0.3 + 0.7 * Math.abs(Math.sin(phase));
+    g.fillStyle = 'rgba(196, 182, 150, 0.9)';
+    for (const s of [-1, 1]) {
+      g.beginPath();
+      g.ellipse(-2, s * 6 * flap, 6, 8 * flap, s * 0.5, 0, TAU);
+      g.fill();
+    }
+    g.fillStyle = '#6d6150';
+    g.beginPath();
+    g.ellipse(0, 0, 7, 2.6, 0, 0, TAU);
+    g.fill();
+    g.strokeStyle = '#6d6150';
+    g.lineWidth = 0.8;
+    g.beginPath();
+    g.moveTo(6, -1); g.lineTo(11, -4);
+    g.moveTo(6, 1); g.lineTo(11, 4);
+    g.stroke();
+    g.restore();
+  }
+
+  function draw() {
+    fitCanvas();
+    const W = innerWidth, H = innerHeight;
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.clearRect(0, 0, W, H);
+    const ox = -rect.x, oy = -rect.y;
+
+    // a dot grid in screen coordinates, so it lines up across windows that touch
+    const STEP = 48;
+    g.fillStyle = 'rgba(235, 229, 214, 0.07)';
+    for (let x = Math.floor(rect.x / STEP) * STEP; x < rect.x + W + STEP; x += STEP) {
+      for (let y = Math.floor(rect.y / STEP) * STEP; y < rect.y + H + STEP; y += STEP) {
+        g.fillRect(x + ox - 1, y + oy - 1, 2, 2);
+      }
+    }
+
+    // the cursor is a lamp, as far as the moth is concerned
+    if (localPointer && Date.now() - localPointer.at < 4000) {
+      const glow = g.createRadialGradient(localPointer.x, localPointer.y, 0, localPointer.x, localPointer.y, 110);
+      glow.addColorStop(0, 'rgba(255, 238, 190, 0.09)');
+      glow.addColorStop(1, 'rgba(255, 238, 190, 0)');
+      g.fillStyle = glow;
+      g.fillRect(localPointer.x - 110, localPointer.y - 110, 220, 220);
+    }
+
+    if (!world) return;
+
+    // string
+    for (const r of world.ropes) {
+      const p = r.pts;
+      if (!p || p.length < 4) continue;
+      g.lineCap = 'round';
+      g.lineJoin = 'round';
+      for (const [color, width, off] of [['rgba(0, 0, 0, 0.45)', 4, 2], ['#b9975b', 2.2, 0]]) {
+        g.strokeStyle = color;
+        g.lineWidth = width;
+        g.beginPath();
+        g.moveTo(p[0] + ox, p[1] + oy + off);
+        for (let j = 2; j < p.length - 2; j += 2) {
+          const mx = (p[j] + p[j + 2]) / 2 + ox, my = (p[j + 1] + p[j + 3]) / 2 + oy + off;
+          g.quadraticCurveTo(p[j] + ox, p[j + 1] + oy + off, mx, my);
+        }
+        g.lineTo(p[p.length - 2] + ox, p[p.length - 1] + oy + off);
+        g.stroke();
+      }
+      // knots where it's tied on
+      g.fillStyle = '#8a6d3b';
+      for (const j of [0, p.length - 2]) {
+        g.beginPath();
+        g.arc(p[j] + ox, p[j + 1] + oy, 4, 0, TAU);
+        g.fill();
+      }
+    }
+
+    // things
+    world.objs.forEach((o, i) => {
+      const pos = renderPos(o, i);
+      const x = pos.x + ox, y = pos.y + oy;
+      if (x < -40 || y < -40 || x > W + 40 || y > H + 40) return;
+      if (o.k === 'ball') drawBall(x, y, o.a);
+      else if (o.k === 'plane') drawPlane(x, y, Math.atan2(o.vy, o.vx), o.a);
+      else drawMoth(x, y, Math.atan2(o.vy, o.vx), o.a);
+    });
+  }
+
+  // ---------- main loop ----------
+  const leadAfter = Date.now() + 350;
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+
+    const r = measure();
+    if (r.x !== rect.x || r.y !== rect.y || r.w !== rect.w || r.h !== rect.h) {
+      noticeMove(Math.hypot(r.x - rect.x, r.y - rect.y));
+      rect = r;
+      heartbeat();
+    } else if (Date.now() - lastBeat > 250) {
+      heartbeat();
+    }
+
+    const all = livePeers();
+    // background tabs and minimized windows aren't part of the room's shape
+    const visible = all.filter(p => p.vis || p.id === me.id);
+    const leader = leaderOf(all);
+    leaderId = leader.id;
+    isLeader = leader.id === me.id;
+    // a fresh window waits a moment to hear from older windows before starting a world of its own
+    if (isLeader && (world || Date.now() > leadAfter)) {
+      if (!world) world = spawnWorld();
+      simulate(dt, visible);
+      updateRopes(visible, dt);
+      if (Date.now() - lastStateSent > 33) broadcastState();
+      detectEvents();
+    }
+    updateHud(all);
+    draw();
+    requestAnimationFrame(frame);
+  }
+  heartbeat();
+  requestAnimationFrame(frame);
+})();
+</script>
+<script src="../assets/away.js"></script>
+</body>
+</html>

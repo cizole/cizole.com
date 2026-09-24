@@ -1,0 +1,802 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mirror · cizole</title>
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/site.css">
+<style>
+  .room {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 64px 16px 40px;
+    background:
+      radial-gradient(ellipse 60% 40% at 50% 12%, rgba(255, 224, 170, 0.1), transparent 70%),
+      repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 48px),
+      repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 48px),
+      #151514;
+  }
+
+  /* vanity light */
+  .vanity {
+    width: min(340px, 70vw);
+    height: 12px;
+    margin-bottom: 20px;
+    border-radius: 6px;
+    background: #f3e6c8;
+    box-shadow: 0 0 22px 6px rgba(255, 225, 160, 0.3), 0 0 90px 24px rgba(255, 225, 160, 0.1);
+  }
+
+  .mirror {
+    position: relative;
+    width: min(420px, calc(100vw - 32px));
+    aspect-ratio: 3 / 4;
+    padding: 14px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #b9bcc0, #6f7378 38%, #d6d9dc 58%, #7d8186);
+    box-shadow: 0 22px 50px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+  }
+  .glass {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    border-radius: 6px;
+    background: #1a1d1f;
+    box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.5);
+  }
+  #glass { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .fog {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(ellipse at 50% 45%, transparent 52%, rgba(220, 228, 232, 0.16) 78%, rgba(232, 238, 242, 0.42) 100%);
+    filter: blur(2px);
+    animation: breathe 9s ease-in-out infinite alternate;
+  }
+  @keyframes breathe { to { opacity: 0.55; } }
+  .sheen {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(115deg, transparent 34%, rgba(255, 255, 255, 0.07) 41%, transparent 49%, transparent 61%, rgba(255, 255, 255, 0.04) 65%, transparent 69%);
+  }
+
+  .covered {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 24px;
+    text-align: center;
+    background: rgba(12, 14, 15, 0.45);
+  }
+  .covered[hidden] { display: none; }
+  .covered small { color: var(--dim); font-size: 12px; line-height: 1.5; }
+
+  .btn {
+    padding: 10px 16px;
+    border: 1px solid #4a4d50;
+    border-radius: 999px;
+    background: #151718;
+    color: var(--fg);
+    font: 14px var(--font);
+    cursor: pointer;
+  }
+  .btn:hover, .btn:focus-visible { border-color: var(--acid); color: var(--acid); }
+  .btn:disabled { opacity: 0.5; cursor: default; }
+  .btn[hidden] { display: none; }
+  .btn.quiet {
+    margin-top: 10px;
+    padding: 4px 8px;
+    border-color: transparent;
+    background: none;
+    color: var(--dim);
+    font-size: 12px;
+    text-decoration: underline;
+  }
+
+  /* the sink */
+  .sink {
+    position: relative;
+    width: min(480px, calc(100vw - 16px));
+    height: 34px;
+    margin-top: 30px;
+    border-radius: 6px 6px 18px 18px;
+    background: linear-gradient(#f2f1ec, #cfcdc6);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+  }
+  .faucet {
+    position: absolute;
+    left: 50%;
+    top: -26px;
+    width: 16px;
+    height: 30px;
+    margin-left: -8px;
+    border-radius: 4px 4px 0 0;
+    background: linear-gradient(90deg, #8d9196, #e3e6e9, #8d9196);
+  }
+  .faucet::after {
+    content: "";
+    position: absolute;
+    left: 4px;
+    top: 2px;
+    width: 30px;
+    height: 7px;
+    border-radius: 4px;
+    background: linear-gradient(#e3e6e9, #8d9196);
+  }
+
+  .controls { min-height: 44px; margin-top: 18px; }
+  .caption { min-height: 1.5em; margin: 12px 0 0; text-align: center; transition: opacity 0.3s; }
+  .caption.fade { opacity: 0; }
+  .fine { max-width: 420px; margin: 18px 0 0; color: #5a564c; font-size: 11px; text-align: center; }
+
+  /* the camera feed is only ever drawn into the mirror; the element itself stays out of sight */
+  .feed { position: fixed; left: 0; top: 0; width: 2px; height: 2px; opacity: 0; pointer-events: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fog { animation: none; }
+  }
+</style>
+</head>
+<body>
+<a class="lobby-link" href="../">&larr; lobby</a>
+
+<main class="room">
+  <div class="vanity" aria-hidden="true"></div>
+  <div class="mirror">
+    <div class="glass">
+      <canvas id="glass" width="450" height="600" aria-label="the mirror"></canvas>
+      <div class="fog" aria-hidden="true"></div>
+      <div class="sheen" aria-hidden="true"></div>
+      <div class="covered" id="covered">
+        <button class="btn" id="on" type="button">turn on the mirror</button>
+        <small>(uses your camera. nothing leaves this page.)</small>
+        <button class="btn quiet" id="someone" type="button">no camera? the mirror will show someone else.</button>
+      </div>
+    </div>
+  </div>
+  <div class="sink" aria-hidden="true"><span class="faucet"></span></div>
+  <div class="controls"><button class="btn" id="cover" type="button" hidden>cover the mirror</button></div>
+  <p class="caption" id="caption" role="status">a mirror. it's covered.</p>
+  <p class="fine">nothing is recorded or uploaded. the picture only exists on this page, in this tab. covering the mirror turns the camera off.</p>
+</main>
+
+<video class="feed" id="video" playsinline muted aria-hidden="true"></video>
+
+<script type="module">
+const $ = s => document.querySelector(s);
+const TAU = Math.PI * 2;
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+const ease = x => x * x * (3 - 2 * x);
+
+const MP_BASE = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.0.1';
+const MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
+// face mesh contour indices for each eye
+const RIGHT_EYE = [33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246];
+const LEFT_EYE = [263, 249, 390, 373, 374, 380, 381, 382, 362, 398, 384, 385, 386, 387, 388, 466];
+
+const glass = $('#glass');
+const g = glass.getContext('2d');
+const DW = glass.width;
+const DH = glass.height;
+const CW = 300; // captured frames are small portrait crops
+const CH = 400;
+const FPS = 20;
+const POOL = 56; // ~2.8 s of history
+
+const video = $('#video');
+const coveredEl = $('#covered');
+const onBtn = $('#on');
+const someoneBtn = $('#someone');
+const coverBtn = $('#cover');
+
+// ---------- captions ----------
+const capEl = $('#caption');
+let capTimer;
+function say(text) {
+  clearTimeout(capTimer);
+  capEl.classList.add('fade');
+  capTimer = setTimeout(() => {
+    capEl.textContent = text;
+    capEl.classList.remove('fade');
+  }, 250);
+}
+
+// ---------- frame buffers ----------
+function makeCanvas(w, h) {
+  const c = document.createElement('canvas');
+  c.width = w;
+  c.height = h;
+  return c;
+}
+const pool = Array.from({ length: POOL }, () => {
+  const canvas = makeCanvas(CW, CH);
+  return { canvas, ctx: canvas.getContext('2d'), t: -1, face: null };
+});
+let poolIdx = 0;
+const memoryCanvas = makeCanvas(CW, CH);
+const lastFaceCanvas = makeCanvas(CW, CH);
+const leaveCanvas = makeCanvas(CW, CH);
+let hasMemory = false;
+let hasLastFace = false;
+let hasLeave = false;
+const copyInto = (dst, src) => dst.getContext('2d').drawImage(src, 0, 0);
+
+function frameAt(time) {
+  let best = null;
+  let oldest = null;
+  for (const f of pool) {
+    if (f.t < 0) continue;
+    if (!oldest || f.t < oldest.t) oldest = f;
+    if (f.t <= time && (!best || f.t > best.t)) best = f;
+  }
+  return best || oldest;
+}
+
+// center-crop any source to the mirror's 3:4 portrait shape
+function crop(w, h) {
+  const aspect = CW / CH;
+  if (w / h > aspect) {
+    const sw = h * aspect;
+    return { sx: (w - sw) / 2, sy: 0, sw, sh: h };
+  }
+  const sh = w / aspect;
+  return { sx: 0, sy: (h - sh) / 2, sw: w, sh };
+}
+
+// ---------- face tracking (camera only, optional) ----------
+let tracker = null;
+let trackerLoading = false;
+let lastDetectTs = 0;
+
+function eyeBox(lm, idx) {
+  let x0 = 1, x1 = 0, y0 = 1, y1 = 0;
+  for (const i of idx) {
+    const p = lm[i];
+    if (!p) continue;
+    x0 = Math.min(x0, p.x); x1 = Math.max(x1, p.x);
+    y0 = Math.min(y0, p.y); y1 = Math.max(y1, p.y);
+  }
+  return { x: (x0 + x1) / 2, y: (y0 + y1) / 2, w: x1 - x0, h: y1 - y0 };
+}
+
+async function loadTracker() {
+  if (tracker || trackerLoading) return;
+  trackerLoading = true;
+  try {
+    const { FaceLandmarker, FilesetResolver } = await import(`${MP_BASE}/vision_bundle.mjs`);
+    const fileset = await FilesetResolver.forVisionTasks(`${MP_BASE}/wasm`);
+    const options = delegate => ({
+      baseOptions: { modelAssetPath: MODEL_URL, delegate },
+      runningMode: 'VIDEO',
+      numFaces: 1,
+      outputFaceBlendshapes: true,
+    });
+    let landmarker;
+    try {
+      landmarker = await FaceLandmarker.createFromOptions(fileset, options('GPU'));
+    } catch (err) {
+      landmarker = await FaceLandmarker.createFromOptions(fileset, options('CPU'));
+    }
+    tracker = {
+      detect(canvas) {
+        const ts = Math.max(lastDetectTs + 1, performance.now());
+        lastDetectTs = ts;
+        const r = landmarker.detectForVideo(canvas, ts);
+        const lm = r.faceLandmarks && r.faceLandmarks[0];
+        if (!lm) return { present: false, eyes: [], blinking: false };
+        const cats = (r.faceBlendshapes && r.faceBlendshapes[0] && r.faceBlendshapes[0].categories) || [];
+        const score = name => (cats.find(c => c.categoryName === name) || {}).score ?? 0;
+        return {
+          present: true,
+          eyes: [eyeBox(lm, RIGHT_EYE), eyeBox(lm, LEFT_EYE)],
+          blinking: Math.max(score('eyeBlinkLeft'), score('eyeBlinkRight')) > 0.4,
+        };
+      },
+    };
+  } catch (err) {
+    // no face tricks today. the mirror is still weird without them.
+    console.warn('mirror: face tracking unavailable', err);
+  }
+  trackerLoading = false;
+}
+
+// ---------- someone else (the no-camera fallback) ----------
+function makeSomeoneElse() {
+  const W = 480;
+  const H = 640;
+  const c = makeCanvas(W, H);
+  const x = c.getContext('2d');
+  const start = performance.now() / 1000;
+  let blinkUntil = 0;
+  let nextBlink = start + 2;
+  let gaze = 0;
+  let gazeTarget = 0;
+  let nextGaze = start + 3;
+  const truth = { present: true, eyes: [], blinking: false };
+
+  // every so often they step out of frame, which is when the mirror gets interesting
+  function offsetAt(t) {
+    const rel = t - start;
+    const first = 38;
+    const period = 75;
+    if (rel < first) return 0;
+    const p = (rel - first) % period;
+    if (p < 1.4) return ease(p / 1.4) * 420;
+    if (p < 7.4) return 420;
+    if (p < 8.8) return (1 - ease((p - 7.4) / 1.4)) * 420;
+    return 0;
+  }
+
+  function draw() {
+    const t = performance.now() / 1000;
+    // bathroom behind them
+    const wall = x.createLinearGradient(0, 0, 0, H);
+    wall.addColorStop(0, '#4a4640');
+    wall.addColorStop(1, '#1f1e1c');
+    x.fillStyle = wall;
+    x.fillRect(0, 0, W, H);
+    x.strokeStyle = 'rgba(0, 0, 0, 0.18)';
+    x.lineWidth = 1;
+    for (let i = 0; i <= W; i += 48) { x.beginPath(); x.moveTo(i + 0.5, 0); x.lineTo(i + 0.5, H); x.stroke(); }
+    for (let j = 0; j <= H; j += 48) { x.beginPath(); x.moveTo(0, j + 0.5); x.lineTo(W, j + 0.5); x.stroke(); }
+    x.fillStyle = '#191816';
+    x.fillRect(360, 120, 80, H - 120);
+    x.strokeStyle = '#5b4a3a';
+    x.lineWidth = 6;
+    x.strokeRect(360, 120, 80, H - 110);
+    const glow = x.createRadialGradient(W / 2, 0, 10, W / 2, 0, 360);
+    glow.addColorStop(0, 'rgba(255, 225, 170, 0.28)');
+    glow.addColorStop(1, 'rgba(255, 225, 170, 0)');
+    x.fillStyle = glow;
+    x.fillRect(0, 0, W, H);
+
+    const off = offsetAt(t);
+    const sway = Math.sin(t * 0.7) * 8 + Math.sin(t * 0.23) * 5;
+    const cx = 240 + sway + off;
+    const cy = 285 + Math.sin(t * 1.1) * 2;
+    if (t > nextBlink) {
+      blinkUntil = t + 0.15;
+      nextBlink = t + 2.5 + Math.random() * 4;
+    }
+    const blinking = t < blinkUntil;
+    if (t > nextGaze) {
+      gazeTarget = Math.random() < 0.7 ? 0 : (Math.random() < 0.5 ? -1 : 1);
+      nextGaze = t + 1.5 + Math.random() * 3;
+    }
+    gaze += (gazeTarget - gaze) * 0.2;
+
+    // shoulders and neck
+    x.fillStyle = '#34424f';
+    x.beginPath();
+    x.moveTo(cx - 160, H);
+    x.quadraticCurveTo(cx - 150, cy + 150, cx - 60, cy + 132);
+    x.lineTo(cx + 60, cy + 132);
+    x.quadraticCurveTo(cx + 150, cy + 150, cx + 160, H);
+    x.fill();
+    x.fillStyle = '#b88a6a';
+    x.fillRect(cx - 28, cy + 60, 56, 76);
+    // hair, ears, head
+    x.fillStyle = '#2a211b';
+    x.beginPath();
+    x.ellipse(cx, cy - 22, 74, 82, 0, 0, TAU);
+    x.fill();
+    x.fillStyle = '#c29272';
+    x.beginPath();
+    x.ellipse(cx - 64, cy + 4, 10, 18, 0, 0, TAU);
+    x.ellipse(cx + 64, cy + 4, 10, 18, 0, 0, TAU);
+    x.fill();
+    x.fillStyle = '#c99b7a';
+    x.beginPath();
+    x.ellipse(cx, cy + 6, 64, 80, 0, 0, TAU);
+    x.fill();
+    x.fillStyle = '#2a211b';
+    x.beginPath();
+    x.ellipse(cx - 8, cy - 60, 62, 26, -0.15, 0, TAU);
+    x.fill();
+    // brows
+    x.strokeStyle = '#2a211b';
+    x.lineWidth = 5;
+    x.lineCap = 'round';
+    x.beginPath();
+    x.moveTo(cx - 42, cy - 32); x.lineTo(cx - 14, cy - 35);
+    x.moveTo(cx + 14, cy - 35); x.lineTo(cx + 42, cy - 32);
+    x.stroke();
+    // eyes
+    for (const side of [-1, 1]) {
+      const ex = cx + side * 27;
+      const ey = cy - 16;
+      if (blinking) {
+        x.fillStyle = '#c29272';
+        x.beginPath();
+        x.ellipse(ex, ey, 15, 9, 0, 0, TAU);
+        x.fill();
+        x.strokeStyle = '#2a211b';
+        x.lineWidth = 2;
+        x.beginPath();
+        x.moveTo(ex - 13, ey + 1);
+        x.quadraticCurveTo(ex, ey + 5, ex + 13, ey + 1);
+        x.stroke();
+      } else {
+        x.fillStyle = '#efe9e2';
+        x.beginPath();
+        x.ellipse(ex, ey, 13, 7, 0, 0, TAU);
+        x.fill();
+        x.fillStyle = '#3b2a1e';
+        x.beginPath();
+        x.arc(ex + gaze * 5, ey, 5.5, 0, TAU);
+        x.fill();
+        x.fillStyle = '#000';
+        x.beginPath();
+        x.arc(ex + gaze * 5, ey, 2.5, 0, TAU);
+        x.fill();
+        x.fillStyle = '#fff';
+        x.fillRect(ex + gaze * 5 + 1, ey - 3, 2, 2);
+      }
+    }
+    // nose, mouth
+    x.strokeStyle = 'rgba(90, 60, 40, 0.5)';
+    x.lineWidth = 2;
+    x.beginPath();
+    x.moveTo(cx, cy - 8); x.lineTo(cx - 8, cy + 22); x.lineTo(cx + 4, cy + 24);
+    x.stroke();
+    x.strokeStyle = '#7a4b3b';
+    x.lineWidth = 3;
+    x.beginPath();
+    x.moveTo(cx - 18, cy + 44);
+    x.quadraticCurveTo(cx, cy + 48, cx + 18, cy + 44);
+    x.stroke();
+
+    truth.present = Math.abs(off) < 120;
+    truth.blinking = blinking;
+    truth.eyes = [-1, 1].map(side => ({ x: (cx + side * 27) / W, y: (cy - 16) / H, w: 30 / W, h: 14 / H }));
+  }
+
+  return {
+    el: c,
+    w: W,
+    h: H,
+    draw,
+    truth: () => ({ present: truth.present, eyes: truth.present ? truth.eyes.map(e => ({ ...e })) : [], blinking: truth.blinking }),
+  };
+}
+
+// ---------- state ----------
+let stream = null;
+let source = null; // { el, w, h, draw?, truth? }
+let who = 'you';
+let latestFace = null;
+let lastCapture = 0;
+let captureCount = 0;
+const S = { on: false };
+const faceAware = () => !!(source && (source.truth || tracker));
+
+function capture(now) {
+  if (!source) return;
+  if (source.draw) source.draw();
+  else if (video.readyState < 2) return;
+  const f = pool[poolIdx];
+  poolIdx = (poolIdx + 1) % POOL;
+  const { sx, sy, sw, sh } = crop(source.w, source.h);
+  f.ctx.drawImage(source.el, sx, sy, sw, sh, 0, 0, CW, CH);
+  f.t = now;
+  captureCount++;
+  if (source.truth) {
+    f.face = source.truth();
+  } else if (tracker && captureCount % 2 === 0) {
+    try { f.face = tracker.detect(f.canvas); } catch (err) { console.warn('mirror: tracking failed', err); tracker = null; f.face = null; }
+  } else {
+    f.face = latestFace;
+  }
+  if (f.face) latestFace = f.face;
+  S.latest = f;
+
+  if (f.face && f.face.present) {
+    S.faceLastSeen = now;
+    copyInto(lastFaceCanvas, f.canvas);
+    hasLastFace = true;
+  }
+  // keep one frame from the very beginning, preferably with a face in it
+  if (!hasMemory && S.cycle === 0 && S.t > 3 && ((f.face && f.face.present) || S.t > 6)) {
+    copyInto(memoryCanvas, f.canvas);
+    hasMemory = true;
+  }
+}
+
+// ---------- the escalation ----------
+function phaseInfo() {
+  const N = S.cycle === 0 ? 12 : 45; // later rounds wait longer before starting
+  const rel = S.t - S.cycleStart;
+  let name = 'anyway';
+  if (rel < N) name = 'normal';
+  else if (rel < N + 18) name = 'lag';
+  else if (rel < N + 33) name = 'freeze';
+  else if (rel < N + 48) name = 'face';
+  else if (rel < N + 51.5 && hasMemory) name = 'memory';
+  return { name, rel, N };
+}
+
+function enterPhase(p, now) {
+  if (p.name === 'normal' && S.cycle === 0) {
+    say(who === 'you' ? 'a mirror. looks normal.' : "a mirror. it's showing someone else. otherwise normal.");
+  } else if (p.name === 'freeze') {
+    S.nextFreeze = now + 1.5;
+  } else if (p.name === 'face') {
+    S.nextBlink = now + 1.5;
+    S.unmirrorDone = false;
+  } else if (p.name === 'memory') {
+    say(who === 'you' ? 'it remembers you from earlier.' : 'it remembers them from earlier.');
+  } else if (p.name === 'anyway') {
+    say('anyway.');
+    S.delay = 0;
+    S.freezeUntil = 0;
+    S.absent = false;
+    S.said = {};
+    S.cycle++;
+    S.cycleStart = S.t;
+    S.phase = 'normal';
+  }
+}
+
+function runTimeline(now, dt) {
+  const p = phaseInfo();
+  if (p.name !== S.phase) {
+    S.phase = p.name;
+    enterPhase(p, now);
+  }
+  const into = p.rel - p.N;
+  let want = 0;
+  if (S.phase === 'lag') want = 1.5 * Math.min(1, into / 16);
+  else if (S.phase === 'freeze') want = 1.2;
+  else if (S.phase === 'face' || S.phase === 'memory') want = 1.0;
+  S.delay += Math.sign(want - S.delay) * Math.min(Math.abs(want - S.delay), dt * 0.6);
+
+  if (S.phase === 'lag' && !S.said.lag && into > 4) {
+    S.said.lag = true;
+    say(S.cycle === 0 ? "it's a little slow today." : "it's slow again.");
+  }
+  if (S.phase === 'freeze' && now >= S.nextFreeze && !S.absent) {
+    S.freezeUntil = now + 1 + Math.random() * 0.4;
+    S.nextFreeze = now + 4 + Math.random() * 2;
+    if (!S.said.freeze) { S.said.freeze = true; say('your reflection is buffering.'); }
+  }
+  if (S.phase === 'face') {
+    if (faceAware() && now >= S.nextBlink) {
+      const f = frameAt(S.playhead);
+      if (f && f.face && f.face.present && f.face.eyes.length === 2 && !f.face.blinking && !S.absent) {
+        S.blinkUntil = now + 0.16;
+        S.nextBlink = now + 2.5 + Math.random() * 2.5;
+        if (!S.said.blink) { S.said.blink = true; say(who === 'you' ? "that wasn't you." : "that wasn't them."); }
+      } else {
+        S.nextBlink = now + 0.5;
+      }
+    }
+    if (!S.unmirrorDone && into >= 41) {
+      S.unmirrorDone = true;
+      S.unmirrorUntil = now + 2.2;
+      say("that's not how mirrors work.");
+    }
+  }
+
+  // stepping out of view: the reflection stays where you were
+  const watching = S.phase === 'lag' || S.phase === 'freeze' || S.phase === 'face';
+  if (faceAware() && watching && hasLastFace) {
+    const gone = now - S.faceLastSeen > 2.5;
+    if (gone && !S.absent) {
+      S.absent = true;
+      say(who === 'you' ? "you left. it didn't." : "they left. the reflection didn't.");
+    } else if (!gone && S.absent) {
+      S.absent = false;
+      say('it waited.');
+    }
+  } else if (S.absent) {
+    S.absent = false;
+  }
+}
+
+// ---------- drawing ----------
+function paintCovered() {
+  const grad = g.createLinearGradient(0, 0, DW, DH);
+  grad.addColorStop(0, '#2a2e30');
+  grad.addColorStop(0.5, '#1b1f21');
+  grad.addColorStop(1, '#121516');
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.fillStyle = grad;
+  g.fillRect(0, 0, DW, DH);
+}
+
+function drawEyelids(img, eyes) {
+  const sx = DW / CW;
+  const sy = DH / CH;
+  const ictx = img.getContext('2d');
+  for (const e of eyes) {
+    const ex = e.x * CW;
+    const ey = e.y * CH;
+    const ew = e.w * CW;
+    const eh = e.h * CH;
+    // borrow the skin tone from just above the eye
+    let r = 190, gr = 150, b = 125;
+    try {
+      const px = clamp(Math.round(ex), 1, CW - 2);
+      const py = clamp(Math.round(ey - ew * 0.45), 1, CH - 2);
+      const d = ictx.getImageData(px - 1, py - 1, 3, 3).data;
+      r = 0; gr = 0; b = 0;
+      for (let i = 0; i < d.length; i += 4) { r += d[i]; gr += d[i + 1]; b += d[i + 2]; }
+      r /= 9; gr /= 9; b /= 9;
+    } catch (err) { /* keep the default tone */ }
+    const rx = ew * 0.62 * sx;
+    const ry = Math.max(eh * 0.95, ew * 0.32) * sy;
+    const cx = ex * sx;
+    const cy = ey * sy;
+    g.filter = 'blur(1.2px)';
+    g.fillStyle = `rgb(${r | 0}, ${gr | 0}, ${b | 0})`;
+    g.beginPath();
+    g.ellipse(cx, cy, rx, ry, 0, 0, TAU);
+    g.fill();
+    g.filter = 'none';
+    g.strokeStyle = 'rgba(40, 25, 20, 0.7)';
+    g.lineWidth = Math.max(1.5, rx * 0.1);
+    g.beginPath();
+    g.moveTo(cx - rx * 0.9, cy + ry * 0.15);
+    g.quadraticCurveTo(cx, cy + ry * 0.55, cx + rx * 0.9, cy + ry * 0.15);
+    g.stroke();
+  }
+}
+
+function draw(now, dt) {
+  const target = now - S.delay;
+  const holding = S.absent || now < S.returnHoldUntil || S.phase === 'memory';
+  if (!holding && now >= S.freezeUntil) {
+    // after a freeze or a hold, play fast until caught up
+    const speed = S.playhead < target - 0.08 ? 3 : 1;
+    S.playhead = Math.min(target, S.playhead + dt * speed);
+  }
+
+  let img;
+  let face = null;
+  if (S.phase === 'memory' && hasMemory) img = memoryCanvas;
+  else if (now < S.returnHoldUntil && hasLeave) img = leaveCanvas;
+  else if (S.absent && hasLastFace) img = lastFaceCanvas;
+  else {
+    const f = frameAt(S.playhead);
+    if (!f) return;
+    img = f.canvas;
+    face = f.face;
+  }
+
+  const mirrored = now >= S.unmirrorUntil;
+  g.save();
+  if (mirrored) g.setTransform(-1, 0, 0, 1, DW, 0);
+  else g.setTransform(1, 0, 0, 1, 0, 0);
+  g.imageSmoothingQuality = 'high';
+  g.drawImage(img, 0, 0, CW, CH, 0, 0, DW, DH);
+  if (now < S.blinkUntil && face && face.present && face.eyes.length) drawEyelids(img, face.eyes);
+  g.restore();
+  g.fillStyle = 'rgba(18, 26, 30, 0.1)';
+  g.fillRect(0, 0, DW, DH);
+}
+
+function tick() {
+  requestAnimationFrame(tick);
+  if (!S.on) return;
+  const now = performance.now() / 1000;
+  const dt = Math.min(0.1, now - S.lastTick);
+  S.lastTick = now;
+  S.t += dt;
+  if (now - lastCapture >= 1 / FPS) {
+    lastCapture = now;
+    capture(now);
+  }
+  runTimeline(now, dt);
+  draw(now, dt);
+}
+
+// ---------- on, off ----------
+function begin(src, whoValue) {
+  source = src;
+  who = whoValue;
+  for (const f of pool) { f.t = -1; f.face = null; }
+  hasMemory = false;
+  hasLastFace = false;
+  hasLeave = false;
+  latestFace = null;
+  lastCapture = 0;
+  captureCount = 0;
+  const now = performance.now() / 1000;
+  Object.assign(S, {
+    on: true, t: 0, cycle: 0, cycleStart: 0, phase: '', delay: 0, playhead: now, lastTick: now,
+    freezeUntil: 0, nextFreeze: 0, blinkUntil: 0, nextBlink: 0, unmirrorUntil: 0, unmirrorDone: false,
+    returnHoldUntil: 0, absent: false, faceLastSeen: now, said: {}, latest: null,
+  });
+  coveredEl.hidden = true;
+  coverBtn.hidden = false;
+}
+
+function cover(text) {
+  if (stream) {
+    stream.getTracks().forEach(t => t.stop());
+    stream = null;
+  }
+  video.srcObject = null;
+  S.on = false;
+  source = null;
+  coveredEl.hidden = false;
+  coverBtn.hidden = true;
+  onBtn.disabled = false;
+  someoneBtn.disabled = false;
+  paintCovered();
+  if (text) say(text);
+}
+
+async function startCamera() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    say("this browser doesn't do mirrors. the other button does.");
+    return;
+  }
+  onBtn.disabled = true;
+  someoneBtn.disabled = true;
+  say('asking permission. the mirror is shy.');
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+      audio: false,
+    });
+  } catch (err) {
+    stream = null;
+    onBtn.disabled = false;
+    someoneBtn.disabled = false;
+    if (err && (err.name === 'NotAllowedError' || err.name === 'SecurityError')) say('permission denied. the mirror respects that. it is a little hurt.');
+    else if (err && (err.name === 'NotFoundError' || err.name === 'OverconstrainedError')) say('no camera found. the mirror has nothing to show you.');
+    else say('the camera said no. mirrors are like that sometimes.');
+    return;
+  }
+  video.srcObject = stream;
+  try { await video.play(); } catch (err) { /* muted inline video should play; drawing still works once frames arrive */ }
+  if (!video.videoWidth) await new Promise(res => video.addEventListener('loadedmetadata', res, { once: true }));
+  if (!stream) return; // covered while we were waiting
+  begin({ el: video, w: video.videoWidth, h: video.videoHeight }, 'you');
+  loadTracker();
+}
+
+onBtn.addEventListener('click', startCamera);
+someoneBtn.addEventListener('click', () => begin(makeSomeoneElse(), 'they'));
+coverBtn.addEventListener('click', () => cover('covered. the camera is off. the mirror will wait.'));
+addEventListener('pagehide', () => cover());
+
+// tab switching: whatever it last saw, it keeps showing for a moment
+addEventListener('cizole:leave', () => {
+  if (S.on && S.latest) {
+    copyInto(leaveCanvas, S.latest.canvas);
+    hasLeave = true;
+  }
+});
+addEventListener('cizole:return', () => {
+  if (!S.on || !hasLeave || S.t < 5) return;
+  S.returnHoldUntil = performance.now() / 1000 + 2.6;
+  say(who === 'you' ? "you left. it didn't." : "you looked away. it didn't.");
+});
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden || !S.on) return;
+  const now = performance.now() / 1000;
+  S.lastTick = now;
+  S.playhead = now - S.delay;
+  S.faceLastSeen = now;
+});
+
+paintCovered();
+requestAnimationFrame(tick);
+</script>
+<script src="../assets/away.js"></script>
+</body>
+</html>
