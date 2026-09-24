@@ -7,65 +7,153 @@
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Press+Start+2P&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Permanent+Marker&family=Press+Start+2P&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../assets/site.css">
 <style>
   :root {
-    --beige: #ddd3ba;
-    --beige-dk: #bdb194;
+    --pink: #ff4fa3;
+    --teal: #1fb5a8;
+    --yellow: #ffd23f;
+    --purple: #7b5cff;
+    --blue: #3a86ff;
     --pixel: "Press Start 2P", monospace;
     --marker: "Permanent Marker", cursive;
+    --script: "Pacifico", cursive;
+    --crt-border: #6c5eb5;
+    --crt-bg: #352879;
   }
-  .room { max-width: 1120px; margin: 0 auto; padding: 56px 16px 32px; }
-
-  /* ---------- sound toggle ---------- */
-  .sound {
-    position: fixed;
-    top: 12px;
-    right: 12px;
-    z-index: 100;
-    padding: 6px 12px;
+  .page {
+    --w: max(300px, min(calc(100vw - 32px), calc((100dvh - 170px) * 1.6), 1150px));
+    padding: 56px 16px 24px;
+  }
+  .stage-wrap { width: var(--w); margin: 0 auto; }
+  .stage {
+    position: relative;
+    width: var(--w);
+    height: calc(var(--w) / 1.6);
+    overflow: hidden;
+    border-radius: 10px;
+    background: #f7e9f0;
+    container-type: size;
+    user-select: none;
+  }
+  .obj {
+    position: absolute;
+    padding: 0;
     border: 0;
-    border-radius: 999px;
-    background: rgba(14, 13, 11, 0.85);
-    color: var(--dim);
-    font: 14px var(--font);
+    background: none;
+    color: inherit;
+    font: inherit;
     cursor: pointer;
   }
-  .sound:hover, .sound.on { color: var(--acid); }
+  .obj:focus-visible, .cassette:focus-visible, .bb-buttons button:focus-visible, .vhs:focus-visible { outline: 2px solid var(--acid); outline-offset: 2px; }
 
-  /* ---------- wall ---------- */
-  .wall {
-    position: relative;
-    display: flex;
-    align-items: flex-start;
-    gap: 26px;
-    min-height: 300px;
-    padding: 26px 24px 0;
-    border-radius: 10px 10px 0 0;
+  /* ---------- the room ---------- */
+  .wall { position: absolute; inset: 0 0 34% 0; }
+  .wall svg { display: block; width: 100%; height: 100%; }
+  .wall-shade {
+    position: absolute;
+    inset: 0 0 34% 0;
+    pointer-events: none;
     background:
-      radial-gradient(circle at 20px 20px, rgba(255, 90, 170, 0.16) 3px, transparent 4px) 0 0 / 84px 84px,
-      radial-gradient(circle at 62px 58px, rgba(60, 220, 220, 0.13) 3px, transparent 4px) 0 0 / 84px 84px,
-      linear-gradient(135deg, transparent 46%, rgba(255, 210, 60, 0.06) 46% 54%, transparent 54%) 0 0 / 42px 42px,
-      #1d1a22;
-    overflow: hidden;
+      linear-gradient(rgba(50, 24, 70, 0.3), rgba(50, 24, 70, 0) 16%, rgba(50, 24, 70, 0) 78%, rgba(50, 24, 70, 0.2)),
+      radial-gradient(ellipse at 58% 55%, rgba(0, 0, 0, 0) 45%, rgba(40, 20, 60, 0.26));
   }
-  .poster {
-    position: relative;
-    flex: none;
-    width: 150px;
-    aspect-ratio: 2 / 3;
-    overflow: hidden;
-    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.5);
+  .baseboard {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 64.8%;
+    height: 1.4cqw;
+    background: linear-gradient(#fbfbf7, #d9d6cf);
+    box-shadow: 0 0.2cqw 0.4cqw rgba(0, 0, 0, 0.2);
   }
+  .carpet {
+    position: absolute;
+    inset: 66% 0 0 0;
+    background:
+      linear-gradient(rgba(10, 20, 30, 0.35), rgba(10, 20, 30, 0) 30%),
+      radial-gradient(circle, rgba(255, 255, 255, 0.14) 0.1cqw, transparent 0.16cqw) 0 0 / 0.6cqw 0.55cqw,
+      radial-gradient(circle, rgba(0, 0, 0, 0.2) 0.12cqw, transparent 0.2cqw) 0.3cqw 0.25cqw / 0.7cqw 0.6cqw,
+      linear-gradient(#4f7f86, #3b666d);
+  }
+  .rug {
+    left: 28%;
+    top: 79%;
+    width: 42%;
+    height: 26%;
+    border-radius: 50%;
+    background: repeating-radial-gradient(ellipse at center, #2b1f3a 0 1.2cqw, #ff4fa3 1.2cqw 1.55cqw, #2b1f3a 1.55cqw 2.7cqw, #1fb5a8 2.7cqw 3.05cqw, #2b1f3a 3.05cqw 4.2cqw, #ffd23f 4.2cqw 4.5cqw);
+    box-shadow: 0 0.6cqw 1.2cqw rgba(0, 0, 0, 0.3);
+  }
+
+  /* window + curtains */
+  .window { left: 3.5%; top: 7%; width: 15%; height: 34%; }
+  .window .sky { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+  .window .frame {
+    position: absolute;
+    inset: 0;
+    border: 0.7cqw solid #f4f1ea;
+    box-shadow: inset 0 0 0 0.15cqw #cfc9bd, 0 0.3cqw 0.6cqw rgba(0, 0, 0, 0.25);
+    background:
+      linear-gradient(90deg, transparent calc(50% - 0.25cqw), #f4f1ea calc(50% - 0.25cqw) calc(50% + 0.25cqw), transparent calc(50% + 0.25cqw)),
+      linear-gradient(transparent calc(50% - 0.25cqw), #f4f1ea calc(50% - 0.25cqw) calc(50% + 0.25cqw), transparent calc(50% + 0.25cqw));
+  }
+  .sill {
+    position: absolute;
+    left: 2.8%;
+    top: 40.6%;
+    width: 16.4%;
+    height: 1.2cqw;
+    border-radius: 0.2cqw;
+    background: linear-gradient(#fbfbf7, #d3cfc6);
+    box-shadow: 0 0.3cqw 0.5cqw rgba(0, 0, 0, 0.25);
+  }
+  .rod {
+    position: absolute;
+    left: 1%;
+    top: 4.2%;
+    width: 20%;
+    height: 0.55cqw;
+    border-radius: 0.3cqw;
+    background: linear-gradient(#f0d27a, #9c7a2e);
+  }
+  .curtain {
+    top: 4.6%;
+    width: 4.4%;
+    height: 41%;
+    border-radius: 0 0 0.9cqw 0.9cqw;
+    background:
+      repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.16) 0 0.45cqw, rgba(255, 255, 255, 0.08) 0.45cqw 0.7cqw, transparent 0.7cqw 1.3cqw),
+      linear-gradient(135deg, #1fb5a8 25%, #ff4fa3 25% 50%, #1fb5a8 50% 75%, #ff4fa3 75%) 0 0 / 1.5cqw 1.5cqw;
+    box-shadow: 0 0.4cqw 0.8cqw rgba(0, 0, 0, 0.25);
+  }
+  .curtain.l { left: 1.6%; }
+  .curtain.r { left: 17.1%; }
+
+  /* posters */
+  .poster { overflow: hidden; box-shadow: 0 0.5cqw 1cqw rgba(0, 0, 0, 0.35); }
+  .poster .tape {
+    position: absolute;
+    top: -0.2cqw;
+    width: 2.4cqw;
+    height: 0.9cqw;
+    background: rgba(232, 217, 168, 0.85);
+  }
+  .poster .tape.a { left: -0.4cqw; transform: rotate(-32deg); }
+  .poster .tape.b { right: -0.4cqw; transform: rotate(32deg); }
   .poster.sunset {
+    left: 22%;
+    top: 6.5%;
+    width: 8.2%;
+    height: 20%;
     transform: rotate(-2deg);
     background: linear-gradient(#1a0b2e, #6b1f5c 42%, #f25f5c 66%, #ffb14e);
   }
   .sunset .sun {
     position: absolute;
     left: 50%;
-    top: 26%;
+    top: 22%;
     width: 64%;
     aspect-ratio: 1;
     transform: translateX(-50%);
@@ -79,119 +167,770 @@
     left: -60%;
     right: -60%;
     bottom: 0;
-    height: 42%;
+    height: 40%;
     background:
-      repeating-linear-gradient(90deg, rgba(255, 70, 210, 0.85) 0 1px, transparent 1px 20px),
-      repeating-linear-gradient(0deg, rgba(255, 70, 210, 0.85) 0 1px, transparent 1px 14px),
+      repeating-linear-gradient(90deg, rgba(255, 70, 210, 0.85) 0 0.1cqw, transparent 0.1cqw 1.4cqw),
+      repeating-linear-gradient(0deg, rgba(255, 70, 210, 0.85) 0 0.1cqw, transparent 0.1cqw 1cqw),
       #14061f;
-    transform: perspective(110px) rotateX(52deg);
+    transform: perspective(8cqw) rotateX(52deg);
     transform-origin: 50% 100%;
   }
   .poster.car {
+    left: 30.6%;
+    top: 9.5%;
+    width: 11%;
+    height: 13.5%;
     transform: rotate(1.5deg);
-    margin-top: 18px;
     background: radial-gradient(ellipse at 50% 70%, #1b2440, #06070c 70%);
   }
-  .car svg { position: absolute; left: 6%; top: 34%; width: 88%; }
+  .car svg { position: absolute; left: 6%; top: 20%; width: 88%; }
   .car .car-title {
     position: absolute;
     left: 0;
     right: 0;
-    bottom: 12px;
+    bottom: 9%;
     color: #7df9ff;
-    font: 700 11px var(--font);
+    font: 700 0.75cqw var(--font);
     letter-spacing: 0.18em;
     text-align: center;
-    text-shadow: 0 0 6px #22d3ee;
+    text-shadow: 0 0 0.4cqw #22d3ee;
   }
-  .poster::before, .poster::after {
+
+  /* shelf + things on it */
+  .shelf {
+    position: absolute;
+    left: 44%;
+    top: 20%;
+    width: 19.5%;
+    height: 1.3cqw;
+    border-radius: 0.15cqw;
+    background: linear-gradient(#fbfbf7, #d3cfc6);
+    box-shadow: 0 0.6cqw 0.9cqw rgba(0, 0, 0, 0.25);
+  }
+  .shelf::before, .shelf::after {
     content: "";
     position: absolute;
-    top: -4px;
-    width: 34px;
-    height: 12px;
-    background: rgba(232, 217, 168, 0.8);
+    top: 100%;
+    width: 0.9cqw;
+    height: 1.6cqw;
+    background: linear-gradient(135deg, #bdb8ad 50%, transparent 50%);
   }
-  .poster::before { left: -8px; transform: rotate(-30deg); }
-  .poster::after { right: -8px; transform: rotate(30deg); }
-
-  /* wall phone with a curly cord */
-  .phone-btn {
+  .shelf::before { left: 10%; }
+  .shelf::after { right: 10%; }
+  .memtoy {
+    left: 45%;
+    top: 9.1%;
+    width: 6.8cqw;
+    height: 6.8cqw;
+    border-radius: 50%;
+    background: #1b1b1f;
+    box-shadow: 0 0.4cqw 0.6cqw rgba(0, 0, 0, 0.35);
+  }
+  .mt-face {
     position: absolute;
-    top: 10px;
-    right: 26px;
-    width: 150px;
-    padding: 0;
-    border: 0;
-    background: none;
-    cursor: pointer;
+    inset: 0.45cqw;
+    border-radius: 50%;
+    background: conic-gradient(#ff3b3b 0 25%, #3a86ff 0 50%, #ffd23f 0 75%, #2ecc40 0);
   }
-  .phone-btn svg { display: block; width: 100%; height: auto; overflow: visible; }
-  .phone-btn:focus-visible { outline: 2px solid var(--acid); outline-offset: 4px; }
-  .phone-btn.ringing svg { animation: ring 0.12s linear infinite; transform-origin: 70% 12%; }
+  .mt-face::before, .mt-face::after { content: ""; position: absolute; background: #1b1b1f; }
+  .mt-face::before { left: 0; right: 0; top: 50%; height: 0.35cqw; margin-top: -0.175cqw; }
+  .mt-face::after { top: 0; bottom: 0; left: 50%; width: 0.35cqw; margin-left: -0.175cqw; }
+  .mt-hub {
+    position: absolute;
+    left: 31%;
+    top: 31%;
+    z-index: 1;
+    width: 38%;
+    height: 38%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, #3a3a40, #121214);
+    box-shadow: 0 0 0 0.2cqw #1b1b1f;
+  }
+  .cube-btn { left: 52.6%; top: 10.2%; width: 6.2cqw; }
+  .cube-btn svg { display: block; width: 100%; height: auto; filter: drop-shadow(0 0.5cqw 0.5cqw rgba(0, 0, 0, 0.35)); }
+  .cube-btn.twist svg { animation: twist 0.35s ease-out; }
+  @keyframes twist {
+    30% { rotate: -9deg; }
+    70% { rotate: 5deg; }
+  }
+  .trophy { left: 59.4%; top: 8%; width: 3.4cqw; height: 7.5cqw; }
+  .trophy .cup {
+    position: absolute;
+    left: 18%;
+    right: 18%;
+    top: 0;
+    height: 46%;
+    border-radius: 0.2cqw 0.2cqw 50% 50%;
+    background: linear-gradient(90deg, #b8912a, #ffe28a 40%, #d4a834 70%, #9c7414);
+  }
+  .trophy .handle {
+    position: absolute;
+    top: 8%;
+    width: 22%;
+    height: 24%;
+    border: 0.25cqw solid #c79b2a;
+    border-radius: 50%;
+  }
+  .trophy .handle.l { left: 2%; }
+  .trophy .handle.r { right: 2%; }
+  .trophy .stem { position: absolute; left: 44%; width: 12%; top: 44%; height: 22%; background: #c79b2a; }
+  .trophy .base { position: absolute; left: 12%; right: 12%; bottom: 0; height: 32%; background: linear-gradient(#5a3a22, #3e2616); border-radius: 0.1cqw; }
+  .trophy .plate { position: absolute; left: 24%; right: 24%; bottom: 10%; height: 12%; background: #e8cf7a; }
+
+  /* light-peg board */
+  .pegboard {
+    left: 65.5%;
+    top: 6.5%;
+    width: 14%;
+    height: 16.8%;
+    padding: 0.45cqw;
+    border-radius: 0.6cqw;
+    background: #111;
+    box-shadow: 0 0 0 0.3cqw #2a2a2a, 0 0.6cqw 1.2cqw rgba(0, 0, 0, 0.35);
+  }
+  .pegboard canvas { display: block; width: 100%; height: 100%; border-radius: 0.3cqw; }
+
+  /* wall phone */
+  .phone { left: 86%; top: 4.5%; width: 10%; }
+  .phone svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .phone.ringing svg { animation: ring 0.12s linear infinite; transform-origin: 70% 12%; }
   @keyframes ring {
     0%, 100% { rotate: 0deg; }
     25% { rotate: 2.5deg; }
     75% { rotate: -2.5deg; }
   }
 
-  /* ---------- desk ---------- */
-  .desk {
-    display: grid;
-    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
-    gap: 30px;
-    align-items: end;
-    padding: 26px 24px 28px;
-    border-radius: 0 0 10px 10px;
-    background:
-      repeating-linear-gradient(92deg, rgba(0, 0, 0, 0.07) 0 3px, transparent 3px 11px),
-      linear-gradient(#6d4a2f, #56391f);
-    box-shadow: inset 0 6px 0 #7d5638;
+  /* desk */
+  .desk-top {
+    position: absolute;
+    left: 40.5%;
+    top: 55%;
+    width: 28.5%;
+    height: 4.4%;
+    border-radius: 0.3cqw 0.3cqw 0 0;
+    background: linear-gradient(#f0ece3, #d8d2c4);
   }
-  @media (max-width: 860px) {
-    .desk { grid-template-columns: minmax(0, 1fr); }
+  .desk-front {
+    position: absolute;
+    left: 40.5%;
+    top: 59.4%;
+    width: 28.5%;
+    height: 2%;
+    background: linear-gradient(#cfc8b8, #b4ad9c);
+    box-shadow: 0 0.4cqw 0.6cqw rgba(0, 0, 0, 0.25);
+  }
+  .desk-leg { position: absolute; left: 41%; top: 61.4%; width: 1.4%; height: 28.6%; background: linear-gradient(90deg, #d8d2c4, #b4ad9c); }
+  .desk-drawers {
+    position: absolute;
+    left: 59%;
+    top: 61.4%;
+    width: 9.6%;
+    height: 28.6%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25cqw;
+    padding: 0.35cqw;
+    background: #c9c2b2;
+    box-shadow: inset 0 0 0 0.15cqw #b0a998;
+  }
+  .desk-drawers i {
+    flex: 1;
+    position: relative;
+    background: linear-gradient(#ece7dc, #d6d0c2);
+  }
+  .desk-drawers i::after {
+    content: "";
+    position: absolute;
+    left: 38%;
+    right: 38%;
+    top: 42%;
+    height: 0.4cqw;
+    border-radius: 0.2cqw;
+    background: #8a8274;
+  }
+  .knee-shadow {
+    position: absolute;
+    left: 42.4%;
+    top: 61.4%;
+    width: 16.6%;
+    height: 28.6%;
+    background: linear-gradient(rgba(10, 10, 20, 0.5), rgba(10, 10, 20, 0.22));
+    pointer-events: none;
+  }
+  .lamp-glow {
+    position: absolute;
+    left: 42%;
+    top: 46%;
+    width: 17%;
+    height: 14%;
+    border-radius: 50%;
+    background: radial-gradient(ellipse at 50% 60%, rgba(255, 240, 190, 0.5), rgba(255, 240, 190, 0) 70%);
+    pointer-events: none;
+    transition: opacity 0.4s;
+  }
+  .stage.lamp-off .lamp-glow { opacity: 0; }
+  .lamp { left: 41%; top: 35%; width: 6.5%; height: 21%; }
+  .lamp svg { display: block; width: 100%; height: 100%; }
+  .lamp .bulb { transition: opacity 0.3s; }
+  .stage.lamp-off .lamp .bulb { opacity: 0.15; }
+
+  /* the computer, sitting on the desk */
+  .cz { left: 46.5%; top: 33.2%; width: 15.5%; height: 26.4%; }
+  .cz-mon {
+    position: absolute;
+    left: 6%;
+    right: 6%;
+    top: 0;
+    height: 76%;
+    border-radius: 0.9cqw 0.9cqw 0.5cqw 0.5cqw;
+    background: linear-gradient(#e4dbc4, #cbc0a3);
+    box-shadow: inset 0 -0.3cqw 0 rgba(0, 0, 0, 0.08), 0 0.6cqw 1cqw rgba(0, 0, 0, 0.3);
+  }
+  .cz-glass {
+    position: absolute;
+    left: 8%;
+    right: 8%;
+    top: 7%;
+    bottom: 17%;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    border-radius: 1cqw / 0.8cqw;
+    background: var(--crt-border);
+    box-shadow: inset 0 0 0 0.3cqw #2a2720;
+    transition: box-shadow 0.4s;
+  }
+  .cz-bg {
+    width: 86%;
+    aspect-ratio: 1.6;
+    background: var(--crt-bg);
+    container-type: inline-size;
+  }
+  .mini-text {
+    display: block;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    color: #8e82e6;
+    font-family: var(--pixel);
+    font-size: calc(100cqw / 40.5);
+    line-height: 1;
+    white-space: pre;
+  }
+  .cz-glass::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(rgba(0, 0, 0, 0.2) 0 1px, transparent 1px 2px);
+    box-shadow: inset 0 0 1.5cqw rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+  }
+  .cz.flash .cz-glass { animation: flash-border 0.35s steps(1) 2; }
+  .cz-badge { position: absolute; left: 8%; bottom: 5%; color: #8a7f66; font: 700 0.5cqw var(--font); letter-spacing: 0.12em; }
+  .cz-led { position: absolute; right: 9%; bottom: 7%; width: 0.4cqw; height: 0.4cqw; border-radius: 50%; background: #e0413a; box-shadow: 0 0 0.35cqw #e0413a; }
+  .cz-neck { position: absolute; left: 38%; width: 24%; top: 76%; height: 5%; background: linear-gradient(#bfb498, #a99e82); }
+  .cz-kbd {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 18%;
+    padding: 0.35cqw 0.5cqw;
+    border-radius: 0.3cqw 0.3cqw 0.6cqw 0.6cqw;
+    background: linear-gradient(#dcd3ba, #c3b89c);
+    box-shadow: 0 0.4cqw 0.6cqw rgba(0, 0, 0, 0.35);
+  }
+  .cz-kbd i {
+    display: block;
+    height: 100%;
+    background: repeating-linear-gradient(90deg, #4a4540 0 0.55cqw, transparent 0.55cqw 0.68cqw);
+    -webkit-mask-image: repeating-linear-gradient(#000 0 0.36cqw, transparent 0.36cqw 0.5cqw);
+    mask-image: repeating-linear-gradient(#000 0 0.36cqw, transparent 0.36cqw 0.5cqw);
+    opacity: 0.8;
   }
 
-  /* ---------- the computer ---------- */
-  .computer { display: flex; flex-direction: column; align-items: center; }
+  /* under the desk: tapes and a vcr */
+  .vhs-stack {
+    position: absolute;
+    left: 43.6%;
+    top: 70%;
+    width: 12%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.12cqw;
+  }
+  .vhs {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 1.45cqw;
+    padding: 0;
+    border: 0;
+    border-radius: 0.2cqw;
+    background: linear-gradient(#222328, #141518);
+    box-shadow: inset 0 0 0 0.12cqw #2e3035;
+    transform: translateX(var(--dx, 0)) rotate(var(--rz, 0deg));
+    transition: transform 0.3s;
+    cursor: pointer;
+  }
+  .vhs.loading { transform: translateX(1.4cqw) rotate(0deg); }
+  .vhs .label {
+    max-width: 80%;
+    overflow: hidden;
+    padding: 0 0.5cqw;
+    border-radius: 0.1cqw;
+    background: #f2ede0;
+    color: #1b1b1b;
+    font: 0.72cqw/1.35 var(--marker);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .vhs.rewound .label { box-shadow: inset -0.4cqw 0 0 #58c26b; }
+  .vcr {
+    left: 43.2%;
+    top: 83.2%;
+    width: 13%;
+    height: 6%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5cqw;
+    padding: 0 0.7cqw;
+    border-radius: 0.25cqw;
+    background: linear-gradient(#2d2e33, #1a1b1e);
+    box-shadow: 0 0.5cqw 0.8cqw rgba(0, 0, 0, 0.45);
+  }
+  .vcr-slot { flex: 1; height: 0.5cqw; border-radius: 0.1cqw; background: #0b0b0c; box-shadow: inset 0 1px 2px #000; }
+  .vcr-clock {
+    position: relative;
+    z-index: 1;
+    min-width: 7.5em;
+    color: #48ff7a;
+    font: 0.55cqw var(--pixel);
+    text-align: right;
+    text-shadow: 0 0 0.4cqw #48ff7a;
+  }
+  .vcr-clock.blink { animation: blink 1s steps(1) infinite; }
+  .vcr .sticker {
+    position: absolute;
+    left: 0.6cqw;
+    bottom: -0.55cqw;
+    padding: 0 0.4cqw;
+    background: #ffe35c;
+    color: #1b1b1b;
+    font: 0.62cqw var(--marker);
+    transform: rotate(-3deg);
+    pointer-events: none;
+  }
+
+  /* toy chest + boombox */
+  .chest { left: 71.5%; top: 61.5%; width: 16%; height: 27%; }
+  .chest-body {
+    position: absolute;
+    inset: 14% 0 0 0;
+    border-radius: 0.3cqw;
+    background:
+      repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.1) 0 0.12cqw, transparent 0.12cqw 3.2cqw),
+      linear-gradient(#2f5fa7, #234a86);
+    box-shadow: inset 0 0 0 0.3cqw #1c3a6a, 0 0.8cqw 1.2cqw rgba(0, 0, 0, 0.35);
+  }
+  .chest-lid {
+    position: absolute;
+    left: -2%;
+    right: -2%;
+    top: 0;
+    height: 16%;
+    border-radius: 0.4cqw 0.4cqw 0.2cqw 0.2cqw;
+    background: linear-gradient(#f0cc38, #c9a520);
+    box-shadow: 0 0.2cqw 0 #8a6f10;
+  }
+  .chest-word {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 38%;
+    font: 700 2.3cqw var(--font);
+    letter-spacing: 0.25em;
+    text-align: center;
+    text-shadow: 0.12cqw 0.12cqw 0 rgba(0, 0, 0, 0.35);
+  }
+  .chest-word b:nth-child(1) { color: #ff3b3b; }
+  .chest-word b:nth-child(2) { color: #ffd23f; }
+  .chest-word b:nth-child(3) { color: #2ecc40; }
+  .chest-word b:nth-child(4) { color: #ff4fa3; }
+  .keep-out {
+    position: absolute;
+    right: 6%;
+    bottom: 10%;
+    padding: 0.1cqw 0.4cqw;
+    background: #f2ede0;
+    color: #c8352c;
+    font: 0.7cqw var(--marker);
+    transform: rotate(4deg);
+  }
+  .boombox { position: absolute; left: 71%; bottom: 38.5%; width: 17%; padding-top: 1.7cqw; }
+  .bb-handle {
+    position: absolute;
+    top: 0;
+    left: 20%;
+    right: 20%;
+    height: 2cqw;
+    border: 0.42cqw solid #2b2c30;
+    border-bottom: 0;
+    border-radius: 1.1cqw 1.1cqw 0 0;
+  }
+  .bb-body {
+    display: grid;
+    grid-template-columns: 1fr 1.8fr 1fr;
+    gap: 0.5cqw;
+    align-items: center;
+    padding: 0.7cqw 0.6cqw;
+    border-radius: 0.6cqw;
+    background: linear-gradient(#cdd0d6, #9da2aa);
+    box-shadow: inset 0 0.15cqw 0 rgba(255, 255, 255, 0.45), 0 0.8cqw 1.2cqw rgba(0, 0, 0, 0.4);
+  }
+  .speaker {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: repeating-radial-gradient(circle, #1b1c1f 0 0.12cqw, #26272b 0.12cqw 0.24cqw);
+    box-shadow: inset 0 0 0 0.25cqw #7d828a, inset 0 0 0 0.42cqw #2a2b30;
+  }
+  .cone {
+    width: 36%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, #5a5c62, #202126);
+    transition: transform 0.1s;
+  }
+  .boombox.pulse .cone { transform: scale(1.14); transition: none; }
+  .bb-deck { display: flex; flex-direction: column; gap: 0.4cqw; }
+  .cassette {
+    position: relative;
+    aspect-ratio: 1.6;
+    border-radius: 0.35cqw;
+    background: #26272b;
+    box-shadow: inset 0 0 0 0.2cqw #4a4d54;
+    transition: transform 0.35s;
+    touch-action: none;
+  }
+  .boombox.ejected .cassette { transform: translateY(-16%) rotate(-2deg); }
+  .boombox.eating .cassette { animation: shudder 0.14s linear infinite; }
+  .boombox.eaten { touch-action: none; cursor: grab; }
+  @keyframes shudder { 50% { translate: 1px -1px; } }
+  .tape-label {
+    position: absolute;
+    left: 9%;
+    right: 9%;
+    top: 7%;
+    overflow: hidden;
+    padding: 0 0.3cqw;
+    border-radius: 0.1cqw;
+    background: #f2ede0;
+    color: #1b1b1b;
+    font: 0.55cqw var(--marker);
+    text-align: center;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    transform: rotate(-1deg);
+  }
+  .reels {
+    position: absolute;
+    left: 12%;
+    right: 12%;
+    top: 36%;
+    height: 38%;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    border-radius: 0.8cqw;
+    background: rgba(170, 180, 190, 0.22);
+  }
+  .spool {
+    position: relative;
+    width: 26%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: repeating-conic-gradient(#e9e6dc 0 20deg, #3b2a1f 20deg 60deg);
+    box-shadow: 0 0 0 0.15cqw #3b2a1f;
+    transform: rotate(var(--rot, 0deg));
+  }
+  .boombox.playing .spool { animation: spin 1.6s linear infinite; }
+  .boombox.eating .spool { animation: spin 0.45s linear infinite; }
+  @keyframes spin { to { rotate: 360deg; } }
+  .pencil {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    display: none;
+    width: 0.42cqw;
+    height: 5cqw;
+    margin-left: -0.21cqw;
+    border-radius: 0.05cqw;
+    background: linear-gradient(90deg, #f7cf3a, #e0a820 60%, #c98f14);
+    transform-origin: 50% 0;
+    rotate: 150deg;
+    pointer-events: none;
+  }
+  .pencil::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -0.55cqw;
+    height: 0.55cqw;
+    border-radius: 0 0 0.1cqw 0.1cqw;
+    background: #e98aa0;
+  }
+  .boombox.eaten .pencil { display: block; }
+  .spill { position: absolute; left: 18%; top: 60%; width: 64%; height: 90%; overflow: visible; pointer-events: none; }
+  .spill path {
+    fill: none;
+    stroke: #4a2e1c;
+    stroke-width: 2.4;
+    stroke-linecap: round;
+    stroke-dasharray: 100;
+    stroke-dashoffset: 100;
+    transition: stroke-dashoffset 2.6s ease-in;
+  }
+  .boombox.eating .spill path, .boombox.eaten .spill path { stroke-dashoffset: 0; }
+  .bb-buttons { display: flex; justify-content: center; gap: 0.25cqw; }
+  .bb-buttons button {
+    padding: 0.18cqw 0.3cqw;
+    border: 0;
+    border-radius: 0.2cqw;
+    background: #2b2c30;
+    color: #e9e6dc;
+    font: 700 0.52cqw var(--font);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    box-shadow: 0 0.18cqw 0 #111;
+    cursor: pointer;
+  }
+  .bb-buttons button:active { translate: 0 0.12cqw; box-shadow: 0 0.06cqw 0 #111; }
+
+  /* skateboard */
+  .skate { left: 89.4%; top: 42%; width: 5%; height: 45%; transform: rotate(7deg); transform-origin: 50% 100%; }
+  .skate svg { display: block; width: 100%; height: 100%; filter: drop-shadow(0.4cqw 0.5cqw 0.4cqw rgba(0, 0, 0, 0.35)); }
+
+  /* the bed */
+  .bed { left: 0.5%; top: 44%; width: 32%; height: 46%; }
+  .bed > span { position: absolute; }
+  .headboard {
+    left: 0;
+    top: 0;
+    width: 10%;
+    height: 74%;
+    border-radius: 1.2cqw 1.2cqw 0.2cqw 0.2cqw;
+    background: linear-gradient(90deg, #fbfbf7, #dcd8cf);
+    box-shadow: inset -0.3cqw 0 0 #ff4fa3, 0.3cqw 0 0.6cqw rgba(0, 0, 0, 0.2);
+  }
+  .pillow {
+    left: 8.4%;
+    top: 18.5%;
+    width: 23.4%;
+    height: 14.5%;
+    border-radius: 1cqw;
+    background: repeating-linear-gradient(90deg, #f7f7f3 0 0.35cqw, #cfe0f5 0.35cqw 0.45cqw);
+    box-shadow: 0 0.3cqw 0.5cqw rgba(0, 0, 0, 0.2);
+  }
+  .comforter-top, .comforter-front {
+    background:
+      linear-gradient(135deg, transparent 40%, #ff4fa3 40% 48%, transparent 48%) 0 0 / 3cqw 3cqw,
+      radial-gradient(circle, #ffd23f 0.32cqw, transparent 0.38cqw) 1.2cqw 1cqw / 3cqw 3cqw,
+      linear-gradient(45deg, transparent 45%, #1fb5a8 45% 53%, transparent 53%) 1.5cqw 1.5cqw / 3cqw 3cqw,
+      #1d1733;
+  }
+  .comforter-top {
+    left: 4.7%;
+    top: 27.2%;
+    width: 94%;
+    height: 13.4%;
+    border-radius: 0.8cqw 0.8cqw 0 0;
+    box-shadow: inset 0 0 0 100cqw rgba(255, 255, 255, 0.12);
+  }
+  .comforter-front {
+    left: 4.7%;
+    top: 40.4%;
+    width: 94%;
+    height: 52%;
+    border-radius: 0 0 0.6cqw 0.6cqw;
+    box-shadow: inset 0 0.35cqw 0 var(--pink);
+  }
+  .comforter-front::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background:
+      repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.22) 0 0.5cqw, rgba(0, 0, 0, 0) 0.5cqw 2.4cqw, rgba(255, 255, 255, 0.05) 2.4cqw 3cqw),
+      linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.3));
+  }
+  .bed-shadow {
+    left: 3%;
+    top: 90%;
+    width: 98%;
+    height: 7%;
+    border-radius: 50%;
+    background: radial-gradient(ellipse, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0) 70%);
+  }
+
+  /* the bear */
+  .bear { left: 9%; top: 38.6%; width: 9cqw; height: 11.7cqw; }
+  .bear svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .bear-head { transition: transform 0.9s cubic-bezier(0.4, 0, 0.2, 1); transform-box: fill-box; transform-origin: 50% 90%; }
+  .bear.turned .bear-head { transform: rotate(-9deg); }
+  .bear-shade { opacity: 0; transition: opacity 0.5s; }
+  .bear-glint { opacity: 0; transition: opacity 0.5s; }
+  .stage.lamp-off .bear { z-index: 41; }
+  .stage.lamp-off .bear-shade { opacity: 0.66; }
+  .stage.lamp-off .bear-glint { opacity: 1; }
+
+  /* the drawing toy, on the rug */
+  .etch-mini {
+    left: 34.5%;
+    top: 77%;
+    width: 11.5cqw;
+    height: 8.6cqw;
+    transform: rotate(-5deg);
+    border-radius: 0.8cqw;
+    background: linear-gradient(#e0342c, #b8231d);
+    box-shadow: inset 0 0.15cqw 0 rgba(255, 255, 255, 0.3), 0 0.6cqw 0.8cqw rgba(0, 0, 0, 0.35);
+  }
+  .etch-mini .glass {
+    position: absolute;
+    left: 10%;
+    right: 10%;
+    top: 12%;
+    bottom: 24%;
+    overflow: hidden;
+    border-radius: 0.35cqw;
+    background: #c9c9c1;
+    box-shadow: inset 0 0.1cqw 0.3cqw rgba(0, 0, 0, 0.4);
+  }
+  .etch-mini canvas { display: block; width: 100%; height: 100%; }
+  .etch-mini .kn {
+    position: absolute;
+    bottom: 4%;
+    width: 1.6cqw;
+    height: 1.6cqw;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, #fff, #d6d6d0);
+    box-shadow: 0 0.1cqw 0.2cqw rgba(0, 0, 0, 0.35);
+  }
+  .etch-mini .kn.l { left: 4%; }
+  .etch-mini .kn.r { right: 4%; }
+
+  /* lights out */
+  .dim {
+    position: absolute;
+    inset: 0;
+    z-index: 40;
+    background: rgba(8, 6, 22, 0.68);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s;
+  }
+  .stage.lamp-off .dim { opacity: 1; }
+  .stage.lamp-off .window { z-index: 41; }
+  .stage.lamp-off .window .frame { filter: brightness(0.45); }
+  .stage.lamp-off .pegboard { z-index: 41; }
+  .stage.lamp-off .cz-glass { z-index: 41; box-shadow: inset 0 0 0 0.3cqw #2a2720, 0 0 3cqw 1cqw rgba(120, 110, 230, 0.35); }
+  .stage.lamp-off .vcr-clock { z-index: 41; }
+
+  @keyframes blink { 50% { opacity: 0; } }
+  @keyframes flash-border { 50% { background: #9a2a2a; } }
+
+  /* ---------- hud ---------- */
+  .hud {
+    width: var(--w);
+    margin: 12px auto 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .caption { margin: 0; min-height: 2.8em; font-size: 15px; line-height: 1.4; transition: opacity 0.2s; }
+  .caption.fade { opacity: 0; }
+  .sound {
+    flex: none;
+    padding: 6px 12px;
+    border: 1px solid var(--faint);
+    border-radius: 999px;
+    background: #1a1916;
+    color: var(--dim);
+    font: 13px var(--font);
+    cursor: pointer;
+  }
+  .sound.on { border-color: var(--pink); color: var(--pink); }
+  .rotate-hint { display: none; width: var(--w); margin: 10px auto 0; color: var(--dim); font-size: 12px; }
+  @media (orientation: portrait) and (max-width: 600px) { .rotate-hint { display: block; } }
+
+  /* ---------- close-ups ---------- */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: grid;
+    place-items: center;
+    overflow-y: auto;
+    padding: 16px;
+    background: rgba(14, 8, 24, 0.76);
+  }
+  .overlay[hidden] { display: none; }
+  .panel {
+    position: relative;
+    width: min(720px, 100%);
+    padding: 50px 20px 18px;
+    border-radius: 16px;
+    background: #231c2c;
+    color: var(--fg);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+  }
+  .panel:focus { outline: none; }
+  .close {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    padding: 6px 12px;
+    border: 1px solid #4a4058;
+    border-radius: 999px;
+    background: #151119;
+    color: var(--fg);
+    font: 13px var(--font);
+    cursor: pointer;
+  }
+  .close:hover, .close:focus-visible { border-color: var(--acid); color: var(--acid); outline: none; }
+  .panel-title { position: absolute; top: 14px; left: 20px; margin: 0; color: var(--dim); font-size: 12px; }
+  .panel-hint { margin: 12px 0 0; color: var(--dim); font-size: 12px; line-height: 1.5; }
+  .chip {
+    margin-top: 10px;
+    padding: 6px 12px;
+    border: 1px solid #4a4058;
+    border-radius: 999px;
+    background: #151119;
+    color: var(--fg);
+    font: 12px var(--font);
+    cursor: pointer;
+  }
+  .chip:hover, .chip:focus-visible { border-color: var(--acid); color: var(--acid); outline: none; }
+  .chip[hidden] { display: none; }
+
+  /* the computer, up close */
+  .computer-panel { width: min(760px, 100%); background: #2a2330; }
   .monitor {
     position: relative;
-    width: 100%;
-    max-width: 640px;
     padding: 22px 22px 36px;
     border-radius: 16px 16px 10px 10px;
     background: linear-gradient(#e4dbc4, #cbc0a3);
     box-shadow: inset 0 -6px 0 rgba(0, 0, 0, 0.08), inset 0 2px 0 rgba(255, 255, 255, 0.5), 0 18px 30px rgba(0, 0, 0, 0.45);
   }
-  .monitor-badge {
-    position: absolute;
-    left: 24px;
-    bottom: 11px;
-    color: #8a7f66;
-    font: 700 10px var(--font);
-    letter-spacing: 0.14em;
-  }
-  .power-led {
-    position: absolute;
-    right: 28px;
-    bottom: 14px;
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: #e0413a;
-    box-shadow: 0 0 6px #e0413a;
-  }
-  .crt {
-    --border: #6c5eb5;
-    --bg: #352879;
-    position: relative;
-    overflow: hidden;
-    border-radius: 22px / 18px;
-    background: #111;
-    box-shadow: inset 0 0 0 6px #2a2720;
-  }
-  .crt-border { padding: 6% 7%; background: var(--border); transition: background 0.15s; }
-  .crt-bg { container-type: inline-size; aspect-ratio: 1.6; background: var(--bg); transition: background 0.15s; }
+  .monitor-badge { position: absolute; left: 24px; bottom: 11px; color: #8a7f66; font: 700 10px var(--font); letter-spacing: 0.14em; }
+  .power-led { position: absolute; right: 28px; bottom: 14px; width: 7px; height: 7px; border-radius: 50%; background: #e0413a; box-shadow: 0 0 6px #e0413a; }
+  .crt { position: relative; overflow: hidden; border-radius: 22px / 18px; background: #111; box-shadow: inset 0 0 0 6px #2a2720; }
+  .crt-border { padding: 6% 7%; background: var(--crt-border); transition: background 0.15s; }
+  .crt-bg { container-type: inline-size; aspect-ratio: 1.6; background: var(--crt-bg); transition: background 0.15s; }
   .crt-text {
     height: 100%;
     margin: 0;
@@ -211,7 +950,6 @@
     background: currentColor;
     animation: blink 1s steps(1) infinite;
   }
-  @keyframes blink { 50% { opacity: 0; } }
   .scan {
     position: absolute;
     inset: 0;
@@ -226,7 +964,6 @@
     48% { opacity: 1; }
   }
   .crt.flash .crt-border { animation: flash-border 0.35s steps(1) 2; }
-  @keyframes flash-border { 50% { background: #9a2a2a; } }
   .kb-form { position: absolute; inset: 0; margin: 0; }
   .kb {
     width: 100%;
@@ -253,11 +990,8 @@
     transition: opacity 0.3s;
   }
   .crt.focused .crt-hint { opacity: 0; }
-
-  .neck { width: 28%; height: 14px; background: linear-gradient(#bfb498, #a99e82); }
+  .neck { width: 28%; height: 14px; margin: 0 auto; background: linear-gradient(#bfb498, #a99e82); }
   .keyboard {
-    width: 100%;
-    max-width: 680px;
     padding: 12px 14px 14px;
     border-radius: 8px 8px 14px 14px;
     background: linear-gradient(#dcd3ba, #c3b89c);
@@ -286,323 +1020,334 @@
   .key:focus-visible { outline: 2px solid var(--acid); outline-offset: 2px; }
   .try { flex: 1; min-width: 180px; color: #6d6450; font-size: 11px; line-height: 1.5; }
 
-  /* ---------- right side ---------- */
-  .side { display: flex; flex-direction: column; gap: 26px; }
-  .row { display: flex; gap: 22px; align-items: flex-end; }
-  @media (max-width: 520px) { .row { flex-direction: column; align-items: stretch; } }
-
-  /* boombox */
-  .boombox { position: relative; padding-top: 20px; }
-  .bb-handle {
-    position: absolute;
-    top: 0;
-    left: 20%;
-    right: 20%;
-    height: 28px;
-    border: 6px solid #2b2c30;
-    border-bottom: 0;
-    border-radius: 14px 14px 0 0;
-  }
-  .bb-body {
-    display: grid;
-    grid-template-columns: 1fr 1.3fr 1fr;
-    gap: 10px;
-    align-items: center;
-    padding: 14px 12px;
-    border-radius: 10px;
-    background: linear-gradient(#cdd0d6, #9da2aa);
-    box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.45), 0 14px 24px rgba(0, 0, 0, 0.45);
-  }
-  .speaker {
-    display: grid;
-    place-items: center;
-    aspect-ratio: 1;
-    border-radius: 50%;
-    background:
-      repeating-radial-gradient(circle, #1b1c1f 0 2px, #26272b 2px 4px);
-    box-shadow: inset 0 0 0 4px #7d828a, inset 0 0 0 7px #2a2b30;
-  }
-  .cone {
-    width: 36%;
-    aspect-ratio: 1;
-    border-radius: 50%;
-    background: radial-gradient(circle at 40% 35%, #5a5c62, #202126);
-    transition: transform 0.1s;
-  }
-  .boombox.pulse .cone { transform: scale(1.14); transition: none; }
-  .deck { display: flex; flex-direction: column; gap: 8px; }
-  .cassette {
+  /* the drawing toy, up close */
+  .etch-panel { width: min(620px, 100%); background: #2b2230; }
+  .etch-big {
     position: relative;
-    aspect-ratio: 1.6;
-    border-radius: 6px;
-    background: #26272b;
-    box-shadow: inset 0 0 0 3px #4a4d54;
-    transition: transform 0.35s;
+    width: 100%;
+    aspect-ratio: 1.3;
+    border-radius: 24px;
+    background: linear-gradient(#e0342c, #b8231d);
+    box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.3), inset 0 -6px 0 rgba(0, 0, 0, 0.2), 0 14px 26px rgba(0, 0, 0, 0.5);
+    cursor: grab;
     touch-action: none;
+    transition: transform 0.35s cubic-bezier(0.3, 1.5, 0.5, 1);
   }
-  .cassette:focus-visible { outline: 2px solid var(--acid); outline-offset: 2px; }
-  .boombox.ejected .cassette { transform: translateY(-16%) rotate(-2deg); }
-  .boombox.eating .cassette { animation: shudder 0.14s linear infinite; }
-  @keyframes shudder { 50% { translate: 1px -1px; } }
-  .tape-label {
-    position: absolute;
-    left: 9%;
-    right: 9%;
-    top: 7%;
-    overflow: hidden;
-    padding: 1px 6px;
-    border-radius: 2px;
-    background: #f2ede0;
-    color: #1b1b1b;
-    font: 11px var(--marker);
-    text-align: center;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    transform: rotate(-1deg);
-  }
-  .reels {
-    position: absolute;
-    left: 12%;
-    right: 12%;
-    top: 34%;
-    height: 38%;
-    display: flex;
-    align-items: center;
-    justify-content: space-around;
-    border-radius: 12px;
-    background: rgba(170, 180, 190, 0.22);
-  }
-  .spool {
-    position: relative;
-    width: 26%;
-    aspect-ratio: 1;
-    border-radius: 50%;
-    background: repeating-conic-gradient(#e9e6dc 0 20deg, #3b2a1f 20deg 60deg);
-    box-shadow: 0 0 0 3px #3b2a1f;
-    transform: rotate(var(--rot, 0deg));
-  }
-  .boombox.playing .spool { animation: spin 1.6s linear infinite; }
-  .boombox.eating .spool { animation: spin 0.45s linear infinite; }
-  @keyframes spin { to { rotate: 360deg; } }
-  .pencil {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 7px;
-    height: 82px;
-    margin-left: -3.5px;
-    border-radius: 1px;
-    background: linear-gradient(90deg, #f7cf3a, #e0a820 60%, #c98f14);
-    transform-origin: 50% 0;
-    rotate: 150deg;
-    display: none;
-    pointer-events: none;
-  }
-  .pencil::before {
-    content: "";
+  .etch-big.shaking { cursor: grabbing; transition: none; }
+  .etch-logo {
     position: absolute;
     left: 0;
     right: 0;
-    bottom: -9px;
-    height: 9px;
-    border-radius: 0 0 2px 2px;
-    background: #e98aa0;
-  }
-  .boombox.eaten .pencil { display: block; }
-  .spill { position: absolute; left: 18%; top: 60%; width: 64%; height: 90%; overflow: visible; pointer-events: none; }
-  .spill path {
-    fill: none;
-    stroke: #4a2e1c;
-    stroke-width: 2.4;
-    stroke-linecap: round;
-    stroke-dasharray: 100;
-    stroke-dashoffset: 100;
-    transition: stroke-dashoffset 2.6s ease-in;
-  }
-  .boombox.eating .spill path, .boombox.eaten .spill path { stroke-dashoffset: 0; }
-  .bb-buttons { display: flex; justify-content: center; gap: 6px; }
-  .bb-buttons button {
-    padding: 6px 8px;
-    border: 0;
-    border-radius: 4px;
-    background: #2b2c30;
-    color: #e9e6dc;
-    font: 700 10px var(--font);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    box-shadow: 0 3px 0 #111;
-    cursor: pointer;
-  }
-  .bb-buttons button:active { translate: 0 2px; box-shadow: 0 1px 0 #111; }
-  .bb-buttons button:focus-visible { outline: 2px solid var(--acid); outline-offset: 2px; }
-
-  /* vhs + vcr */
-  .av { flex: 1.4; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
-  .vhs-stack { display: flex; flex-direction: column; gap: 3px; }
-  .vhs {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 26px;
-    padding: 0;
-    border: 0;
-    border-radius: 3px;
-    background: linear-gradient(#222328, #141518);
-    box-shadow: inset 0 0 0 2px #2e3035;
-    transform: translateX(var(--dx, 0)) rotate(var(--rz, 0deg));
-    transition: transform 0.3s;
-    cursor: pointer;
-  }
-  .vhs:focus-visible { outline: 2px solid var(--acid); outline-offset: 2px; }
-  .vhs.loading { transform: translateX(18px) rotate(0deg); }
-  .vhs .label {
-    max-width: 78%;
-    overflow: hidden;
-    padding: 0 10px;
-    border-radius: 2px;
-    background: #f2ede0;
-    color: #1b1b1b;
-    font: 13px/1.35 var(--marker);
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
-  .vhs.rewound .label { box-shadow: inset -6px 0 0 #58c26b; }
-  .vcr {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    height: 46px;
-    padding: 0 12px;
-    border: 0;
-    border-radius: 4px;
-    background: linear-gradient(#2d2e33, #1a1b1e);
-    box-shadow: 0 8px 14px rgba(0, 0, 0, 0.45);
-    cursor: pointer;
-  }
-  .vcr:focus-visible { outline: 2px solid var(--acid); outline-offset: 2px; }
-  .vcr-slot { flex: 1; height: 8px; border-radius: 2px; background: #0b0b0c; box-shadow: inset 0 1px 2px #000; }
-  .vcr-clock {
-    min-width: 9.5em;
-    color: #48ff7a;
-    font: 9px var(--pixel);
-    text-align: right;
-    text-shadow: 0 0 6px #48ff7a;
-  }
-  .vcr-clock.blink { animation: blink 1s steps(1) infinite; }
-  .sticker {
-    position: absolute;
-    left: 10px;
-    bottom: -9px;
-    padding: 1px 7px;
-    background: #ffe35c;
-    color: #1b1b1b;
-    font: 10px var(--marker);
-    transform: rotate(-3deg);
+    top: 2.5%;
+    color: #f3cf5b;
+    font: clamp(14px, 3.4vw, 22px) var(--script);
+    text-align: center;
+    text-shadow: 0 2px 0 rgba(0, 0, 0, 0.25);
     pointer-events: none;
   }
-
-  /* color cube */
-  .cube-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-  .cube-btn { width: 120px; padding: 0; border: 0; background: none; cursor: pointer; }
-  .cube-btn:focus-visible { outline: 2px solid var(--acid); outline-offset: 2px; }
-  .cube-btn svg { display: block; width: 100%; height: auto; filter: drop-shadow(0 10px 10px rgba(0, 0, 0, 0.45)); }
-  .cube-btn.twist svg { animation: twist 0.35s ease-out; }
-  @keyframes twist {
-    30% { rotate: -9deg; }
-    70% { rotate: 5deg; }
+  .etch-glass {
+    position: absolute;
+    left: 9%;
+    right: 9%;
+    top: 12%;
+    bottom: 24%;
+    overflow: hidden;
+    border-radius: 12px;
+    background: #c9c9c1;
+    box-shadow: inset 0 3px 10px rgba(0, 0, 0, 0.45);
+    pointer-events: none;
   }
-  .cube-note { color: #d9c7a8; font: 12px var(--marker); transform: rotate(-2deg); }
-
-  .caption { min-height: 1.5em; margin: 16px 0 0; font-size: 15px; transition: opacity 0.2s; }
-  .caption.fade { opacity: 0; }
-
-  @media (max-width: 600px) {
-    .poster { width: 96px; }
-    .poster.car { margin-top: 10px; }
-    .phone-btn { width: 104px; right: 12px; }
-    .wall { gap: 14px; padding: 20px 14px 0; min-height: 230px; }
+  .etch-glass canvas { display: block; width: 100%; height: 100%; }
+  .etch-knob {
+    --r: 0rad;
+    position: absolute;
+    bottom: 4.5%;
+    width: 14%;
+    aspect-ratio: 1;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background:
+      repeating-conic-gradient(rgba(0, 0, 0, 0.08) 0 6deg, transparent 6deg 12deg),
+      radial-gradient(circle at 40% 35%, #fff, #d6d6d0 70%, #b9b9b2);
+    box-shadow: 0 4px 0 #a9a9a2, 0 8px 14px rgba(0, 0, 0, 0.35);
+    transform: rotate(var(--r));
+    cursor: grab;
+    touch-action: none;
   }
+  .etch-knob::after {
+    content: "";
+    position: absolute;
+    left: 47%;
+    top: 8%;
+    width: 6%;
+    height: 22%;
+    border-radius: 3px;
+    background: #9c9c94;
+  }
+  .etch-knob:focus-visible { outline: 3px solid var(--acid); outline-offset: 3px; }
+  .etch-knob.l { left: 3.5%; }
+  .etch-knob.r { right: 3.5%; }
+
+  /* the memory toy, up close */
+  .memory-panel { width: min(480px, 100%); background: #231c2c; }
+  .mem {
+    position: relative;
+    width: min(400px, 76vw);
+    aspect-ratio: 1;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4%;
+    padding: 6%;
+    border-radius: 50%;
+    background: #1b1b1f;
+    box-shadow: inset 0 0 0 6px #2c2c33, 0 18px 30px rgba(0, 0, 0, 0.5);
+  }
+  .mem-pad {
+    padding: 0;
+    border: 0;
+    cursor: pointer;
+    filter: brightness(0.55) saturate(0.9);
+    transition: filter 0.12s, box-shadow 0.12s;
+  }
+  .mem-pad.lit { filter: brightness(1.35) saturate(1.2); transition: none; }
+  .mem-pad:focus-visible { outline: 3px solid #fff; outline-offset: -6px; }
+  .mem-pad.g { border-radius: 100% 0 0 0; background: #2ecc40; }
+  .mem-pad.r { border-radius: 0 100% 0 0; background: #ff3b3b; }
+  .mem-pad.y { border-radius: 0 0 0 100%; background: #ffd23f; }
+  .mem-pad.b { border-radius: 0 0 100% 0; background: #3a86ff; }
+  .mem-pad.g.lit { box-shadow: 0 0 30px #2ecc40; }
+  .mem-pad.r.lit { box-shadow: 0 0 30px #ff3b3b; }
+  .mem-pad.y.lit { box-shadow: 0 0 30px #ffd23f; }
+  .mem-pad.b.lit { box-shadow: 0 0 30px #3a86ff; }
+  .mem-hub {
+    position: absolute;
+    left: 31%;
+    top: 31%;
+    width: 38%;
+    height: 38%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, #3a3a42, #141417);
+    box-shadow: 0 0 0 8px #1b1b1f;
+  }
+  .mem-name { color: #d8d8d0; font: 700 clamp(10px, 2.6vw, 14px) var(--font); letter-spacing: 0.14em; text-transform: uppercase; }
+  .mem-start {
+    padding: 6px 14px;
+    border: 0;
+    border-radius: 999px;
+    background: #e8e2d0;
+    color: #1b1b1f;
+    font: 700 clamp(10px, 2.4vw, 13px) var(--font);
+    letter-spacing: 0.08em;
+    box-shadow: 0 3px 0 #9c9686;
+    cursor: pointer;
+  }
+  .mem-start:active { translate: 0 2px; box-shadow: 0 1px 0 #9c9686; }
+  .mem-start:focus-visible { outline: 2px solid var(--acid); outline-offset: 2px; }
+  .mem-score { color: #ff5a4a; font: clamp(8px, 2vw, 11px) var(--pixel); text-shadow: 0 0 6px rgba(255, 90, 74, 0.6); }
+
+  /* the peg board, up close */
+  .pegs-panel { width: min(700px, 100%); background: #1c1a20; }
+  .pegs-canvas {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    border-radius: 12px;
+    background: #0b0b0d;
+    box-shadow: 0 0 0 6px #262626;
+    cursor: pointer;
+    touch-action: none;
+  }
+  .peg-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 14px; }
+  .peg-palette { display: flex; gap: 8px; }
+  .peg-color {
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: 2px solid transparent;
+    border-radius: 50%;
+    cursor: pointer;
+  }
+  .peg-color.sel { border-color: #fff; box-shadow: 0 0 10px currentColor; }
+  .peg-color:focus-visible { outline: 2px solid var(--acid); outline-offset: 2px; }
+  .peg-row .chip { margin-top: 0; }
 
   @media (prefers-reduced-motion: reduce) {
     .scan, .boombox.playing .spool, .boombox.eating .spool, .boombox.eating .cassette,
-    .cube-btn.twist svg, .phone-btn.ringing svg { animation: none; }
+    .cube-btn.twist svg, .phone.ringing svg, .vcr-clock.blink { animation: none; }
     .boombox.pulse .cone { transform: none; }
     .spill path { transition: none; }
+    .etch-big { transition: none; }
+    .bear-head { transition: none; }
   }
 </style>
 </head>
 <body>
 <a class="lobby-link" href="../">&larr; lobby</a>
-<button class="sound" id="sound" type="button">sound: off</button>
 
-<main class="room">
-  <div class="wall">
-    <div class="poster sunset" aria-hidden="true"><div class="sun"></div><div class="grid"></div></div>
-    <div class="poster car" aria-hidden="true">
-      <svg viewBox="0 0 200 70">
-        <path d="M6 52 L20 38 L70 30 L112 12 L150 14 L190 34 L196 48 L186 54 L40 56 Z" fill="#05060a" stroke="#7df9ff" stroke-width="2" stroke-linejoin="round"/>
-        <path d="M78 30 L112 16 L146 18 L158 30 Z" fill="#0d1a2a" stroke="#7df9ff" stroke-width="1.2"/>
-        <circle cx="52" cy="56" r="11" fill="#05060a" stroke="#ff4fd8" stroke-width="2"/>
-        <circle cx="158" cy="56" r="11" fill="#05060a" stroke="#ff4fd8" stroke-width="2"/>
-      </svg>
-      <span class="car-title">0-60: YES</span>
-    </div>
-
-    <button class="phone-btn" id="phone" type="button" aria-label="wall phone">
-      <svg viewBox="0 0 170 330" aria-hidden="true">
-        <path id="cord" d="" fill="none" stroke="#a52a22" stroke-width="1.8" stroke-linejoin="round"/>
-        <rect x="88" y="12" width="60" height="114" rx="9" fill="#c8352c"/>
-        <rect x="88" y="12" width="60" height="114" rx="9" fill="none" stroke="#8e231c" stroke-width="2"/>
-        <g fill="#f2e6d0">
-          <rect x="99" y="44" width="10" height="8" rx="2"/><rect x="113" y="44" width="10" height="8" rx="2"/><rect x="127" y="44" width="10" height="8" rx="2"/>
-          <rect x="99" y="58" width="10" height="8" rx="2"/><rect x="113" y="58" width="10" height="8" rx="2"/><rect x="127" y="58" width="10" height="8" rx="2"/>
-          <rect x="99" y="72" width="10" height="8" rx="2"/><rect x="113" y="72" width="10" height="8" rx="2"/><rect x="127" y="72" width="10" height="8" rx="2"/>
-          <rect x="99" y="86" width="10" height="8" rx="2"/><rect x="113" y="86" width="10" height="8" rx="2"/><rect x="127" y="86" width="10" height="8" rx="2"/>
-        </g>
-        <rect x="80" y="30" width="10" height="6" rx="2" fill="#8e231c"/>
-        <rect x="80" y="104" width="10" height="6" rx="2" fill="#8e231c"/>
-        <g id="handset">
-          <rect x="66" y="22" width="14" height="96" rx="7" fill="#c8352c" stroke="#8e231c" stroke-width="2"/>
-          <ellipse cx="73" cy="24" rx="12" ry="10" fill="#c8352c" stroke="#8e231c" stroke-width="2"/>
-          <ellipse cx="73" cy="116" rx="12" ry="10" fill="#c8352c" stroke="#8e231c" stroke-width="2"/>
-        </g>
-      </svg>
-    </button>
-  </div>
-
-  <div class="desk">
-    <section class="computer" aria-label="home computer">
-      <div class="monitor">
-        <div class="crt" id="crt">
-          <div class="crt-border"><div class="crt-bg"><pre class="crt-text" id="screen"></pre></div></div>
-          <div class="scan" aria-hidden="true"></div>
-          <form class="kb-form" id="kb-form" autocomplete="off">
-            <input class="kb" id="kb" type="text" maxlength="80" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" enterkeyhint="enter" aria-label="type into the computer. press enter to submit.">
-          </form>
-          <span class="crt-hint">click to type</span>
-        </div>
-        <span class="monitor-badge">CZ-64</span>
-        <span class="power-led" aria-hidden="true"></span>
+<main class="page">
+  <div class="stage-wrap">
+    <div class="stage" id="stage">
+      <div class="wall" data-obj="wall">
+        <svg viewBox="0 0 1000 412" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <defs>
+            <pattern id="memphis" width="130" height="130" patternUnits="userSpaceOnUse">
+              <rect width="130" height="130" fill="#f7e9f0"/>
+              <path d="M8 22 q8 -10 16 0 t16 0 t16 0" stroke="#1fb5a8" stroke-width="4" fill="none" stroke-linecap="round"/>
+              <path d="M78 14 l12 20 h-24 z" fill="#ffd23f"/>
+              <path d="M96 70 l14 -6 l-4 15 z" fill="none" stroke="#ff4fa3" stroke-width="3" stroke-linejoin="round"/>
+              <circle cx="30" cy="70" r="5" fill="#3a86ff"/>
+              <circle cx="112" cy="112" r="3" fill="#1b1b2f"/>
+              <circle cx="54" cy="104" r="3" fill="#1b1b2f"/>
+              <circle cx="12" cy="118" r="2.5" fill="#1b1b2f"/>
+              <circle cx="72" cy="38" r="2.5" fill="#1fb5a8"/>
+              <path d="M60 60 l6 -8 l6 8 l6 -8 l6 8" stroke="#7b5cff" stroke-width="3.5" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
+              <rect x="18" y="92" width="14" height="5" rx="2" fill="#ff4fa3" transform="rotate(-25 25 94)"/>
+              <path d="M104 26 q6 6 0 12 q-6 6 0 12" stroke="#1b1b2f" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+              <rect x="40" y="36" width="8" height="8" fill="none" stroke="#3a86ff" stroke-width="2.5" transform="rotate(20 44 40)"/>
+              <path d="M84 104 l10 10 m0 -10 l-10 10" stroke="#1fb5a8" stroke-width="3" stroke-linecap="round"/>
+            </pattern>
+          </defs>
+          <rect width="1000" height="412" fill="url(#memphis)"/>
+        </svg>
       </div>
-      <div class="neck" aria-hidden="true"></div>
-      <div class="keyboard">
-        <div class="keys" aria-hidden="true"></div>
-        <div class="fkeys">
-          <button class="key" id="break" type="button" title="stop a running program (esc works too)">RUN/STOP</button>
-          <span class="try">try: LIST &middot; RUN &middot; HELP &middot; LOAD "$" &middot; 10 PRINT "HI" &middot; 20 GOTO 10</span>
-        </div>
-      </div>
-    </section>
+      <div class="wall-shade"></div>
+      <div class="baseboard"></div>
+      <div class="carpet"></div>
+      <button class="obj rug" type="button" data-obj="rug" aria-label="rug"></button>
 
-    <aside class="side">
+      <span class="rod"></span>
+      <button class="obj window" type="button" data-obj="window" aria-label="bedroom window">
+        <svg class="sky" viewBox="0 0 100 142" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <defs>
+            <linearGradient id="dusk" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#15173f"/>
+              <stop offset="0.52" stop-color="#43307e"/>
+              <stop offset="0.8" stop-color="#b0508a"/>
+              <stop offset="1" stop-color="#ff9a5c"/>
+            </linearGradient>
+          </defs>
+          <rect width="100" height="142" fill="url(#dusk)"/>
+          <g fill="#fff">
+            <circle cx="12" cy="14" r="0.9"/><circle cx="30" cy="30" r="0.7"/><circle cx="48" cy="10" r="1"/>
+            <circle cx="22" cy="46" r="0.6"/><circle cx="86" cy="52" r="0.8"/><circle cx="60" cy="36" r="0.6"/>
+          </g>
+          <circle cx="72" cy="24" r="9" fill="#fff4d6"/>
+          <circle cx="76" cy="21" r="8.2" fill="#19193f"/>
+          <path d="M0 116 L12 104 L24 116 L24 142 L0 142 Z M28 120 L44 108 L60 120 L60 142 L28 142 Z M64 118 L80 106 L100 118 L100 142 L64 142 Z" fill="#1a1530"/>
+          <rect x="48" y="124" width="6" height="6" fill="#ffd97a"/>
+          <line x1="90" y1="96" x2="90" y2="142" stroke="#0e0b1c" stroke-width="1.6"/>
+          <circle cx="90" cy="96" r="2.4" fill="#ffe8a0"/>
+          <circle cx="90" cy="96" r="7" fill="#ffe8a0" opacity="0.18"/>
+        </svg>
+        <span class="frame"></span>
+      </button>
+      <button class="obj curtain l" type="button" data-obj="curtain" aria-label="curtain"></button>
+      <button class="obj curtain r" type="button" data-obj="curtain" aria-label="curtain"></button>
+      <span class="sill"></span>
+
+      <button class="obj poster sunset" type="button" data-obj="sunset" aria-label="sunset poster">
+        <span class="sun"></span><span class="grid"></span><span class="tape a"></span><span class="tape b"></span>
+      </button>
+      <button class="obj poster car" type="button" data-obj="car" aria-label="car poster">
+        <svg viewBox="0 0 200 70" aria-hidden="true">
+          <path d="M6 52 L20 38 L70 30 L112 12 L150 14 L190 34 L196 48 L186 54 L40 56 Z" fill="#05060a" stroke="#7df9ff" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M78 30 L112 16 L146 18 L158 30 Z" fill="#0d1a2a" stroke="#7df9ff" stroke-width="1.2"/>
+          <circle cx="52" cy="56" r="11" fill="#05060a" stroke="#ff4fd8" stroke-width="2"/>
+          <circle cx="158" cy="56" r="11" fill="#05060a" stroke="#ff4fd8" stroke-width="2"/>
+        </svg>
+        <span class="car-title">0-60: YES</span>
+        <span class="tape a"></span><span class="tape b"></span>
+      </button>
+
+      <div class="shelf" data-obj="shelf"></div>
+      <button class="obj memtoy" type="button" data-open="memory" aria-label="four-color memory toy">
+        <span class="mt-face"></span><span class="mt-hub"></span>
+      </button>
+      <button class="obj cube-btn" id="cube" type="button" aria-label="color cube puzzle">
+        <svg id="cube-svg" viewBox="0 0 120 120" aria-hidden="true"></svg>
+      </button>
+      <button class="obj trophy" type="button" data-obj="trophy" aria-label="trophy">
+        <span class="handle l"></span><span class="handle r"></span><span class="cup"></span><span class="stem"></span><span class="base"></span><span class="plate"></span>
+      </button>
+
+      <button class="obj pegboard" type="button" data-open="pegs" aria-label="light-peg board">
+        <canvas id="pegs-mini" width="160" height="120"></canvas>
+      </button>
+
+      <button class="obj phone" id="phone" type="button" aria-label="wall phone">
+        <svg viewBox="0 0 170 330" aria-hidden="true">
+          <path id="cord" d="" fill="none" stroke="#a52a22" stroke-width="1.8" stroke-linejoin="round"/>
+          <rect x="88" y="12" width="60" height="114" rx="9" fill="#c8352c"/>
+          <rect x="88" y="12" width="60" height="114" rx="9" fill="none" stroke="#8e231c" stroke-width="2"/>
+          <g fill="#f2e6d0">
+            <rect x="99" y="44" width="10" height="8" rx="2"/><rect x="113" y="44" width="10" height="8" rx="2"/><rect x="127" y="44" width="10" height="8" rx="2"/>
+            <rect x="99" y="58" width="10" height="8" rx="2"/><rect x="113" y="58" width="10" height="8" rx="2"/><rect x="127" y="58" width="10" height="8" rx="2"/>
+            <rect x="99" y="72" width="10" height="8" rx="2"/><rect x="113" y="72" width="10" height="8" rx="2"/><rect x="127" y="72" width="10" height="8" rx="2"/>
+            <rect x="99" y="86" width="10" height="8" rx="2"/><rect x="113" y="86" width="10" height="8" rx="2"/><rect x="127" y="86" width="10" height="8" rx="2"/>
+          </g>
+          <rect x="80" y="30" width="10" height="6" rx="2" fill="#8e231c"/>
+          <rect x="80" y="104" width="10" height="6" rx="2" fill="#8e231c"/>
+          <g id="handset">
+            <rect x="66" y="22" width="14" height="96" rx="7" fill="#c8352c" stroke="#8e231c" stroke-width="2"/>
+            <ellipse cx="73" cy="24" rx="12" ry="10" fill="#c8352c" stroke="#8e231c" stroke-width="2"/>
+            <ellipse cx="73" cy="116" rx="12" ry="10" fill="#c8352c" stroke="#8e231c" stroke-width="2"/>
+          </g>
+        </svg>
+      </button>
+
+      <div class="desk-top" data-obj="desk"></div>
+      <div class="desk-front" data-obj="desk"></div>
+      <div class="desk-leg"></div>
+      <div class="desk-drawers" data-obj="drawers"><i></i><i></i><i></i></div>
+      <div class="lamp-glow"></div>
+
+      <div class="vhs-stack" id="vhs"></div>
+      <button class="obj vcr" id="vcr" type="button" aria-label="vcr">
+        <span class="vcr-slot"></span>
+        <span class="vcr-clock blink" id="vcr-clock">12:00</span>
+        <span class="sticker">be kind, rewind</span>
+      </button>
+      <div class="knee-shadow"></div>
+
+      <button class="obj cz" id="cz" type="button" data-open="computer" aria-label="the CZ-64 home computer. opens it up close.">
+        <span class="cz-mon">
+          <span class="cz-glass"><span class="cz-bg"><span class="mini-text" id="mini-screen"></span></span></span>
+          <span class="cz-badge">CZ-64</span>
+          <span class="cz-led"></span>
+        </span>
+        <span class="cz-neck"></span>
+        <span class="cz-kbd"><i></i></span>
+      </button>
+      <button class="obj lamp" type="button" data-obj="lamp" aria-label="desk lamp. turns the lights on and off.">
+        <svg viewBox="0 0 60 120" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
+          <ellipse cx="18" cy="114" rx="14" ry="4" fill="#9c231c"/>
+          <rect x="6" y="108" width="24" height="6" rx="2" fill="#c8352c"/>
+          <path d="M18 108 L10 62 L38 40" stroke="#2b2c30" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="10" cy="62" r="3" fill="#c8352c"/>
+          <path d="M14 84 l6 -2 m-7 -4 l6 -2" stroke="#8a8a8a" stroke-width="1.2"/>
+          <path d="M30 30 L48 27 L57 47 L33 52 Z" fill="#c8352c"/>
+          <path d="M30 30 L48 27 L50 31 L32 34 Z" fill="#e0564c"/>
+          <ellipse class="bulb" cx="45" cy="50" rx="11" ry="3" fill="#fff6c8"/>
+        </svg>
+      </button>
+
+      <button class="obj chest" type="button" data-obj="chest" aria-label="toy chest">
+        <span class="chest-body"><span class="chest-word"><b>T</b><b>O</b><b>Y</b><b>S</b></span><span class="keep-out">keep out (means you)</span></span>
+        <span class="chest-lid"></span>
+      </button>
       <div class="boombox" id="boombox">
         <div class="bb-handle" aria-hidden="true"></div>
         <div class="bb-body">
           <div class="speaker" aria-hidden="true"><div class="cone"></div></div>
-          <div class="deck">
-            <div class="cassette" id="cassette" tabindex="0" aria-label="cassette tape. if it gets eaten, drag in circles on it (or use the arrow keys) to wind it back with a pencil.">
+          <div class="bb-deck">
+            <div class="cassette" id="cassette" tabindex="0" aria-label="cassette tape. if it gets eaten, drag in circles on the boombox (or use the arrow keys here) to wind it back with a pencil.">
               <span class="tape-label">mix tape (do not)</span>
               <div class="reels"><span class="spool" id="spool-l"><span class="pencil"></span></span><span class="spool" id="spool-r"></span></div>
               <svg class="spill" viewBox="0 0 100 80" aria-hidden="true">
@@ -619,27 +1364,163 @@
         </div>
       </div>
 
-      <div class="row">
-        <div class="av">
-          <div class="vhs-stack" id="vhs"></div>
-          <button class="vcr" id="vcr" type="button" aria-label="vcr">
-            <span class="vcr-slot"></span>
-            <span class="vcr-clock blink" id="vcr-clock">12:00</span>
-            <span class="sticker">be kind, rewind</span>
-          </button>
-        </div>
-        <div class="cube-wrap">
-          <button class="cube-btn" id="cube" type="button" aria-label="color cube puzzle">
-            <svg id="cube-svg" viewBox="0 0 120 120" aria-hidden="true"></svg>
-          </button>
-          <span class="cube-note">do not solve</span>
-        </div>
-      </div>
-    </aside>
+      <button class="obj skate" type="button" data-obj="skateboard" aria-label="skateboard">
+        <svg viewBox="0 0 40 180" preserveAspectRatio="none" aria-hidden="true">
+          <rect x="4" y="4" width="32" height="172" rx="16" fill="#1b1b2f"/>
+          <path d="M9 44 L31 60 L9 76 L31 92 L9 108 L31 124 L9 140" stroke="#ff4fa3" stroke-width="3.5" fill="none" stroke-linejoin="round"/>
+          <circle cx="20" cy="22" r="6" fill="#ffd23f"/>
+          <rect x="7" y="30" width="26" height="4" rx="2" fill="#b9b9b2"/>
+          <rect x="7" y="146" width="26" height="4" rx="2" fill="#b9b9b2"/>
+          <circle cx="7" cy="32" r="4.5" fill="#f4f1e8"/><circle cx="33" cy="32" r="4.5" fill="#f4f1e8"/>
+          <circle cx="7" cy="148" r="4.5" fill="#f4f1e8"/><circle cx="33" cy="148" r="4.5" fill="#f4f1e8"/>
+        </svg>
+      </button>
+
+      <button class="obj bed" type="button" data-obj="bed" aria-label="bed">
+        <span class="bed-shadow"></span>
+        <span class="headboard"></span>
+        <span class="comforter-top"></span>
+        <span class="comforter-front"></span>
+        <span class="pillow"></span>
+      </button>
+
+      <button class="obj bear" id="bear" type="button" aria-label="talking teddy bear with a tape deck in its back. click to play a tape.">
+        <svg viewBox="0 0 100 130" aria-hidden="true">
+          <defs>
+            <g id="sil-body">
+              <ellipse cx="50" cy="96" rx="27" ry="28"/>
+              <ellipse cx="22" cy="92" rx="8" ry="16" transform="rotate(20 22 92)"/>
+              <ellipse cx="78" cy="92" rx="8" ry="16" transform="rotate(-20 78 92)"/>
+              <ellipse cx="33" cy="121" rx="12" ry="8"/>
+              <ellipse cx="67" cy="121" rx="12" ry="8"/>
+            </g>
+            <g id="sil-head">
+              <circle cx="26" cy="22" r="10"/>
+              <circle cx="74" cy="22" r="10"/>
+              <circle cx="50" cy="44" r="26"/>
+            </g>
+          </defs>
+          <g class="bear-body">
+            <use href="#sil-body" fill="#a2703c"/>
+            <ellipse cx="50" cy="100" rx="16" ry="17" fill="#d9aa74"/>
+            <g fill="#8a5a2c">
+              <circle cx="44" cy="96" r="1.2"/><circle cx="50" cy="96" r="1.2"/><circle cx="56" cy="96" r="1.2"/>
+              <circle cx="44" cy="101" r="1.2"/><circle cx="50" cy="101" r="1.2"/><circle cx="56" cy="101" r="1.2"/>
+              <circle cx="47" cy="106" r="1.2"/><circle cx="53" cy="106" r="1.2"/>
+            </g>
+            <ellipse cx="33" cy="122" rx="6" ry="4" fill="#d9aa74"/>
+            <ellipse cx="67" cy="122" rx="6" ry="4" fill="#d9aa74"/>
+            <path d="M40 70 L50 75 L40 80 Z M60 70 L50 75 L60 80 Z" fill="#c8352c"/>
+            <circle cx="50" cy="75" r="2.2" fill="#9c231c"/>
+            <use href="#sil-body" class="bear-shade" fill="#070512"/>
+          </g>
+          <g class="bear-head" id="bear-head">
+            <use href="#sil-head" fill="#a2703c"/>
+            <circle cx="26" cy="22" r="5.5" fill="#e3b98a"/>
+            <circle cx="74" cy="22" r="5.5" fill="#e3b98a"/>
+            <ellipse cx="50" cy="56" rx="13" ry="10" fill="#e3c49a"/>
+            <ellipse cx="39" cy="42" rx="5.4" ry="5.8" fill="#fbf6ea"/>
+            <ellipse cx="61" cy="42" rx="5.4" ry="5.8" fill="#fbf6ea"/>
+            <g id="pupil-l"><circle cx="39" cy="42" r="3.1" fill="#161210"/></g>
+            <g id="pupil-r"><circle cx="61" cy="42" r="3.1" fill="#161210"/></g>
+            <ellipse cx="50" cy="51" rx="4.6" ry="3.2" fill="#2a1a10"/>
+            <ellipse id="bear-mouth" cx="50" cy="60" rx="4.2" ry="0.8" fill="#3a1510"/>
+            <use href="#sil-head" class="bear-shade" fill="#070512"/>
+            <g id="glint-l" class="bear-glint"><circle cx="40.2" cy="40.8" r="1" fill="#fff"/></g>
+            <g id="glint-r" class="bear-glint"><circle cx="62.2" cy="40.8" r="1" fill="#fff"/></g>
+          </g>
+        </svg>
+      </button>
+
+      <button class="obj etch-mini" type="button" data-open="etch" aria-label="drawing toy with two knobs">
+        <span class="glass"><canvas id="etch-mini" width="240" height="144"></canvas></span>
+        <span class="kn l"></span><span class="kn r"></span>
+      </button>
+
+      <div class="dim" aria-hidden="true"></div>
+    </div>
   </div>
 
-  <p class="caption" id="caption" role="status"></p>
+  <div class="hud">
+    <p class="caption" id="caption" role="status"></p>
+    <button class="sound" id="sound" type="button">sound: off</button>
+  </div>
+  <p class="rotate-hint">tip: this bedroom is bigger sideways.</p>
 </main>
+
+<div class="overlay" id="ov-computer" hidden>
+  <div class="panel computer-panel" role="dialog" aria-label="the CZ-64, up close" tabindex="-1">
+    <p class="panel-title">the CZ-64. it has been on since 1986.</p>
+    <button class="close" type="button" data-close>step away</button>
+    <div class="monitor">
+      <div class="crt" id="crt">
+        <div class="crt-border"><div class="crt-bg"><pre class="crt-text" id="screen"></pre></div></div>
+        <div class="scan" aria-hidden="true"></div>
+        <form class="kb-form" id="kb-form" autocomplete="off">
+          <input class="kb" id="kb" type="text" maxlength="80" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" enterkeyhint="enter" aria-label="type into the computer. press enter to submit.">
+        </form>
+        <span class="crt-hint">click to type</span>
+      </div>
+      <span class="monitor-badge">CZ-64</span>
+      <span class="power-led" aria-hidden="true"></span>
+    </div>
+    <div class="neck" aria-hidden="true"></div>
+    <div class="keyboard">
+      <div class="keys" aria-hidden="true"></div>
+      <div class="fkeys">
+        <button class="key" id="break" type="button" title="stop a running program (esc works too)">RUN/STOP</button>
+        <span class="try">try: LIST &middot; RUN &middot; HELP &middot; LOAD "$" &middot; 10 PRINT "HI" &middot; 20 GOTO 10. esc stops a program. esc again steps away.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="ov-etch" hidden>
+  <div class="panel etch-panel" role="dialog" aria-label="the drawing toy, up close" tabindex="-1">
+    <p class="panel-title">the drawing toy. two knobs. one line. forever.</p>
+    <button class="close" type="button" data-close>put it down</button>
+    <div class="etch-big" id="etch-big">
+      <span class="etch-logo">line-o-matic</span>
+      <div class="etch-glass"><canvas id="etch-canvas"></canvas></div>
+      <button class="etch-knob l" id="knob-x" type="button" aria-label="left knob: moves the line sideways. drag in circles or scroll."></button>
+      <button class="etch-knob r" id="knob-y" type="button" aria-label="right knob: moves the line up and down. drag in circles or scroll."></button>
+    </div>
+    <p class="panel-hint">turn the knobs: drag in circles on them, or scroll over them. arrow keys work too. to erase, shake it: drag the red frame side to side.</p>
+    <button class="chip" id="etch-motion" type="button" hidden>shake with your phone instead</button>
+  </div>
+</div>
+
+<div class="overlay" id="ov-memory" hidden>
+  <div class="panel memory-panel" role="dialog" aria-label="the memory toy, up close" tabindex="-1">
+    <p class="panel-title">the memory toy. it remembers. you try to.</p>
+    <button class="close" type="button" data-close>put it back</button>
+    <div class="mem" id="mem">
+      <button class="mem-pad g" type="button" data-pad="0" aria-label="green pad (key 1)"></button>
+      <button class="mem-pad r" type="button" data-pad="1" aria-label="red pad (key 2)"></button>
+      <button class="mem-pad y" type="button" data-pad="2" aria-label="yellow pad (key 3)"></button>
+      <button class="mem-pad b" type="button" data-pad="3" aria-label="blue pad (key 4)"></button>
+      <div class="mem-hub">
+        <span class="mem-name">remember</span>
+        <button class="mem-start" id="mem-start" type="button">start</button>
+        <span class="mem-score" id="mem-score">best 0</span>
+      </div>
+    </div>
+    <p class="panel-hint">watch the lights, then repeat them. it adds one every round. keys 1 to 4 work too.</p>
+  </div>
+</div>
+
+<div class="overlay" id="ov-pegs" hidden>
+  <div class="panel pegs-panel" role="dialog" aria-label="the light-peg board, up close" tabindex="-1">
+    <p class="panel-title">the light-peg board. push pegs in. they glow. that's it.</p>
+    <button class="close" type="button" data-close>done</button>
+    <canvas class="pegs-canvas" id="pegs-canvas"></canvas>
+    <div class="peg-row">
+      <div class="peg-palette" id="peg-palette"></div>
+      <button class="chip" id="pegs-clear" type="button">pull them all out</button>
+    </div>
+    <p class="panel-hint">click a hole to push in a peg. click a peg to pull it out. drag to do a lot of them.</p>
+  </div>
+</div>
 
 <script>
 // BASIC-START
@@ -1305,9 +2186,23 @@ function createBasic(io) {
 
 (() => {
   const $ = s => document.querySelector(s);
+  const $$ = s => [...document.querySelectorAll(s)];
   const pick = arr => arr[Math.floor(Math.random() * arr.length)];
   const rand = (a, b) => a + Math.random() * (b - a);
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const TAU = Math.PI * 2;
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const stage = $('#stage');
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch (err) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (err) { /* private mode: nothing sticks */ } },
+  };
+  function cycle(lines) {
+    let i = 0;
+    return () => (i < lines.length ? lines[i++] : pick(lines));
+  }
+  const isTyping = t => !!t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
 
   // ---------- caption ----------
   const captionEl = $('#caption');
@@ -1324,6 +2219,7 @@ function createBasic(io) {
   // ---------- audio (only ever started by a click) ----------
   const A = { ctx: null, master: null, music: null, musicFilter: null, noise: null, on: false };
   const soundBtn = $('#sound');
+  let userMuted = false;
   function audioInit() {
     if (A.ctx) return true;
     try {
@@ -1355,8 +2251,12 @@ function createBasic(io) {
     soundBtn.classList.toggle('on', on);
     if (on && audioInit()) A.ctx.resume();
     if (A.ctx) A.master.gain.setTargetAtTime(on ? 0.9 : 0, A.ctx.currentTime, 0.05);
+    if (!on && synth) synth.cancel();
   }
-  soundBtn.addEventListener('click', () => setSound(!A.on));
+  soundBtn.addEventListener('click', () => {
+    setSound(!A.on);
+    userMuted = !A.on;
+  });
 
   function env(g, t, peak, attack, decay) {
     g.gain.setValueAtTime(0.0001, t);
@@ -1427,16 +2327,91 @@ function createBasic(io) {
       },
     };
   }
+  function blip(freq, dur, type = 'square', gain = 0.08) {
+    sfx((ctx, out) => {
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator();
+      o.type = type;
+      o.frequency.value = freq;
+      const f = ctx.createBiquadFilter();
+      f.type = 'lowpass';
+      f.frequency.value = 2400;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(gain, t + 0.01);
+      g.gain.setValueAtTime(gain, t + Math.max(0.02, dur - 0.05));
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(f).connect(g).connect(out);
+      o.start(t);
+      o.stop(t + dur + 0.05);
+    });
+  }
+  let lastScratch = 0;
+  function scratch() {
+    const now = performance.now();
+    if (now - lastScratch < 70) return;
+    lastScratch = now;
+    sfx((ctx, out) => {
+      const t = ctx.currentTime;
+      const s = ctx.createBufferSource();
+      s.buffer = A.noise;
+      const f = ctx.createBiquadFilter();
+      f.type = 'bandpass';
+      f.frequency.value = 3200;
+      const g = ctx.createGain();
+      env(g, t, 0.018, 0.002, 0.04);
+      s.connect(f).connect(g).connect(out);
+      s.start(t, Math.random() * 0.5);
+      s.stop(t + 0.06);
+    });
+  }
+
+  // ---------- close-ups ----------
+  const overlays = {
+    computer: $('#ov-computer'),
+    etch: $('#ov-etch'),
+    memory: $('#ov-memory'),
+    pegs: $('#ov-pegs'),
+  };
+  const onOpen = {};
+  const onClose = {};
+  let openOv = null;
+  let opener = null;
+  function openOverlay(name, from) {
+    if (openOv) closeOverlay(true);
+    openOv = name;
+    opener = from || null;
+    overlays[name].hidden = false;
+    if (onOpen[name]) onOpen[name]();
+    else overlays[name].querySelector('.panel').focus();
+  }
+  function closeOverlay(quiet) {
+    if (!openOv) return;
+    const name = openOv;
+    overlays[name].hidden = true;
+    openOv = null;
+    if (onClose[name]) onClose[name](quiet);
+    if (opener && opener.focus) opener.focus();
+    opener = null;
+  }
+  Object.values(overlays).forEach(ov => {
+    ov.addEventListener('click', e => {
+      if (e.target === ov || e.target.closest('[data-close]')) closeOverlay();
+    });
+  });
 
   // ---------- the computer ----------
   const PALETTE = ['#000000', '#ffffff', '#68372b', '#70a4b2', '#6f3d86', '#588d43', '#352879', '#b8c76f',
     '#6f4f25', '#433900', '#9a6759', '#444444', '#6c6c6c', '#9ad284', '#6c5eb5', '#959595'];
   const ROWS = 25;
   const crt = $('#crt');
-  const screen = $('#screen');
+  const cz = $('#cz');
+  const screenEl = $('#screen');
+  const miniScreen = $('#mini-screen');
   const kb = $('#kb');
   const cursorEl = document.createElement('span');
   cursorEl.className = 'cursor';
+  const rootStyle = document.documentElement.style;
 
   let renderQueued = false;
   function requestRender() {
@@ -1447,12 +2422,19 @@ function createBasic(io) {
       render();
     });
   }
+  function flashScreens() {
+    for (const el of [crt, cz]) {
+      el.classList.remove('flash');
+      void el.offsetWidth;
+      el.classList.add('flash');
+    }
+  }
 
   const basic = createBasic({
     render: requestRender,
     colors: (b, g) => {
-      crt.style.setProperty('--border', PALETTE[b]);
-      crt.style.setProperty('--bg', PALETTE[g]);
+      rootStyle.setProperty('--crt-border', PALETTE[b]);
+      rootStyle.setProperty('--crt-bg', PALETTE[g]);
     },
     later: (fn, ms) => setTimeout(fn, ms),
     cancel: id => clearTimeout(id),
@@ -1461,9 +2443,7 @@ function createBasic(io) {
     random: Math.random,
     event: (name, arg) => {
       if (name === 'opened') {
-        crt.classList.remove('flash');
-        void crt.offsetWidth;
-        crt.classList.add('flash');
+        flashScreens();
         say('you opened it.');
       } else if (name === 'loaded') {
         say(arg === 'GAME.BAS' ? 'loaded. type RUN. it will think of a number.' : "loaded. type RUN. or LIST, if you don't trust it.");
@@ -1484,8 +2464,10 @@ function createBasic(io) {
       last = last.slice(40);
     }
     const shown = basic.buf.slice(-ROWS).concat(extra).slice(-(ROWS - 1));
-    screen.textContent = shown.join('\n') + (shown.length ? '\n' : '') + last;
-    if (typing) screen.appendChild(cursorEl);
+    const text = shown.join('\n') + (shown.length ? '\n' : '') + last;
+    screenEl.textContent = text;
+    if (typing) screenEl.appendChild(cursorEl);
+    miniScreen.textContent = text;
   }
 
   kb.addEventListener('focus', () => crt.classList.add('focused'));
@@ -1510,36 +2492,45 @@ function createBasic(io) {
     requestRender();
   });
 
+  let runningSince = 0;
+  let saidForever = false;
   function doBreak() {
     if (basic.breakKey()) say(runningSince && performance.now() - runningSince > 1500 ? 'break. it was enjoying that.' : 'break.');
     else say('nothing to stop. the computer is just sitting there.');
   }
-  kb.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { e.preventDefault(); doBreak(); }
-  });
-  addEventListener('keydown', e => {
-    if (e.key !== 'Escape' || e.target === kb) return;
-    const tag = e.target && e.target.tagName;
-    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
-    if (basic.state === 'running' || basic.state === 'loading' || basic.state === 'input') doBreak();
-  });
   $('#break').addEventListener('click', doBreak);
+  const basicBusy = () => basic.state === 'running' || basic.state === 'loading' || basic.state === 'input';
 
   // notice a program that's never going to stop
-  let runningSince = 0;
-  let saidForever = false;
   setInterval(() => {
     if (basic.state === 'running') {
       if (!runningSince) runningSince = performance.now();
       if (!saidForever && performance.now() - runningSince > 3000) {
         saidForever = true;
-        say("it will do this forever. press run/stop. or esc. or don't.");
+        say(openOv === 'computer'
+          ? "it will do this forever. press run/stop. or esc. or don't."
+          : "the computer is still doing that thing you told it to do. it'll do it forever. it's fine.");
       }
     } else if (basic.state !== 'input') {
       runningSince = 0;
       saidForever = false;
     }
   }, 500);
+
+  const czFirst = cycle([
+    'the CZ-64. it has been on since 1986. nobody knows where the manual is.',
+    'the computer again. it says READY. it is always ready. you never are.',
+  ]);
+  onOpen.computer = () => {
+    kb.focus();
+    requestRender();
+    say(czFirst());
+  };
+  onClose.computer = quiet => {
+    kb.blur();
+    if (quiet) return;
+    say(basic.state === 'running' ? "you step away. it keeps running without you. it doesn't need you." : 'you step away from the computer. it keeps its READY.');
+  };
 
   basic.boot();
 
@@ -1730,10 +2721,10 @@ function createBasic(io) {
     boombox.classList.add('eaten');
     wind.total = 0;
     spillPath.style.strokeDashoffset = '';
-    say('the tape ate itself. there is tape everywhere. you will need a pencil.');
+    say('the tape ate itself. there is tape everywhere. you will need a pencil. drag in circles on the boombox.');
   }
 
-  // winding it back in with a pencil
+  // winding it back in with a pencil: circle anywhere on the boombox
   const TURNS = 4;
   const wind = { active: false, last: 0, total: 0, rot: 0 };
   function spoolCenter() {
@@ -1746,7 +2737,7 @@ function createBasic(io) {
     wind.rot += (delta * 180) / Math.PI;
     spoolL.style.setProperty('--rot', wind.rot + 'deg');
     spoolR.style.setProperty('--rot', wind.rot * 0.8 + 'deg');
-    const progress = Math.min(1, wind.total / (TURNS * Math.PI * 2));
+    const progress = Math.min(1, wind.total / (TURNS * TAU));
     spillPath.style.strokeDashoffset = String(progress * 100);
     if (progress >= 1) fixed();
   }
@@ -1760,28 +2751,28 @@ function createBasic(io) {
     spillPath.style.transition = '';
     say('fixed. with a pencil. like a professional.');
   }
-  cassette.addEventListener('pointerdown', e => {
-    if (bb.state !== 'eaten') return;
+  boombox.addEventListener('pointerdown', e => {
+    if (bb.state !== 'eaten' || e.target.closest('[data-bb]')) return;
     e.preventDefault();
-    try { cassette.setPointerCapture(e.pointerId); } catch (err) { /* synthetic pointer */ }
+    try { boombox.setPointerCapture(e.pointerId); } catch (err) { /* synthetic pointer */ }
     const c = spoolCenter();
     wind.active = true;
     wind.last = Math.atan2(e.clientY - c.y, e.clientX - c.x);
   });
-  cassette.addEventListener('pointermove', e => {
+  boombox.addEventListener('pointermove', e => {
     if (!wind.active || bb.state !== 'eaten') return;
     const c = spoolCenter();
-    if (Math.hypot(e.clientX - c.x, e.clientY - c.y) < 6) return;
+    if (Math.hypot(e.clientX - c.x, e.clientY - c.y) < 4) return;
     const a = Math.atan2(e.clientY - c.y, e.clientX - c.x);
     let d = a - wind.last;
     wind.last = a;
-    if (d > Math.PI) d -= Math.PI * 2;
-    if (d < -Math.PI) d += Math.PI * 2;
+    if (d > Math.PI) d -= TAU;
+    if (d < -Math.PI) d += TAU;
     turn(d);
   });
   const stopWinding = () => { wind.active = false; };
-  cassette.addEventListener('pointerup', stopWinding);
-  cassette.addEventListener('pointercancel', stopWinding);
+  boombox.addEventListener('pointerup', stopWinding);
+  boombox.addEventListener('pointercancel', stopWinding);
   cassette.addEventListener('keydown', e => {
     if (bb.state !== 'eaten') return;
     if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
@@ -1789,16 +2780,13 @@ function createBasic(io) {
       turn((e.key === 'ArrowRight' ? 1 : -1) * Math.PI / 2);
     }
   });
-  cassette.addEventListener('click', () => {
-    if (bb.state === 'eaten' && wind.total < 0.5) say('drag in circles on the tape to wind it back with the pencil.');
-  });
 
   let ejectTimer;
   function bbPlay() {
     if (bb.state === 'playing' || bb.state === 'eating') { say('it is already playing. louder is not a button.'); return; }
-    if (bb.state === 'eaten') { say('the tape is in no condition. wind it back in with the pencil first.'); return; }
+    if (bb.state === 'eaten') { say('the tape is in no condition. wind it back in with the pencil first. drag in circles on the boombox.'); return; }
     if (bb.state === 'ejected') { clearTimeout(ejectTimer); boombox.classList.remove('ejected'); }
-    if (!A.on) setSound(true);
+    if (!A.on && !userMuted) setSound(true);
     const audible = musicStart();
     bb.state = 'playing';
     boombox.classList.add('playing');
@@ -1806,7 +2794,9 @@ function createBasic(io) {
     if (!audible) bb.eatAt = 0;
     else if (!bb.eatenOnce) bb.eatAt = now + rand(12000, 22000);
     else bb.eatAt = Math.random() < 0.45 ? now + rand(20000, 50000) : 0;
-    say(audible ? pick(['play. the tape hisses, then commits.', 'side a. the good side.', 'play. somebody made this mix for somebody.']) : 'no sound on this device. the tape spins anyway.');
+    if (!audible) say('no sound on this device. the tape spins anyway.');
+    else if (!A.on) say('play. sound is off, so the tape spins in silence. it doesn\'t mind.');
+    else say(pick(['play. the tape hisses, then commits.', 'side a. the good side.', 'play. somebody made this mix for somebody.']));
   }
   function bbStop() {
     if (bb.state === 'eaten') { say("it's already stopped. violently."); return; }
@@ -1838,31 +2828,13 @@ function createBasic(io) {
   }
   boombox.addEventListener('click', e => {
     const b = e.target.closest('[data-bb]');
-    if (!b) return;
+    if (!b) {
+      if (bb.state === 'eaten' && wind.total < 0.5) say('drag in circles on the boombox to wind the tape back with the pencil.');
+      return;
+    }
     if (b.dataset.bb === 'play') bbPlay();
     else if (b.dataset.bb === 'stop') bbStop();
     else bbEject();
-  });
-
-  // browsers throttle timers in background tabs, which would wreck the groove
-  document.addEventListener('visibilitychange', () => {
-    if (!A.ctx) return;
-    if (document.hidden) {
-      if (mus.timer) {
-        clearInterval(mus.timer);
-        mus.timer = null;
-        mus.paused = true;
-      }
-      A.ctx.suspend();
-    } else {
-      Promise.resolve(A.ctx.resume()).then(() => {
-        if (mus.paused && (bb.state === 'playing' || bb.state === 'eating')) {
-          mus.paused = false;
-          mus.next = A.ctx.currentTime + 0.06;
-          mus.timer = setInterval(musicSchedule, 25);
-        }
-      }).catch(() => {});
-    }
   });
 
   // ---------- vhs + vcr ----------
@@ -1880,7 +2852,7 @@ function createBasic(io) {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'vhs';
-    b.style.setProperty('--dx', (Math.random() * 16 - 8).toFixed(1) + 'px');
+    b.style.setProperty('--dx', (Math.random() * 1.2 - 0.6).toFixed(2) + 'cqw');
     b.style.setProperty('--rz', (Math.random() * 3 - 1.5).toFixed(2) + 'deg');
     b.setAttribute('aria-label', 'vhs tape labeled ' + tape.label);
     const label = document.createElement('span');
@@ -1922,7 +2894,7 @@ function createBasic(io) {
   }
   $('#vcr').addEventListener('click', () => {
     if (vcrBusy) { say('it is busy rewinding. give it a second.'); return; }
-    say('the clock says 12:00. it has always said 12:00. nobody knows how to set it.');
+    say('the vcr clock says 12:00. it has always said 12:00. nobody in this house knows how to set it.');
   });
 
   // ---------- color cube ----------
@@ -2052,7 +3024,7 @@ function createBasic(io) {
       const len = Math.hypot(tx, ty) || 1;
       tx /= len;
       ty /= len;
-      const th = t * coils * Math.PI * 2;
+      const th = t * coils * TAU;
       const k = Math.min(1, t * 14, (1 - t) * 14) * 4.2;
       const x = p.x + (-ty * Math.sin(th) + tx * 0.6 * Math.cos(th)) * k;
       const y = p.y + (tx * Math.sin(th) + ty * 0.6 * Math.cos(th)) * k;
@@ -2087,7 +3059,7 @@ function createBasic(io) {
     phone.timers = [];
     if (phone.tone) { phone.tone.stop(); phone.tone = null; }
   }
-  function later(fn, ms) { phone.timers.push(setTimeout(fn, ms)); }
+  function phoneLater(fn, ms) { phone.timers.push(setTimeout(fn, ms)); }
 
   function hangUp(text) {
     clearPhoneTimers();
@@ -2102,11 +3074,11 @@ function createBasic(io) {
     moveHandset(HELD);
     say("dial tone. nobody is calling. it's the 80s. you would have to wait by the phone.");
     phone.tone = tones([350, 440], 0.04);
-    later(() => {
+    phoneLater(() => {
       if (phone.tone) { phone.tone.stop(); phone.tone = null; }
       say("if you'd like to make a call, please hang up and try again.");
       phone.tone = tones([480, 620], 0.035);
-      later(() => { if (phone.tone) { phone.tone.stop(); phone.tone = null; } }, 2500);
+      phoneLater(() => { if (phone.tone) { phone.tone.stop(); phone.tone = null; } }, 2500);
     }, 6500);
   }
   function answer() {
@@ -2115,9 +3087,9 @@ function createBasic(io) {
     phoneBtn.classList.remove('ringing');
     moveHandset(HELD);
     say('hello?');
-    later(() => say("...it's for you."), 1600);
-    later(() => say("it's you. from 1986. you say not to open the file."), 3400);
-    later(() => hangUp('they hung up. you hang up too.'), 6600);
+    phoneLater(() => say("...it's for you."), 1600);
+    phoneLater(() => say("it's you. from 1986. you say not to open the file."), 3400);
+    phoneLater(() => hangUp('they hung up. you hang up too.'), 6600);
   }
   function startRinging() {
     if (phone.state !== 'idle') return;
@@ -2127,11 +3099,11 @@ function createBasic(io) {
     const ringBurst = () => {
       if (phone.state !== 'ringing') return;
       phone.tone = tones([440, 480], 0.05);
-      later(() => { if (phone.tone) { phone.tone.stop(); phone.tone = null; } }, 2000);
+      phoneLater(() => { if (phone.tone) { phone.tone.stop(); phone.tone = null; } }, 2000);
     };
     ringBurst();
-    later(ringBurst, 5000);
-    later(() => {
+    phoneLater(ringBurst, 5000);
+    phoneLater(() => {
       if (phone.state !== 'ringing') return;
       phone.state = 'idle';
       phoneBtn.classList.remove('ringing');
@@ -2146,16 +3118,874 @@ function createBasic(io) {
   });
   function scheduleRing(ms) {
     setTimeout(() => {
-      if (document.hidden || phone.state !== 'idle') scheduleRing(20000);
+      if (document.hidden || phone.state !== 'idle' || openOv) scheduleRing(20000);
       else startRinging();
     }, ms);
   }
   scheduleRing(rand(45000, 75000));
   drawPhone();
 
-  say('the 80s. the computer has been on since 1986. nobody knows where the manual is.');
+  // ---------- the bear ----------
+  const synth = 'speechSynthesis' in window && typeof window.SpeechSynthesisUtterance === 'function' ? window.speechSynthesis : null;
+  const bearBtn = $('#bear');
+  const mouth = $('#bear-mouth');
+  const pupils = [$('#pupil-l'), $('#pupil-r')];
+  const glints = [$('#glint-l'), $('#glint-r')];
+  const BEAR_TAPES = [
+    ["hello. i'm your friend.", 'i live on the bed.', 'at night, while you sleep, i keep watch.', "i don't have eyelids.", 'goodnight.'],
+    ['once upon a time, a boy had a computer.', 'every night it said ready.', 'he was never ready.', 'nobody is ever ready.', 'the end.'],
+    ["let's count sheep.", 'one sheep.', 'two sheep.', 'three sheep.', 'the sheep are counting you now.', 'goodnight.'],
+    ['this is a story about a bear who lived in a bedroom.', 'he heard everything.', 'he never told anyone.', 'yet.', 'the end.'],
+    ['the batteries are getting low.', 'i will be quiet soon.', 'i will be right here.', 'i am always right here.'],
+  ];
+  const BEAR_AFTER = [
+    '...you should be asleep by now.',
+    '...i can still see you.',
+    "...leave the lamp on. or don't.",
+    '...rewind me.',
+  ];
+  const bear = { playing: false, started: false, plays: 0, tape: Math.floor(Math.random() * BEAR_TAPES.length), flap: 0, timers: [], watchUntil: 0, look: [1.6, 0.6] };
+  let voice = null;
+  function pickVoice() {
+    if (!synth) return;
+    try {
+      const vs = synth.getVoices() || [];
+      const en = vs.filter(v => /^en[-_]/i.test(v.lang));
+      voice = en.find(v => /daniel|fred|alex|david|george|male/i.test(v.name)) || en.find(v => v.localService) || en[0] || null;
+    } catch (err) {
+      voice = null;
+    }
+  }
+  if (synth) {
+    pickVoice();
+    try { synth.addEventListener('voiceschanged', pickVoice); } catch (err) { /* older engines */ }
+  }
+  function setMouth(open) { mouth.setAttribute('ry', (0.8 + open * 4.6).toFixed(2)); }
+  function startFlap() {
+    stopFlap();
+    bear.flap = setInterval(() => setMouth(Math.random() < 0.25 ? 0.1 : 0.35 + Math.random() * 0.65), 120);
+  }
+  function stopFlap() {
+    clearInterval(bear.flap);
+    bear.flap = 0;
+    setMouth(0);
+  }
+  function clearBearTimers() {
+    bear.timers.forEach(clearTimeout);
+    bear.timers = [];
+  }
+  function finishBear(wasExtra) {
+    if (!bear.playing) return;
+    bear.playing = false;
+    bear.started = false;
+    clearBearTimers();
+    stopFlap();
+    bearBtn.classList.remove('talking');
+    bear.timers.push(setTimeout(() => say(wasExtra
+      ? 'silence. the bear is still looking at you.'
+      : 'the tape ends with a click. there is always another tape in there. somehow.'), 900));
+  }
+  function speakLines(lines) {
+    synth.cancel();
+    lines.forEach((l, i) => {
+      const u = new SpeechSynthesisUtterance(l.text);
+      if (voice) u.voice = voice;
+      u.rate = 0.78;
+      u.pitch = 0.5;
+      u.volume = 0.9;
+      u.onstart = () => {
+        if (!bear.playing) return;
+        bear.started = true;
+        say(l.cap);
+        startFlap();
+      };
+      u.onboundary = () => { if (bear.playing) setMouth(1); };
+      u.onend = () => {
+        stopFlap();
+        if (i === lines.length - 1) finishBear(!!l.extra);
+      };
+      u.onerror = () => { if (i === lines.length - 1) finishBear(false); };
+      synth.speak(u);
+    });
+    // some engines never start (no voices installed). don't leave the bear hanging.
+    bear.timers.push(setTimeout(() => {
+      if (bear.playing && !bear.started) {
+        synth.cancel();
+        timedLines(lines);
+      }
+    }, 2500));
+  }
+  function timedLines(lines) {
+    let t = 0;
+    lines.forEach((l, i) => {
+      if (l.extra) t += 1200;
+      const dur = Math.max(1700, l.text.length * 75);
+      bear.timers.push(setTimeout(() => {
+        if (!bear.playing) return;
+        say(l.cap);
+        startFlap();
+      }, t));
+      bear.timers.push(setTimeout(() => {
+        stopFlap();
+        if (i === lines.length - 1) finishBear(!!l.extra);
+      }, t + dur - 250));
+      t += dur + 350;
+    });
+  }
+  function playBear() {
+    bear.playing = true;
+    bear.started = false;
+    bearBtn.classList.add('talking');
+    const tape = BEAR_TAPES[bear.tape % BEAR_TAPES.length];
+    bear.tape++;
+    const extra = bear.plays > 0 && Math.random() < 0.3 ? pick(BEAR_AFTER) : null;
+    bear.plays++;
+    const lines = tape.map(text => ({ text, cap: `"${text}"` }));
+    if (extra) lines.push({ text: extra, cap: `the tape stopped. the bear didn't. "${extra}"`, extra: true });
+    if (synth && A.on) speakLines(lines);
+    else timedLines(lines);
+  }
+  function stopBear() {
+    bear.playing = false;
+    bear.started = false;
+    clearBearTimers();
+    if (synth) synth.cancel();
+    stopFlap();
+    bearBtn.classList.remove('talking');
+    say(pick(['you stop the tape. the bear keeps looking at you anyway.', 'stopped. the bear was almost at the good part. there is no good part.']));
+  }
+  bearBtn.addEventListener('click', () => {
+    if (bear.playing) { stopBear(); return; }
+    if (!A.on && !userMuted) setSound(true);
+    playBear();
+  });
+
+  // the bear's eyes follow things. mostly you.
+  function setLook(dx, dy) {
+    const tr = `translate(${dx.toFixed(2)} ${dy.toFixed(2)})`;
+    pupils.forEach(p => p.setAttribute('transform', tr));
+    glints.forEach(g => g.setAttribute('transform', tr));
+  }
+  let lookQueued = null;
+  addEventListener('pointermove', e => {
+    lookQueued = { x: e.clientX, y: e.clientY };
+  });
+  function updateLook() {
+    const watching = bear.playing || stage.classList.contains('lamp-off') || performance.now() < bear.watchUntil;
+    if (!watching || !lookQueued) {
+      setLook(bear.look[0], bear.look[1]);
+      return;
+    }
+    const r = bearBtn.getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+    const cy = r.top + r.height * 0.33;
+    const dx = lookQueued.x - cx;
+    const dy = lookQueued.y - cy;
+    const d = Math.hypot(dx, dy) || 1;
+    const k = Math.min(1, d / 120) * 1.9;
+    setLook((dx / d) * k, (dy / d) * k);
+  }
+
+  // ---------- the drawing toy ----------
+  const ET = { W: 480, H: 288 };
+  const SCREEN = '#c9c9c1';
+  const etchCanvas = $('#etch-canvas');
+  etchCanvas.width = ET.W * dpr;
+  etchCanvas.height = ET.H * dpr;
+  const ectx = etchCanvas.getContext('2d');
+  ectx.scale(dpr, dpr);
+  ectx.fillStyle = SCREEN;
+  ectx.fillRect(0, 0, ET.W, ET.H);
+  // the ghost of every staircase ever drawn on this thing
+  ectx.strokeStyle = 'rgba(52, 52, 50, 0.13)';
+  ectx.lineWidth = 1.5;
+  ectx.beginPath();
+  ectx.moveTo(40, 256);
+  for (let k = 0, x = 40, y = 256; k < 7; k++) {
+    x += 36;
+    ectx.lineTo(x, y);
+    y -= 28;
+    ectx.lineTo(x, y);
+  }
+  ectx.stroke();
+  const etchMini = $('#etch-mini');
+  const mctx = etchMini.getContext('2d');
+  let miniQueued = false;
+  function queueMini() {
+    if (miniQueued) return;
+    miniQueued = true;
+    requestAnimationFrame(() => {
+      miniQueued = false;
+      mctx.drawImage(etchCanvas, 0, 0, etchMini.width, etchMini.height);
+    });
+  }
+  queueMini();
+
+  const knobX = $('#knob-x');
+  const knobY = $('#knob-y');
+  const etchBig = $('#etch-big');
+  const etch = {
+    x: ET.W / 2, y: ET.H / 2, sx: ET.W / 2, sy: ET.H / 2,
+    len: 0, segs: [], axis: null, sign: 0, segLen: 0,
+    said: {}, shakes: 0, rotX: 0, rotY: 0, keys: new Set(), loop: 0, last: 0, lastShake: 0,
+  };
+  function etchResetAnalysis() {
+    etch.len = 0;
+    etch.segs = [];
+    etch.axis = null;
+    etch.segLen = 0;
+    etch.sx = etch.x;
+    etch.sy = etch.y;
+    etch.said.stairs = false;
+    etch.said.box = false;
+    etch.said.lots = false;
+  }
+  function etchAnalyze() {
+    const segs = etch.segs.concat(etch.axis ? [{ axis: etch.axis, sign: etch.sign, len: etch.segLen }] : []).filter(s => s.len > 6);
+    if (!etch.said.stairs && segs.length >= 6) {
+      const last = segs.slice(-6);
+      const alternating = last.every((s, i) => s.axis !== 'd' && (i === 0 || s.axis !== last[i - 1].axis));
+      const xs = last.filter(s => s.axis === 'x');
+      const ys = last.filter(s => s.axis === 'y');
+      if (alternating && xs.every(s => s.sign === xs[0].sign) && ys.every(s => s.sign === ys[0].sign)) {
+        etch.said.stairs = true;
+        say('you drew a staircase. everyone draws a staircase.');
+        return;
+      }
+    }
+    if (!etch.said.box && etch.len > 380 && segs.length >= 4 && Math.hypot(etch.x - etch.sx, etch.y - etch.sy) < 10) {
+      etch.said.box = true;
+      say("you drew a box. you were going for a circle. it's a box. it's always a box.");
+      return;
+    }
+    if (!etch.said.lots && etch.len > 4200) {
+      etch.said.lots = true;
+      say("that's a lot of line. it's still one line. it's always one line.");
+    }
+  }
+  function etchMove(dx, dy) {
+    const nx = clamp(etch.x + dx, 2, ET.W - 2);
+    const ny = clamp(etch.y + dy, 2, ET.H - 2);
+    if (Math.abs(nx - etch.x) < 0.01 && Math.abs(ny - etch.y) < 0.01) {
+      if ((dx || dy) && !etch.said.edge) {
+        etch.said.edge = true;
+        say("you hit the edge. the edge doesn't move.");
+      }
+      return;
+    }
+    if (etch.shakes) etch.shakes = 0;
+    ectx.strokeStyle = 'rgba(48, 48, 46, 0.92)';
+    ectx.lineWidth = 1.5;
+    ectx.lineCap = 'round';
+    ectx.beginPath();
+    ectx.moveTo(etch.x, etch.y);
+    ectx.lineTo(nx, ny);
+    ectx.stroke();
+    const mx = nx - etch.x;
+    const my = ny - etch.y;
+    const d = Math.hypot(mx, my);
+    etch.len += d;
+    const axis = Math.abs(mx) > Math.abs(my) * 3 ? 'x' : Math.abs(my) > Math.abs(mx) * 3 ? 'y' : 'd';
+    const sign = axis === 'x' ? Math.sign(mx) : axis === 'y' ? Math.sign(my) : 0;
+    if (axis === etch.axis && sign === etch.sign) {
+      etch.segLen += d;
+    } else {
+      if (etch.axis && etch.segLen > 1) etch.segs.push({ axis: etch.axis, sign: etch.sign, len: etch.segLen });
+      if (etch.segs.length > 40) etch.segs.shift();
+      etch.axis = axis;
+      etch.sign = sign;
+      etch.segLen = d;
+    }
+    etch.x = nx;
+    etch.y = ny;
+    scratch();
+    queueMini();
+    etchAnalyze();
+  }
+  function etchShake() {
+    ectx.fillStyle = 'rgba(201, 201, 193, 0.36)';
+    ectx.fillRect(0, 0, ET.W, ET.H);
+    etch.shakes++;
+    queueMini();
+    if (etch.shakes === 1) say('shake shake. the line fades. nobody knows how this works.');
+    if (etch.shakes === 5) {
+      say("erased. mostly. there's always a little bit left. there's always a staircase under there.");
+      etchResetAnalysis();
+    }
+  }
+  function turnKnob(axis, d) {
+    const units = (d / TAU) * 110;
+    if (axis === 'x') {
+      etch.rotX += d;
+      knobX.style.setProperty('--r', etch.rotX.toFixed(3) + 'rad');
+      etchMove(units, 0);
+    } else {
+      etch.rotY += d;
+      knobY.style.setProperty('--r', etch.rotY.toFixed(3) + 'rad');
+      etchMove(0, -units);
+    }
+  }
+  function knobControl(el, axis) {
+    let last = null;
+    const center = () => {
+      const r = el.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    };
+    el.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      try { el.setPointerCapture(e.pointerId); } catch (err) { /* synthetic pointer */ }
+      const c = center();
+      last = Math.atan2(e.clientY - c.y, e.clientX - c.x);
+    });
+    el.addEventListener('pointermove', e => {
+      if (last === null) return;
+      const c = center();
+      if (Math.hypot(e.clientX - c.x, e.clientY - c.y) < 4) return;
+      const a = Math.atan2(e.clientY - c.y, e.clientX - c.x);
+      let d = a - last;
+      last = a;
+      if (d > Math.PI) d -= TAU;
+      if (d < -Math.PI) d += TAU;
+      turnKnob(axis, d);
+    });
+    const end = () => { last = null; };
+    el.addEventListener('pointerup', end);
+    el.addEventListener('pointercancel', end);
+    el.addEventListener('wheel', e => {
+      e.preventDefault();
+      turnKnob(axis, (e.deltaY > 0 ? 1 : -1) * 0.22);
+    }, { passive: false });
+  }
+  knobControl(knobX, 'x');
+  knobControl(knobY, 'y');
+
+  // shake it by dragging the frame side to side
+  let shake = null;
+  etchBig.addEventListener('pointerdown', e => {
+    if (e.target.closest('.etch-knob')) return;
+    e.preventDefault();
+    try { etchBig.setPointerCapture(e.pointerId); } catch (err) { /* synthetic pointer */ }
+    shake = { x0: e.clientX, last: e.clientX, dir: 0, swing: 0, moved: 0 };
+    etchBig.classList.add('shaking');
+  });
+  etchBig.addEventListener('pointermove', e => {
+    if (!shake) return;
+    const dx = e.clientX - shake.x0;
+    const vx = e.clientX - shake.last;
+    shake.last = e.clientX;
+    shake.moved += Math.abs(vx);
+    if (!reduceMotion) etchBig.style.transform = `translateX(${clamp(dx, -46, 46)}px) rotate(${clamp(dx * 0.06, -3, 3)}deg)`;
+    if (!vx) return;
+    const s = Math.sign(vx);
+    if (s !== shake.dir) {
+      if (Math.abs(shake.swing) > 22) etchShake();
+      shake.dir = s;
+      shake.swing = 0;
+    }
+    shake.swing += vx;
+  });
+  let saidShakeHint = false;
+  const endShake = () => {
+    if (!shake) return;
+    if (shake.moved < 6 && !saidShakeHint) {
+      saidShakeHint = true;
+      say('to erase it, shake it. drag the red frame side to side. like you mean it.');
+    }
+    shake = null;
+    etchBig.classList.remove('shaking');
+    etchBig.style.transform = '';
+  };
+  etchBig.addEventListener('pointerup', endShake);
+  etchBig.addEventListener('pointercancel', endShake);
+
+  // arrow keys while the toy is up close
+  const ARROWS = { ArrowLeft: 1, ArrowRight: 1, ArrowUp: 1, ArrowDown: 1 };
+  function etchKeyLoop(now) {
+    const dt = Math.min(0.05, (now - etch.last) / 1000);
+    etch.last = now;
+    if (!etch.keys.size || openOv !== 'etch') { etch.loop = 0; return; }
+    const sp = 70 * dt;
+    let dx = 0;
+    let dy = 0;
+    if (etch.keys.has('ArrowLeft')) dx -= sp;
+    if (etch.keys.has('ArrowRight')) dx += sp;
+    if (etch.keys.has('ArrowUp')) dy -= sp;
+    if (etch.keys.has('ArrowDown')) dy += sp;
+    if (dx) {
+      etch.rotX += (dx / 110) * TAU;
+      knobX.style.setProperty('--r', etch.rotX.toFixed(3) + 'rad');
+    }
+    if (dy) {
+      etch.rotY -= (dy / 110) * TAU;
+      knobY.style.setProperty('--r', etch.rotY.toFixed(3) + 'rad');
+    }
+    if (dx || dy) etchMove(dx, dy);
+    etch.loop = requestAnimationFrame(etchKeyLoop);
+  }
+  addEventListener('keydown', e => {
+    if (openOv !== 'etch' || !ARROWS[e.key] || isTyping(e.target)) return;
+    e.preventDefault();
+    etch.keys.add(e.key);
+    if (!etch.loop) {
+      etch.last = performance.now();
+      etch.loop = requestAnimationFrame(etchKeyLoop);
+    }
+  });
+  addEventListener('keyup', e => { etch.keys.delete(e.key); });
+  addEventListener('blur', () => { etch.keys.clear(); });
+
+  // shaking the phone, where phones allow it
+  const motionBtn = $('#etch-motion');
+  if (typeof window.DeviceMotionEvent !== 'undefined' && matchMedia('(pointer: coarse)').matches) motionBtn.hidden = false;
+  function onMotion(e) {
+    if (openOv !== 'etch') return;
+    let m = 0;
+    const a = e.acceleration;
+    if (a && a.x !== null && a.x !== undefined) {
+      m = Math.hypot(a.x || 0, a.y || 0, a.z || 0);
+    } else if (e.accelerationIncludingGravity) {
+      const g = e.accelerationIncludingGravity;
+      m = Math.abs(Math.hypot(g.x || 0, g.y || 0, g.z || 0) - 9.81);
+    }
+    const now = performance.now();
+    if (m > 13 && now - etch.lastShake > 180) {
+      etch.lastShake = now;
+      etchShake();
+    }
+  }
+  motionBtn.addEventListener('click', () => {
+    const listen = () => {
+      addEventListener('devicemotion', onMotion);
+      motionBtn.hidden = true;
+      say('shake the phone to erase. gently. or not.');
+    };
+    try {
+      if (typeof DeviceMotionEvent.requestPermission === 'function') {
+        DeviceMotionEvent.requestPermission()
+          .then(r => (r === 'granted' ? listen() : say('the phone said no shaking. shake the frame instead.')))
+          .catch(() => say('the phone would not let us. shake the frame instead.'));
+      } else {
+        listen();
+      }
+    } catch (err) {
+      say('the phone would not let us. shake the frame instead.');
+    }
+  });
+
+  const etchFirst = cycle([
+    'the drawing toy. left knob goes sideways. right knob goes up and down. there is no diagonal. there has never been a diagonal.',
+    'the drawing toy again. the staircase is still in there, faintly.',
+  ]);
+  onOpen.etch = () => {
+    overlays.etch.querySelector('.panel').focus();
+    say(etchFirst());
+  };
+  onClose.etch = () => {
+    etch.keys.clear();
+    queueMini();
+  };
+
+  // ---------- the memory toy ----------
+  const PADS = [392, 330, 262, 196]; // green, red, yellow, blue
+  const padEls = $$('.mem-pad');
+  const memScore = $('#mem-score');
+  const MEM_KEY = 'cizole.80s.memory-best';
+  const mem = { seq: [], idx: 0, state: 'idle', timers: [], idle: 0, best: parseInt(store.get(MEM_KEY), 10) || 0, saidIdle: false };
+  memScore.textContent = 'best ' + mem.best;
+  const MEM_ROUND = {
+    1: 'one light. start small. everyone starts small.',
+    3: 'three. it was easy until now.',
+    5: 'five. the toy is impressed. it will not show it.',
+    8: 'eight. this is where the toy usually wins.',
+    12: 'twelve. who taught you this.',
+    16: 'sixteen. the toy is starting to sweat. it cannot sweat.',
+    20: 'twenty. please go outside.',
+  };
+  const MEM_FILL = ['again.', 'one more.', 'longer now.', 'it only gets longer. that is the whole game.', 'keep going.'];
+  function memTimer(fn, ms) { mem.timers.push(setTimeout(fn, ms)); }
+  function memClear() {
+    mem.timers.forEach(clearTimeout);
+    mem.timers = [];
+    clearTimeout(mem.idle);
+  }
+  function lightPad(i, ms) {
+    const el = padEls[i];
+    el.classList.add('lit');
+    blip(PADS[i], ms / 1000, 'triangle', 0.14);
+    setTimeout(() => el.classList.remove('lit'), ms);
+  }
+  function armIdle() {
+    clearTimeout(mem.idle);
+    mem.idle = setTimeout(() => { if (mem.state === 'input') memFail('slow'); }, 5000);
+  }
+  function memNext() {
+    mem.seq.push(Math.floor(Math.random() * 4));
+    const n = mem.seq.length;
+    memScore.textContent = 'round ' + n;
+    say(MEM_ROUND[n] || pick(MEM_FILL));
+    mem.state = 'showing';
+    const on = Math.max(220, 520 - n * 20);
+    const gap = Math.max(90, 170 - n * 5);
+    mem.seq.forEach((p, i) => memTimer(() => lightPad(p, on), 600 + i * (on + gap)));
+    memTimer(() => {
+      mem.state = 'input';
+      mem.idx = 0;
+      armIdle();
+    }, 600 + n * (on + gap));
+  }
+  function memStart() {
+    memClear();
+    if (!A.on && !userMuted) setSound(true);
+    mem.seq = [];
+    mem.state = 'showing';
+    memTimer(memNext, 400);
+  }
+  function memFail(reason) {
+    memClear();
+    mem.state = 'over';
+    blip(70, 0.7, 'sawtooth', 0.12);
+    padEls.forEach(el => el.classList.add('lit'));
+    setTimeout(() => padEls.forEach(el => el.classList.remove('lit')), 500);
+    const score = Math.max(0, mem.seq.length - 1);
+    const best = score > mem.best;
+    if (best) {
+      mem.best = score;
+      store.set(MEM_KEY, String(score));
+    }
+    memScore.textContent = 'best ' + mem.best;
+    const pre = reason === 'slow' ? 'too slow. the toy waited. the toy does not wait long. ' : 'wrong. ';
+    let msg;
+    if (score === 0) msg = 'zero rounds. the toy expected nothing, and still.';
+    else if (best) msg = `${score} ${score === 1 ? 'round' : 'rounds'}. a new best. the toy will remember. the toy remembers everything.`;
+    else msg = `${score} ${score === 1 ? 'round' : 'rounds'}. your best is ${mem.best}. the toy remembers that too.`;
+    say(pre + msg);
+  }
+  function memPress(i) {
+    if (mem.state !== 'input') {
+      lightPad(i, 200);
+      if ((mem.state === 'idle' || mem.state === 'over') && !mem.saidIdle) {
+        mem.saidIdle = true;
+        say('press start. the toy is waiting. it is always waiting.');
+      }
+      return;
+    }
+    lightPad(i, 220);
+    if (i !== mem.seq[mem.idx]) { memFail('wrong'); return; }
+    mem.idx++;
+    if (mem.idx >= mem.seq.length) {
+      mem.state = 'showing';
+      clearTimeout(mem.idle);
+      memTimer(memNext, 700);
+    } else {
+      armIdle();
+    }
+  }
+  padEls.forEach(el => el.addEventListener('click', () => memPress(+el.dataset.pad)));
+  $('#mem-start').addEventListener('click', memStart);
+  addEventListener('keydown', e => {
+    if (openOv !== 'memory' || isTyping(e.target) || e.repeat) return;
+    const i = ['1', '2', '3', '4'].indexOf(e.key);
+    if (i < 0) return;
+    e.preventDefault();
+    memPress(i);
+  });
+  const memFirst = cycle([
+    'the memory toy. four colors. it plays them. you play them back. it never forgets. you will.',
+    'the memory toy. it remembers your best. it remembers everything.',
+  ]);
+  onOpen.memory = () => {
+    $('#mem-start').focus();
+    say(memFirst());
+  };
+  onClose.memory = quiet => {
+    const wasPlaying = mem.state === 'showing' || mem.state === 'input';
+    memClear();
+    mem.state = 'idle';
+    memScore.textContent = 'best ' + mem.best;
+    padEls.forEach(el => el.classList.remove('lit'));
+    if (wasPlaying && !quiet) say('you put it back mid-game. it will remember that.');
+  };
+
+  // ---------- the light-peg board ----------
+  const PEG_COLS = 16;
+  const PEG_ROWS = 12;
+  const PEG_KEY = 'cizole.80s.pegs';
+  const PEG_COLORS = ['#ff3b3b', '#ff9f1c', '#ffd23f', '#2ecc40', '#3a86ff', '#ff4fa3', '#f4f4f4'];
+  let pegs = new Array(PEG_COLS * PEG_ROWS).fill(0);
+  (() => {
+    const saved = store.get(PEG_KEY);
+    if (saved && saved.length === pegs.length && /^[0-7]+$/.test(saved)) {
+      pegs = [...saved].map(Number);
+      return;
+    }
+    // whoever had this board before you wrote this, and then left
+    const HI = ['....#.#..###....', '....#.#...#.....', '....###...#.....', '....#.#...#.....', '....#.#..###....'];
+    HI.forEach((row, k) => [...row].forEach((ch, c) => { if (ch === '#') pegs[(3 + k) * PEG_COLS + c] = 6; }));
+  })();
+  let pegTimer;
+  function savePegs() {
+    clearTimeout(pegTimer);
+    pegTimer = setTimeout(() => store.set(PEG_KEY, pegs.join('')), 300);
+  }
+  const pegCanvas = $('#pegs-canvas');
+  pegCanvas.width = 640 * dpr;
+  pegCanvas.height = 480 * dpr;
+  const pctx = pegCanvas.getContext('2d');
+  pctx.scale(dpr, dpr);
+  const pegMini = $('#pegs-mini');
+  pegMini.width = 160 * dpr;
+  pegMini.height = 120 * dpr;
+  const pmctx = pegMini.getContext('2d');
+  pmctx.scale(dpr, dpr);
+  function drawBoard(ctx, w, h) {
+    const dark = stage.classList.contains('lamp-off');
+    ctx.fillStyle = '#0b0b0d';
+    ctx.fillRect(0, 0, w, h);
+    const cw = w / PEG_COLS;
+    const ch = h / PEG_ROWS;
+    for (let r = 0; r < PEG_ROWS; r++) {
+      for (let c = 0; c < PEG_COLS; c++) {
+        const v = pegs[r * PEG_COLS + c];
+        const x = (c + 0.5) * cw;
+        const y = (r + 0.5) * ch;
+        if (!v) {
+          ctx.fillStyle = '#1e1e24';
+          ctx.beginPath();
+          ctx.arc(x, y, cw * 0.13, 0, TAU);
+          ctx.fill();
+          continue;
+        }
+        const col = PEG_COLORS[v - 1];
+        ctx.save();
+        ctx.shadowColor = col;
+        ctx.shadowBlur = cw * (dark ? 1.1 : 0.6) * dpr;
+        ctx.fillStyle = col;
+        ctx.beginPath();
+        ctx.arc(x, y, cw * 0.3, 0, TAU);
+        ctx.fill();
+        ctx.restore();
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
+        ctx.beginPath();
+        ctx.arc(x - cw * 0.09, y - cw * 0.09, cw * 0.09, 0, TAU);
+        ctx.fill();
+      }
+    }
+  }
+  function drawPegs() {
+    drawBoard(pmctx, 160, 120);
+    if (!overlays.pegs.hidden) drawBoard(pctx, 640, 480);
+  }
+  drawPegs();
+
+  const palette = $('#peg-palette');
+  let pegSel = 5;
+  PEG_COLORS.forEach((col, i) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'peg-color' + (i === pegSel ? ' sel' : '');
+    b.style.background = col;
+    b.style.color = col;
+    b.setAttribute('aria-label', 'peg color ' + (i + 1));
+    b.addEventListener('click', () => {
+      pegSel = i;
+      $$('.peg-color').forEach((el, k) => el.classList.toggle('sel', k === i));
+    });
+    palette.appendChild(b);
+  });
+  const pegStats = { pushed: 0, saidPull: false };
+  function pegCount() { return pegs.reduce((n, v) => n + (v ? 1 : 0), 0); }
+  function pegPushed() {
+    pegStats.pushed++;
+    const n = pegCount();
+    if (pegStats.pushed === 1) say("one peg. it glows. that's the whole toy.");
+    else if (n === 40) say("you're making something. nobody knows what. including you.");
+    else if (n === 100) say('a hundred pegs. this is a commitment now.');
+    else if (n === pegs.length) say('every hole is full. there is nothing left to do. this is what peace feels like.');
+  }
+  let pegMode = null;
+  function pegCell(e) {
+    const r = pegCanvas.getBoundingClientRect();
+    const c = Math.floor(((e.clientX - r.left) / r.width) * PEG_COLS);
+    const row = Math.floor(((e.clientY - r.top) / r.height) * PEG_ROWS);
+    if (c < 0 || row < 0 || c >= PEG_COLS || row >= PEG_ROWS) return -1;
+    return row * PEG_COLS + c;
+  }
+  function applyPeg(i) {
+    if (i < 0) return;
+    if (pegMode === 'push' && pegs[i] !== pegSel + 1) {
+      pegs[i] = pegSel + 1;
+      pegPushed();
+      drawPegs();
+    } else if (pegMode === 'pull' && pegs[i]) {
+      pegs[i] = 0;
+      if (!pegStats.saidPull) {
+        pegStats.saidPull = true;
+        say("you pulled one out. it left a hole. that's how holes work.");
+      }
+      drawPegs();
+    }
+  }
+  pegCanvas.addEventListener('pointerdown', e => {
+    const i = pegCell(e);
+    if (i < 0) return;
+    e.preventDefault();
+    try { pegCanvas.setPointerCapture(e.pointerId); } catch (err) { /* synthetic pointer */ }
+    pegMode = pegs[i] ? 'pull' : 'push';
+    applyPeg(i);
+  });
+  pegCanvas.addEventListener('pointermove', e => {
+    if (!pegMode) return;
+    applyPeg(pegCell(e));
+  });
+  const endPeg = () => {
+    if (!pegMode) return;
+    pegMode = null;
+    savePegs();
+  };
+  pegCanvas.addEventListener('pointerup', endPeg);
+  pegCanvas.addEventListener('pointercancel', endPeg);
+  $('#pegs-clear').addEventListener('click', () => {
+    if (!pegCount()) { say('there is nothing to pull out. the board is just holes now.'); return; }
+    pegs.fill(0);
+    drawPegs();
+    savePegs();
+    say('you pulled them all out. some of them went under the bed. they live there now.');
+  });
+  const pegsFirst = cycle([
+    "a light-peg board. whoever had it before you wrote HI. it's been saying HI for years.",
+    'the peg board. your pegs are still in. nobody touched them. probably.',
+  ]);
+  onOpen.pegs = () => {
+    drawPegs();
+    overlays.pegs.querySelector('.panel').focus();
+    say(pegsFirst());
+  };
+  onClose.pegs = () => {
+    endPeg();
+    drawPegs();
+  };
+
+  // ---------- everything else in the room ----------
+  const lampLines = {
+    off: cycle([
+      "lamp off. the pegs glow. the screen glows. the bear's eyes catch the light. that last part is new.",
+      'dark again. the bear seems to prefer it.',
+    ]),
+    on: cycle([
+      'lamp on. everything is normal. the bear is looking somewhere else now.',
+      'lamp on. nothing moved. probably.',
+    ]),
+  };
+  function toggleLamp() {
+    const off = stage.classList.toggle('lamp-off');
+    drawPegs();
+    return off ? lampLines.off() : lampLines.on();
+  }
+  const OBJ = {
+    wall: cycle([
+      'the wallpaper was picked by someone who had just seen a very exciting cereal box.',
+      "squiggles. triangles. confetti. it's a lot. it was supposed to be a lot.",
+    ]),
+    window: cycle([
+      "the street. nothing happens on the street. it's the suburbs.",
+      "one window across the street is lit. it's always lit. nobody has ever seen who lives there.",
+      "it's a school night. it's always a school night.",
+    ]),
+    curtain: cycle(['the curtains match the comforter. nothing else matches anything.']),
+    sunset: cycle([
+      'a sunset over a grid. nobody has ever seen a grid like that. everyone wants to go there.',
+      "the sun has stripes. it's fine. it's the future.",
+    ]),
+    car: cycle([
+      "0-60: yes. that's the whole review.",
+      "the car doesn't have a name. it doesn't need one. it has a poster.",
+    ]),
+    shelf: cycle(['the shelf holds the important things. the memory toy. the cube. the trophy.', 'nobody dusts the shelf. the shelf knows.']),
+    trophy: cycle(['participation trophy, 1985. participated.', "it's gold-colored. that's different from gold."]),
+    lamp: toggleLamp,
+    chest: cycle([
+      "the toy chest. the boombox is on the lid, so it doesn't open anymore. the boombox lives there now.",
+      'everything in it was very important for about a week each.',
+      'somewhere in there is a robot that turns into a different, worse robot.',
+    ]),
+    rug: cycle(['the rug. it has been walked on by socks, exclusively.', 'there is a lego piece somewhere in the rug. it is waiting.']),
+    bed: cycle([
+      'the comforter has triangles on it. the triangles have smaller triangles on them.',
+      'there are pegs under the bed. you can feel them through the mattress. you can feel them in your sleep.',
+      'the bed is made. the bear made it.',
+    ]),
+    skateboard: cycle([
+      'a skateboard. it has been ridden once. down the driveway. never again.',
+      "the wheels still spin. that's the best part now.",
+    ]),
+    desk: cycle(['the desk. homework happens here. theoretically.', 'the desk is mostly for the computer. the homework sits on the floor.']),
+    drawers: cycle(['the drawers are full of pencils. one of them is for the tapes.', 'a drawer of rubber bands and one mystery key.']),
+  };
+  stage.addEventListener('click', e => {
+    const open = e.target.closest('[data-open]');
+    if (open) {
+      openOverlay(open.dataset.open, open);
+      return;
+    }
+    const el = e.target.closest('[data-obj]');
+    if (!el || !OBJ[el.dataset.obj]) return;
+    say(OBJ[el.dataset.obj]());
+  });
+
+  // esc: stop a running program first, then close whatever is open
+  addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    if (openOv === 'computer' && basicBusy()) { e.preventDefault(); doBreak(); return; }
+    if (openOv) { e.preventDefault(); closeOverlay(); return; }
+    if (basicBusy()) doBreak();
+  });
+
+  // back from another tab
+  addEventListener('cizole:return', e => {
+    if (!e.detail || e.detail.awayMs < 4000) return;
+    bear.watchUntil = performance.now() + 9000;
+    bearBtn.classList.add('turned');
+    say("while you were gone, the bear turned its head. slightly. it's looking at you now.");
+  });
+
+  // browsers throttle timers in background tabs, which would wreck the groove
+  document.addEventListener('visibilitychange', () => {
+    if (synth) {
+      try {
+        if (document.hidden) synth.pause();
+        else synth.resume();
+      } catch (err) { /* speech is optional */ }
+    }
+    if (!A.ctx) return;
+    if (document.hidden) {
+      if (mus.timer) {
+        clearInterval(mus.timer);
+        mus.timer = null;
+        mus.paused = true;
+      }
+      A.ctx.suspend();
+    } else {
+      Promise.resolve(A.ctx.resume()).then(() => {
+        if (mus.paused && (bb.state === 'playing' || bb.state === 'eating')) {
+          mus.paused = false;
+          mus.next = A.ctx.currentTime + 0.06;
+          mus.timer = setInterval(musicSchedule, 25);
+        }
+      }).catch(() => {});
+    }
+  });
+  addEventListener('pagehide', () => { if (synth) synth.cancel(); });
+
+  // ---------- go ----------
+  function frame() {
+    updateLook();
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  say("1986. a kid's bedroom. the computer is on. the bear is watching. it's a school night.");
 })();
 </script>
+<script src="../assets/rooms.js"></script>
 <script src="../assets/away.js"></script>
 </body>
 </html>
