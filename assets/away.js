@@ -16,17 +16,31 @@
   const BACK = "oh. you're back.";
   const OURS = new Set([...LINES, BACK]);
 
-  // the favicon's eye looks off to the side while you're gone
-  const LOOKING_AWAY = 'data:image/svg+xml,' + encodeURIComponent(
+  // the favicon is a "c" with an eye in it (see /favicon.svg). while you're gone it goes
+  // dark and looks away, and every so often it blinks.
+  const faviconSvg = (bg, fg, pupil) => 'data:image/svg+xml,' + encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">' +
-    '<rect width="32" height="32" rx="7" fill="#0e0d0b"/>' +
-    '<path d="M3 16 Q16 4 29 16 Q16 28 3 16 Z" fill="#ebe5d6"/>' +
-    '<circle cx="9" cy="14" r="5" fill="#c8ff3d"/>' +
-    '<circle cx="8" cy="13.5" r="2.4" fill="#0e0d0b"/>' +
+    `<rect width="32" height="32" rx="7" fill="${bg}"/>` +
+    `<path d="M22.02 22.69 A9 9 0 1 1 22.02 9.31" fill="none" stroke="${fg}" stroke-width="5.5"/>` +
+    pupil.replace('FG', fg) +
     '</svg>'
   );
+  const LOOKING_AWAY = faviconSvg('#0e0d0b', '#c8ff3d', '<circle cx="13.2" cy="15" r="3.2" fill="FG"/>');
+  const BLINK = faviconSvg('#c8ff3d', '#0e0d0b', '<rect x="13.6" y="15" width="7.4" height="2.2" rx="1.1" fill="FG"/>');
   const icon = document.querySelector('link[rel="icon"]');
   const iconHref = icon ? icon.getAttribute('href') : null;
+
+  if (icon && iconHref && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    (function blinkLater() {
+      setTimeout(() => {
+        if (!document.hidden) {
+          icon.setAttribute('href', BLINK);
+          setTimeout(() => { if (!document.hidden) icon.setAttribute('href', iconHref); }, 180);
+        }
+        blinkLater();
+      }, 8000 + Math.random() * 14000);
+    })();
+  }
 
   let baseTitle = document.title;
   let leftAt = 0;
