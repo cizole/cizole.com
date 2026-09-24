@@ -12,16 +12,16 @@
 <style>
   main {
     min-height: 100%;
-    max-width: 980px;
+    max-width: 720px;
     margin: 0 auto;
-    padding: 48px 24px 40px;
+    padding: 48px 24px;
     display: flex;
     flex-direction: column;
     justify-content: center;
   }
   .wordmark {
     margin: 0;
-    font-size: clamp(64px, 15vw, 150px);
+    font-size: clamp(64px, 18vw, 160px);
     font-weight: 700;
     letter-spacing: -0.04em;
     line-height: 1;
@@ -31,7 +31,7 @@
   .wordmark span { display: inline-block; will-change: transform; }
   .tagline {
     align-self: flex-start;
-    margin: 14px 0 36px;
+    margin: 16px 0 56px;
     padding: 0;
     min-height: 1.5em;
     border: 0;
@@ -43,80 +43,74 @@
   }
   .tagline::after { content: "_"; animation: caret 1s steps(1) infinite; }
   @keyframes caret { 50% { opacity: 0; } }
-  /* the room grid, built from assets/rooms.js */
-  .featured, .room {
-    display: grid;
-    grid-template-columns: 2.6em 1fr;
-    align-content: start;
-    column-gap: 10px;
+  /* the room list, built from assets/rooms.js */
+  .exhibits { list-style: none; margin: 0; padding: 0; }
+  .exhibits li { border-top: 1px solid var(--faint); }
+  .exhibits li:last-child { border-bottom: 1px solid var(--faint); }
+  .exhibits a {
+    display: flex;
+    align-items: baseline;
+    gap: 20px;
+    padding: 18px 4px;
     color: var(--fg);
     text-decoration: none;
   }
-  .featured .num, .room .num { grid-row: span 3; padding-top: 4px; color: var(--dim); font-size: 13px; }
-  .name { font-weight: 700; }
-  .blurb { color: var(--dim); }
-  .featured {
-    margin-bottom: 20px;
-    padding: 16px 18px;
-    border: 1px solid var(--faint);
-    border-left: 3px solid var(--acid);
-    border-radius: 6px;
-    background: #12110f;
-  }
-  .featured .name { font-size: 24px; }
-  .featured .blurb { font-size: 14px; }
-  .featured .note { margin-top: 6px; color: var(--acid); font-size: 12px; }
-  .rooms {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
-    column-gap: 28px;
-  }
-  .room { padding: 11px 4px; border-top: 1px solid var(--faint); }
-  .room .name { font-size: 17px; }
-  .room .blurb { font-size: 13px; }
-  .featured:hover .name, .room:hover .name, .featured:focus-visible .name, .room:focus-visible .name { color: var(--acid); }
+  .exhibits a:hover { color: var(--acid); }
+  .num { color: var(--dim); font-size: 13px; }
+  .name { font-size: 20px; font-weight: 700; }
+  .blurb { margin-left: auto; color: var(--dim); font-size: 14px; text-align: right; }
+  .note { display: block; color: var(--acid); font-size: 12px; }
   .last .blurb::after { content: "  \00b7  you were just here"; color: var(--acid); }
-  footer { margin-top: 36px; color: #4a463d; font-size: 12px; }
+  footer { margin-top: 56px; color: #4a463d; font-size: 12px; }
+  @media (max-width: 520px) {
+    .exhibits a { flex-wrap: wrap; row-gap: 4px; }
+    .blurb { flex-basis: 100%; margin-left: 0; text-align: left; }
+  }
 </style>
 </head>
 <body>
 <main>
   <h1 class="wordmark" id="wordmark" aria-label="cizole">cizole</h1>
   <button class="tagline" id="tagline" type="button"></button>
-  <div id="featured"></div>
-  <nav class="rooms" id="rooms" aria-label="rooms"></nav>
+  <ul class="exhibits" id="rooms"></ul>
   <footer>more rooms are being dug.</footer>
 </main>
 <script src="assets/rooms.js"></script>
 <script>
-// The room grid comes from assets/rooms.js, the same list every room's menu uses.
+// The room list comes from assets/rooms.js, the same list every room's menu uses.
 (() => {
   const rooms = window.CIZOLE_ROOMS || [];
   let last = null;
   try { last = sessionStorage.getItem('cizole.last-room'); } catch (err) { /* storage off */ }
-  function card(r, cls) {
-    const a = document.createElement('a');
-    a.className = cls + (r.slug === last ? ' last' : '');
-    a.href = r.slug + '/';
-    for (const [c, t] of [['num', r.n], ['name', r.name], ['blurb', r.blurb]]) {
-      const s = document.createElement('span');
-      s.className = c;
-      s.textContent = t;
-      a.appendChild(s);
-    }
-    return a;
-  }
-  const feature = rooms.find(r => r.featured);
-  if (feature) {
-    const f = card(feature, 'featured');
-    const note = document.createElement('span');
-    note.className = 'note';
-    note.textContent = 'recommended by the management.';
-    f.appendChild(note);
-    document.getElementById('featured').appendChild(f);
-  }
+  const span = (cls, text) => {
+    const s = document.createElement('span');
+    s.className = cls;
+    s.textContent = text;
+    return s;
+  };
   const list = document.getElementById('rooms');
-  for (const r of rooms) if (r !== feature) list.appendChild(card(r, 'room'));
+  let lastRow = null;
+  // featured rooms go first
+  for (const r of [...rooms.filter(r => r.featured), ...rooms.filter(r => !r.featured)]) {
+    const li = document.createElement('li');
+    const a = document.createElement('a');
+    a.href = r.slug + '/';
+    const blurb = span('blurb', r.blurb);
+    if (r.featured) blurb.appendChild(span('note', 'recommended by the management.'));
+    a.append(span('num', r.n), span('name', r.name), blurb);
+    if (r.slug === last) {
+      a.classList.add('last');
+      lastRow = li;
+    }
+    li.appendChild(a);
+    list.appendChild(li);
+  }
+  // back from a room: pick up where you left off instead of at the top
+  if (lastRow) {
+    addEventListener('load', () => {
+      if (lastRow.getBoundingClientRect().bottom > innerHeight) lastRow.scrollIntoView({ block: 'center' });
+    });
+  }
 })();
 </script>
 <script>
