@@ -20,6 +20,7 @@
     { n: '016', slug: 'junk-drawer', name: 'junk drawer', blurb: 'no organizational guarantees' },
     { n: '017', slug: 'basement', name: 'the basement', blurb: 'the doors go to the rooms. mostly.' },
     { n: '018', slug: 'weather', name: 'weather', blurb: 'it is not snowing in here' },
+    { n: '022', slug: 'about', name: 'about', blurb: 'regrettably, a person' },
   ];
   window.CIZOLE_ROOMS = ROOMS;
 

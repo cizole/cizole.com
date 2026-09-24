@@ -29,7 +29,6 @@ Room ideas not built yet (numbers continue from the lobby):
 
 - snowology: apparently weather needed more software
 - projects: things that escaped localhost
-- about: regrettably, a person
 - guestbook: the internet used to have these
 - links: leave while you still can
 - the light switch: turning the lights off makes something in the room move
