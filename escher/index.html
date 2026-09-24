@@ -16,24 +16,40 @@
     --ink-soft: rgba(28, 25, 20, 0.6);
   }
   html, body { overflow: hidden; background: var(--paper); }
-  body { color: var(--ink); }
+  body {
+    color: var(--ink);
+    background: radial-gradient(ellipse at 50% 40%, #f3ecdc, #e6dcc7 80%);
+  }
 
-  #wall, #stage { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
-  #wall { z-index: 0; }
-  #stage { z-index: 1; touch-action: none; cursor: grab; outline: none; }
-  #stage.dragging { cursor: grabbing; }
-  #stage:focus-visible { box-shadow: inset 0 0 0 3px var(--ink-soft); }
-  .vignette {
+  /* the room is a square print hung on the page. the whole print can be turned. */
+  #print {
     position: fixed;
+    --u: 6px;
+    width: 600px;
+    height: 600px;
+    left: 0;
+    top: 0;
+    transform-origin: 50% 50%;
+    outline: 1px solid rgba(28, 25, 20, 0.28);
+    outline-offset: 7px;
+    box-shadow: 0 14px 40px rgba(60, 40, 10, 0.22);
+    overflow: hidden;
+  }
+  #wall, #stage { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  #wall { z-index: 0; }
+  #stage { z-index: 1; touch-action: none; cursor: grab; }
+  #stage.dragging { cursor: grabbing; }
+  .vignette {
+    position: absolute;
     inset: 0;
     z-index: 2;
     pointer-events: none;
-    box-shadow: inset 0 0 140px rgba(90, 64, 30, 0.28);
+    box-shadow: inset 0 0 calc(var(--u) * 16) rgba(90, 64, 30, 0.28);
   }
 
-  /* doors and windows that picked a different floor */
+  /* doors and windows that picked a different floor. click one and it gets its way. */
   .prop {
-    position: fixed;
+    position: absolute;
     z-index: 3;
     padding: 0;
     border: 0;
@@ -43,11 +59,13 @@
   }
   .prop svg { display: block; width: 100%; height: 100%; overflow: visible; }
   .prop:focus-visible { outline: 2px dashed var(--ink); outline-offset: 4px; }
-  .ceiling-door { top: 0; left: calc(50% - 4vmin); width: 8vmin; height: 14vmin; transform: rotate(180deg); }
-  .wall-door { left: 3vmin; top: calc(50% - 7vmin); width: 8vmin; height: 14vmin; transform: rotate(90deg); }
-  .side-window { right: 1vmin; top: calc(24% - 6vmin); width: 10vmin; height: 12vmin; transform: rotate(-90deg); }
-  .floor-lamp { right: 17vmin; bottom: 0; width: 6vmin; height: 15vmin; transform: rotate(180deg); }
-  .wall-walker { right: 1.5vmin; top: 0; width: 4vmin; height: 7vmin; will-change: transform; }
+  .prop.grav:hover svg { filter: drop-shadow(0 0 3px rgba(28, 25, 20, 0.35)); }
+  .ceiling-door { top: 0; left: calc(50% - var(--u) * 4); width: calc(var(--u) * 8); height: calc(var(--u) * 14); transform: rotate(180deg); }
+  .wall-door { left: calc(var(--u) * 3); top: calc(50% - var(--u) * 7); width: calc(var(--u) * 8); height: calc(var(--u) * 14); transform: rotate(90deg); }
+  .side-window { right: calc(var(--u) * 1); top: calc(24% - var(--u) * 6); width: calc(var(--u) * 10); height: calc(var(--u) * 12); transform: rotate(-90deg); }
+  .floor-lamp { right: calc(var(--u) * 17); bottom: 0; width: calc(var(--u) * 6); height: calc(var(--u) * 15); transform: rotate(180deg); }
+  .exit-door { left: 0; top: 0; width: calc(var(--u) * 5.5); height: calc(var(--u) * 10.5); }
+  .wall-walker { right: calc(var(--u) * 1.5); top: 0; width: calc(var(--u) * 4); height: calc(var(--u) * 7); will-change: transform; }
   .wall-walker .leg { transform-origin: 20px 44px; animation: stride 0.9s ease-in-out infinite alternate; }
   .wall-walker .leg.b { animation-delay: -0.45s; }
   @keyframes stride {
@@ -55,19 +73,54 @@
     to { transform: rotate(22deg); }
   }
 
+  /* things that stay put while the room turns */
   .counter {
     position: fixed;
     top: 14px;
     right: 16px;
     z-index: 4;
-    padding: 4px 8px;
-    background: rgba(239, 231, 214, 0.85);
+    padding: 5px 9px;
+    background: rgba(239, 231, 214, 0.9);
     font-size: 12px;
     line-height: 1.55;
     text-align: right;
   }
   .counter b { font-weight: 700; }
-  .counter .hint { color: var(--ink-soft); }
+  .counter .hint, .counter .small { color: var(--ink-soft); }
+  .counter .small { font-size: 11px; }
+  .counter button {
+    margin-top: 2px;
+    padding: 1px 6px;
+    border: 1px solid var(--ink-soft);
+    border-radius: 3px;
+    background: none;
+    color: var(--ink-soft);
+    font: 11px var(--font);
+    cursor: pointer;
+  }
+  .counter button.on { color: var(--ink); border-color: var(--ink); }
+  .climb {
+    position: fixed;
+    right: 16px;
+    bottom: 64px;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .climb button {
+    width: 46px;
+    height: 46px;
+    border: 2px solid var(--ink);
+    border-radius: 50%;
+    background: rgba(239, 231, 214, 0.92);
+    color: var(--ink);
+    font: 700 18px var(--font);
+    cursor: pointer;
+    touch-action: none;
+    user-select: none;
+  }
+  .climb button:active { background: var(--ink); color: var(--paper); }
   .caption {
     position: fixed;
     left: 50%;
@@ -85,6 +138,10 @@
   }
   .caption.fade { opacity: 0; }
 
+  @media (max-width: 640px) {
+    .counter { font-size: 11px; }
+    .caption { max-width: calc(100vw - 88px); left: 12px; transform: none; text-align: left; }
+  }
   @media (prefers-reduced-motion: reduce) {
     .wall-walker .leg { animation-duration: 2s; }
   }
@@ -101,10 +158,6 @@
 <body>
 <a class="lobby-link" href="../">&larr; lobby</a>
 
-<canvas id="wall" aria-hidden="true"></canvas>
-<canvas id="stage" tabindex="0" role="img" aria-label="an impossible staircase that goes up all the way around. drag, or use the arrow keys, to look at it from another angle."></canvas>
-<div class="vignette" aria-hidden="true"></div>
-
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
     <pattern id="hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
@@ -113,61 +166,85 @@
   </defs>
 </svg>
 
-<button class="prop ceiling-door" type="button" data-prop="ceiling" aria-label="a door on the ceiling">
-  <svg viewBox="0 0 80 140" aria-hidden="true">
-    <rect x="4" y="4" width="72" height="132" fill="#efe7d6" stroke="currentColor" stroke-width="3"/>
-    <rect x="15" y="17" width="50" height="44" fill="url(#hatch)" stroke="currentColor" stroke-width="2"/>
-    <rect x="15" y="75" width="50" height="48" fill="url(#hatch)" stroke="currentColor" stroke-width="2"/>
-    <circle cx="64" cy="70" r="4" fill="currentColor"/>
-    <path d="M-6 138 H86" stroke="currentColor" stroke-width="3"/>
-  </svg>
-</button>
+<div id="print">
+  <canvas id="wall" aria-hidden="true"></canvas>
+  <canvas id="stage" role="img" aria-label="an impossible staircase that goes up all the way around. you are on it. arrow keys climb. drag to look at it from another angle, which ruins it."></canvas>
+  <div class="vignette" aria-hidden="true"></div>
 
-<button class="prop wall-door" type="button" data-prop="wall" aria-label="a door on the wall, lying down">
-  <svg viewBox="0 0 80 140" aria-hidden="true">
-    <rect x="4" y="4" width="72" height="132" fill="#efe7d6" stroke="currentColor" stroke-width="3"/>
-    <rect x="15" y="17" width="50" height="106" fill="url(#hatch)" stroke="currentColor" stroke-width="2"/>
-    <circle cx="16" cy="72" r="4" fill="currentColor"/>
-    <path d="M-6 138 H86" stroke="currentColor" stroke-width="3"/>
-    <rect x="14" y="140" width="52" height="7" fill="url(#hatch)" stroke="currentColor" stroke-width="1.5"/>
-  </svg>
-</button>
+  <button class="prop grav ceiling-door" type="button" data-prop="ceiling" data-grav="180" aria-label="a door on the ceiling. click to make it the floor">
+    <svg viewBox="0 0 80 140" aria-hidden="true">
+      <rect x="4" y="4" width="72" height="132" fill="#efe7d6" stroke="currentColor" stroke-width="3"/>
+      <rect x="15" y="17" width="50" height="44" fill="url(#hatch)" stroke="currentColor" stroke-width="2"/>
+      <rect x="15" y="75" width="50" height="48" fill="url(#hatch)" stroke="currentColor" stroke-width="2"/>
+      <circle cx="64" cy="70" r="4" fill="currentColor"/>
+      <path d="M-6 138 H86" stroke="currentColor" stroke-width="3"/>
+    </svg>
+  </button>
 
-<button class="prop side-window" type="button" data-prop="window" aria-label="a window facing the floor">
-  <svg viewBox="0 0 100 120" aria-hidden="true">
-    <rect x="6" y="6" width="88" height="100" fill="#e6ddc9" stroke="currentColor" stroke-width="3"/>
-    <path d="M14 70 Q30 60 44 68 T78 64" fill="none" stroke="currentColor" stroke-width="1.5"/>
-    <path d="M20 40 q8 -10 18 -2 q10 -8 16 2 z" fill="#efe7d6" stroke="currentColor" stroke-width="1.5"/>
-    <path d="M50 6 V106 M6 56 H94" stroke="currentColor" stroke-width="3"/>
-    <rect x="0" y="106" width="100" height="8" fill="url(#hatch)" stroke="currentColor" stroke-width="2"/>
-  </svg>
-</button>
+  <button class="prop grav wall-door" type="button" data-prop="wall" data-grav="90" aria-label="a door lying on the left wall. click to make it the floor">
+    <svg viewBox="0 0 80 140" aria-hidden="true">
+      <rect x="4" y="4" width="72" height="132" fill="#efe7d6" stroke="currentColor" stroke-width="3"/>
+      <rect x="15" y="17" width="50" height="106" fill="url(#hatch)" stroke="currentColor" stroke-width="2"/>
+      <circle cx="16" cy="72" r="4" fill="currentColor"/>
+      <path d="M-6 138 H86" stroke="currentColor" stroke-width="3"/>
+      <rect x="14" y="140" width="52" height="7" fill="url(#hatch)" stroke="currentColor" stroke-width="1.5"/>
+    </svg>
+  </button>
 
-<button class="prop floor-lamp" type="button" data-prop="lamp" aria-label="a lamp hanging up from the floor">
-  <svg viewBox="0 0 60 150" aria-hidden="true">
-    <path d="M30 0 V74" stroke="currentColor" stroke-width="2"/>
-    <path d="M12 106 L20 74 H40 L48 106 Z" fill="url(#hatch)" stroke="currentColor" stroke-width="2.5"/>
-    <circle cx="30" cy="112" r="6" fill="#f7f1e2" stroke="currentColor" stroke-width="2"/>
-    <path d="M14 126 L8 134 M30 128 V138 M46 126 L52 134" stroke="currentColor" stroke-width="1.5"/>
-  </svg>
-</button>
+  <button class="prop grav side-window" type="button" data-prop="window" data-grav="-90" aria-label="a window facing the floor. click to make its wall the floor">
+    <svg viewBox="0 0 100 120" aria-hidden="true">
+      <rect x="6" y="6" width="88" height="100" fill="#e6ddc9" stroke="currentColor" stroke-width="3"/>
+      <path d="M14 70 Q30 60 44 68 T78 64" fill="none" stroke="currentColor" stroke-width="1.5"/>
+      <path d="M20 40 q8 -10 18 -2 q10 -8 16 2 z" fill="#efe7d6" stroke="currentColor" stroke-width="1.5"/>
+      <path d="M50 6 V106 M6 56 H94" stroke="currentColor" stroke-width="3"/>
+      <rect x="0" y="106" width="100" height="8" fill="url(#hatch)" stroke="currentColor" stroke-width="2"/>
+    </svg>
+  </button>
 
-<button class="prop wall-walker" type="button" data-prop="walker" aria-label="someone walking up the wall">
-  <svg viewBox="0 0 40 70" aria-hidden="true">
-    <circle cx="20" cy="9" r="6.5" fill="currentColor"/>
-    <path d="M20 16 V44" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
-    <path d="M20 22 L10 34 M20 22 L30 34" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-    <path class="leg" d="M20 44 L20 66" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
-    <path class="leg b" d="M20 44 L20 66" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
-  </svg>
-</button>
+  <button class="prop grav floor-lamp" type="button" data-prop="lamp" data-grav="180" aria-label="a lamp hanging up from the floor. click to hang it from the ceiling">
+    <svg viewBox="0 0 60 150" aria-hidden="true">
+      <path d="M30 0 V74" stroke="currentColor" stroke-width="2"/>
+      <path d="M12 106 L20 74 H40 L48 106 Z" fill="url(#hatch)" stroke="currentColor" stroke-width="2.5"/>
+      <circle cx="30" cy="112" r="6" fill="#f7f1e2" stroke="currentColor" stroke-width="2"/>
+      <path d="M14 126 L8 134 M30 128 V138 M46 126 L52 134" stroke="currentColor" stroke-width="1.5"/>
+    </svg>
+  </button>
+
+  <button class="prop exit-door" type="button" data-prop="exit" aria-label="a small door marked exit, at the bottom of the stairs">
+    <svg viewBox="0 0 55 105" aria-hidden="true">
+      <rect x="11" y="0" width="33" height="12" fill="#efe7d6" stroke="currentColor" stroke-width="1.5"/>
+      <text x="27.5" y="9.5" font-family="Space Mono, monospace" font-size="8" text-anchor="middle" fill="currentColor">exit</text>
+      <rect x="3" y="16" width="49" height="86" fill="#efe7d6" stroke="currentColor" stroke-width="2.5"/>
+      <rect x="11" y="25" width="33" height="30" fill="url(#hatch)" stroke="currentColor" stroke-width="1.5"/>
+      <rect x="11" y="62" width="33" height="32" fill="url(#hatch)" stroke="currentColor" stroke-width="1.5"/>
+      <circle cx="44" cy="60" r="3" fill="currentColor"/>
+      <path d="M-4 103 H59" stroke="currentColor" stroke-width="2.5"/>
+    </svg>
+  </button>
+
+  <button class="prop wall-walker" type="button" data-prop="walker" aria-label="someone walking up the wall">
+    <svg viewBox="0 0 40 70" aria-hidden="true">
+      <circle cx="20" cy="9" r="6.5" fill="currentColor"/>
+      <path d="M20 16 V44" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+      <path d="M20 22 L10 34 M20 22 L30 34" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+      <path class="leg" d="M20 44 L20 66" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+      <path class="leg b" d="M20 44 L20 66" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+    </svg>
+  </button>
+</div>
 
 <div class="counter" aria-live="off">
   floors climbed: <b id="floors">412</b><br>
+  by you: <b id="mine">0</b> <span class="small">(lifetime <b id="lifetime">0</b>)</span><br>
   current floor: <b>1</b><br>
-  <span class="hint">drag to look closer</span>
+  <span class="hint" id="hint">arrows to climb · drag to look</span><br>
+  <button type="button" id="sound">sound: off</button>
 </div>
-<p class="caption" id="caption" role="status">a staircase. it goes up. all the way around.</p>
+<div class="climb" aria-label="climb">
+  <button type="button" id="up" aria-label="up a step">&#9650;</button>
+  <button type="button" id="down" aria-label="down a step">&#9660;</button>
+</div>
+<p class="caption" id="caption" role="status">a staircase. it goes up. all the way around. you're on it.</p>
 
 <script>
   // if the 3d module never arrives (blocked cdn, very old browser), say so instead of sitting there blank
@@ -188,8 +265,10 @@ const $ = s => document.querySelector(s);
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const coarse = matchMedia('(pointer: coarse)').matches;
 const INK = '#1c1914';
 const PAPER = '#efe7d6';
+const TAU = Math.PI * 2;
 const store = {
   get(k) { try { return localStorage.getItem(k); } catch (err) { return null; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch (err) { /* storage off */ } },
@@ -215,16 +294,67 @@ function cycle(key, lines) {
   return lines[i % lines.length];
 }
 
-// ---------- the counter ----------
+// ---------- the counters ----------
 const floorsEl = $('#floors');
+const mineEl = $('#mine');
+const lifetimeEl = $('#lifetime');
 let floors = parseInt(store.get('cizole.escher.floors'), 10);
 if (!Number.isFinite(floors) || floors < 412) floors = 412;
-const renderFloors = () => { floorsEl.textContent = floors.toLocaleString('en-US'); };
-renderFloors();
+let lifetime = parseInt(store.get('cizole.escher.laps'), 10);
+if (!Number.isFinite(lifetime) || lifetime < 0) lifetime = 0;
+let mine = 0;
+function renderCounters() {
+  floorsEl.textContent = floors.toLocaleString('en-US');
+  mineEl.textContent = String(mine);
+  lifetimeEl.textContent = lifetime.toLocaleString('en-US');
+}
+renderCounters();
+if (coarse) $('#hint').textContent = 'buttons to climb · drag to look';
 
-// ---------- pointer, shared by the wall's eyes ----------
-const pointer = { x: innerWidth / 2, y: innerHeight / 2 };
-addEventListener('pointermove', e => { pointer.x = e.clientX; pointer.y = e.clientY; });
+// =====================================================================
+// the print: a square on the page that holds the whole room. gravity is
+// whichever way the print is turned. everything outside it (the counter,
+// the caption, the exit to the lobby) stays put. it has seen this before.
+// =====================================================================
+const print = $('#print');
+let S = 600;      // the print's side, in css px
+let PX = 0, PY = 0; // where it sits on the page
+let roll = 0;     // how far the print is turned, radians, clockwise
+let rollAnim = null; // { from, to, start, dur }
+const ROLL_T = reduceMotion ? 0 : 1.2;
+
+function layoutPrint() {
+  S = Math.max(160, Math.min(innerWidth, innerHeight) - 16);
+  PX = Math.round((innerWidth - S) / 2);
+  PY = Math.round((innerHeight - S) / 2);
+  print.style.left = PX + 'px';
+  print.style.top = PY + 'px';
+  print.style.width = S + 'px';
+  print.style.height = S + 'px';
+  print.style.setProperty('--u', (S / 100).toFixed(3) + 'px');
+}
+function applyRoll() {
+  print.style.transform = `rotate(${roll.toFixed(4)}rad)`;
+}
+// page coords -> print coords (as if the print weren't turned)
+function toLocal(x, y) {
+  const cx = PX + S / 2, cy = PY + S / 2;
+  const dx = x - cx, dy = y - cy;
+  const c = Math.cos(roll), s = Math.sin(roll);
+  return { x: S / 2 + dx * c + dy * s, y: S / 2 - dx * s + dy * c };
+}
+function localDelta(dx, dy) {
+  const c = Math.cos(roll), s = Math.sin(roll);
+  return { x: dx * c + dy * s, y: -dx * s + dy * c };
+}
+
+// the pointer, in print coords, shared by the wall's eyes
+const pointer = { x: 300, y: 300 };
+addEventListener('pointermove', e => {
+  const p = toLocal(e.clientX, e.clientY);
+  pointer.x = p.x;
+  pointer.y = p.y;
+});
 
 // =====================================================================
 // the wall: an original tessellation that slowly turns into eyes.
@@ -232,17 +362,15 @@ addEventListener('pointermove', e => { pointer.x = e.clientX; pointer.y = e.clie
 // =====================================================================
 const wall = $('#wall');
 const wctx = wall.getContext('2d');
-let WW = 0, WH = 0, G = 80;
+let G = 80;
 let paper = null;
 
 function sizeWall() {
   const dpr = Math.min(devicePixelRatio || 1, 2);
-  WW = innerWidth;
-  WH = innerHeight;
-  wall.width = Math.round(WW * dpr);
-  wall.height = Math.round(WH * dpr);
+  wall.width = Math.round(S * dpr);
+  wall.height = Math.round(S * dpr);
   wctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  G = clamp(Math.min(WW, WH) / 8, 52, 96);
+  G = clamp(S / 8, 52, 96);
   // paper, drawn once per size: base color, specks, a few fibers
   paper = document.createElement('canvas');
   paper.width = wall.width;
@@ -250,15 +378,15 @@ function sizeWall() {
   const p = paper.getContext('2d');
   p.setTransform(dpr, 0, 0, dpr, 0, 0);
   p.fillStyle = PAPER;
-  p.fillRect(0, 0, WW, WH);
-  for (let i = 0; i < (WW * WH) / 500; i++) {
+  p.fillRect(0, 0, S, S);
+  for (let i = 0; i < (S * S) / 500; i++) {
     p.fillStyle = `rgba(90, 70, 40, ${(0.03 + Math.random() * 0.07).toFixed(3)})`;
-    p.fillRect(Math.random() * WW, Math.random() * WH, 1, 1);
+    p.fillRect(Math.random() * S, Math.random() * S, 1, 1);
   }
   p.strokeStyle = 'rgba(120, 96, 60, 0.07)';
   p.lineWidth = 1;
-  for (let i = 0; i < 70; i++) {
-    const x = Math.random() * WW, y = Math.random() * WH;
+  for (let i = 0; i < 60; i++) {
+    const x = Math.random() * S, y = Math.random() * S;
     p.beginPath();
     p.moveTo(x, y);
     p.quadraticCurveTo(x + (Math.random() - 0.5) * 30, y + (Math.random() - 0.5) * 30, x + (Math.random() - 0.5) * 50, y + (Math.random() - 0.5) * 50);
@@ -266,14 +394,13 @@ function sizeWall() {
   }
 }
 
-const TAU = Math.PI * 2;
 const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
 // edge shapes: zero at both ends, so every tile keeps its corners
 const fH = t => 0.2 * Math.sin(TAU * t) + 0.08 * Math.sin(2 * TAU * t);
 const fV = t => 0.18 * Math.sin(TAU * t) - 0.09 * Math.sin(3 * TAU * t);
 // how far a spot on the wall has morphed, drifting slowly across it
 function morph(x, y, t) {
-  const phase = (x / WW) * TAU * 0.9 + (y / WH) * 1.3 - t * 0.00009;
+  const phase = (x / S) * TAU * 0.9 + (y / S) * 1.3 - t * 0.00009;
   return smooth(0.15, 0.85, 0.5 + 0.5 * Math.sin(phase));
 }
 const hash = (i, j) => { const s = Math.sin(i * 127.1 + j * 311.7) * 43758.5453; return s - Math.floor(s); };
@@ -282,13 +409,12 @@ const SEG = 10;
 function drawWall(now) {
   if (!paper) return;
   const t = reduceMotion ? 20000 : now;
-  wctx.drawImage(paper, 0, 0, WW, WH);
+  wctx.drawImage(paper, 0, 0, S, S);
   wctx.lineWidth = 1;
   wctx.lineJoin = 'round';
-  const cols = Math.ceil(WW / G) + 1;
-  const rows = Math.ceil(WH / G) + 1;
-  for (let j = -1; j < rows; j++) {
-    for (let i = -1; i < cols; i++) {
+  const n = Math.ceil(S / G) + 1;
+  for (let j = -1; j < n; j++) {
+    for (let i = -1; i < n; i++) {
       const x0 = i * G, y0 = j * G;
       const aT = morph(x0 + G / 2, y0, t);
       const aB = morph(x0 + G / 2, y0 + G, t);
@@ -355,10 +481,11 @@ const U = new THREE.Vector3(1, 2, 1);
 const MAGIC_TH = Math.atan2(U.x, U.z);
 const MAGIC_PH = Math.asin(U.y / U.length());
 
-// the magic view's screen axes (right, up) and depth axis
+// the magic view's screen axes (right, up) and the axis toward the viewer
 const BZ = U.clone().normalize();
 const BX = new THREE.Vector3(0, 1, 0).cross(BZ).normalize();
 const BY = BZ.clone().cross(BX);
+const WORLD_UP = new THREE.Vector3(0, 1, 0);
 
 // staircase: 6 steps +x, 6 steps +z, 3 steps -x, 3 steps -z. each step rises
 // RISE, so the loop ends exactly 3 * U away from where it began. seen along U,
@@ -380,6 +507,13 @@ for (const [dx, dz, n] of SIDES) {
 }
 // tops[N] is a phantom: where step 0 would be if the stairs kept going. it
 // sits exactly D * U from tops[0], so on screen they're the same step.
+
+// the step that looks lowest from the magic angle (the exit door goes there)
+let lowest = 0, highest = 0;
+for (let i = 1; i < N; i++) {
+  if (tops[i].dot(BY) < tops[lowest].dot(BY)) lowest = i;
+  if (tops[i].dot(BY) > tops[highest].dot(BY)) highest = i;
+}
 
 // triangle: legs of L along x, 2L along y, L along z. the gap is L * U.
 const TRI_L = 2.3;
@@ -443,6 +577,7 @@ const inkMat = new THREE.ShaderMaterial({
 });
 const lineMat = new LineMaterial({ color: new THREE.Color(INK), linewidth: 1.7 });
 const figureMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(INK) });
+const paperMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(PAPER) });
 
 // boxes: { w, h, d, x, y, z } in world units (center + size)
 function addBoxes(parent, boxes, kind) {
@@ -478,32 +613,102 @@ const tri = new THREE.Group();
 }
 scene.add(tri);
 
-// three small figures who have never reached the top
-function makeFigure() {
+// ---------- the figures ----------
+// gravity, for a figure, is whichever way the print is turned. this is the
+// world direction that shows up as "up" on the page once the print is rolled.
+const vup = new THREE.Vector3();
+function figureUp(r, out) {
+  return out.copy(WORLD_UP).applyAxisAngle(BZ, r);
+}
+function makeFigure(you) {
   const g = new THREE.Group();
+  const kind = you ? 'you' : 'figure';
   const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.085, 0.26, 4, 10), figureMat);
   body.position.y = 0.23;
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.095, 12, 10), figureMat);
-  head.position.y = 0.47;
   const pack = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.16, 0.08), figureMat);
   pack.position.set(0, 0.28, -0.1);
-  for (const m of [body, head, pack]) m.userData.kind = 'figure';
-  g.add(body, head, pack);
-  g.userData.kind = 'figure';
+  body.userData.kind = kind;
+  pack.userData.kind = kind;
+  g.add(body, pack);
+  let head;
+  if (you) {
+    // the site's mark for a head: a "c" with a dot in it, always facing you
+    head = new THREE.Group();
+    const cGeo = new THREE.TorusGeometry(0.1, 0.032, 8, 24, Math.PI * 1.5);
+    cGeo.rotateZ(Math.PI / 4); // the opening faces right, like the favicon
+    const c = new THREE.Mesh(cGeo, figureMat);
+    const dot = new THREE.Mesh(new THREE.SphereGeometry(0.036, 10, 8), figureMat);
+    dot.position.x = 0.012;
+    const disc = new THREE.Mesh(new THREE.CircleGeometry(0.135, 20), paperMat);
+    disc.position.z = -0.02;
+    for (const m of [c, dot, disc]) m.userData.kind = kind;
+    head.add(disc, c, dot);
+  } else {
+    head = new THREE.Mesh(new THREE.SphereGeometry(0.095, 12, 10), figureMat);
+    head.userData.kind = kind;
+  }
+  head.position.y = 0.47;
+  g.add(head);
+  g.userData.kind = kind;
   scene.add(g);
-  return g;
+  return { mesh: g, body, head, you };
 }
-const STEP_TIME = reduceMotion ? 1.9 : 0.95;
-const figures = [0, 6.3, 12.6].map(k => ({ k, mesh: makeFigure() }));
+
+const STEP_TIME = reduceMotion ? 1.9 : 0.95;      // the others' pace
+const HOP_T = reduceMotion ? 0.5 : 0.28;          // your hop
+const FOLLOW_STEP = 0.5;
+const walkers = [0, 6.3, 12.6].map(k => ({ ...makeFigure(false), k, prevK: k, tumble: null }));
+const you = { ...makeFigure(true), k: 3, hop: null, sitting: false, tumble: null, steps: 0 };
+let following = false;
+
 const fpos = new THREE.Vector3();
-function placeFigure(f) {
-  const i = Math.floor(f.k);
-  const t = f.k - i;
+const qUp = new THREE.Quaternion();
+const qYaw = new THREE.Quaternion();
+const qSpin = new THREE.Quaternion();
+const qHead = new THREE.Quaternion();
+const mHead = new THREE.Matrix4();
+const hx = new THREE.Vector3(), hy = new THREE.Vector3();
+const easeInOut = t => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+function placeFigure(f, now) {
+  // mid-hop past either end, k is briefly outside [0, N); the stairs don't mind
+  const kk = ((f.k % N) + N) % N;
+  const i = Math.floor(kk);
+  const t = kk - i;
   const a = tops[i], b = tops[i + 1];
+  figureUp(roll, vup);
   fpos.lerpVectors(a, b, t);
-  fpos.y += Math.sin(Math.PI * t) * 0.16;
+  fpos.addScaledVector(vup, Math.sin(Math.PI * t) * 0.16);
+  let spin = 0;
+  if (f.tumble) {
+    const u = clamp((now - f.tumble.start) / f.tumble.dur, 0, 1);
+    fpos.addScaledVector(vup, Math.sin(Math.PI * u) * f.tumble.height);
+    spin = f.tumble.spin * easeInOut(u);
+    if (u >= 1) f.tumble = null;
+  }
   f.mesh.position.copy(fpos);
-  f.mesh.rotation.y = Math.atan2(b.x - a.x, b.z - a.z);
+  qUp.setFromUnitVectors(WORLD_UP, vup);
+  qYaw.setFromAxisAngle(WORLD_UP, Math.atan2(b.x - a.x, b.z - a.z));
+  f.mesh.quaternion.copy(qUp).multiply(qYaw);
+  if (spin) {
+    qSpin.setFromAxisAngle(BZ, spin);
+    f.mesh.quaternion.premultiply(qSpin);
+  }
+  if (f.sitting) {
+    f.body.scale.set(1.15, 0.62, 1.15);
+    f.head.position.y = 0.36;
+  } else {
+    f.body.scale.set(1, 1, 1);
+    f.head.position.y = 0.47;
+  }
+  if (f.you) {
+    // the "c" stays upright and faces the viewer whatever the body is doing
+    hy.copy(vup).addScaledVector(BZ, -vup.dot(BZ)).normalize();
+    hx.crossVectors(hy, BZ);
+    mHead.makeBasis(hx, hy, BZ);
+    qHead.setFromRotationMatrix(mHead);
+    f.head.quaternion.copy(f.mesh.quaternion).invert().multiply(qHead);
+  }
 }
 
 // ---------- layout: fit everything, as seen from the magic angle ----------
@@ -511,7 +716,7 @@ const tmp = new THREE.Vector3();
 function boxCorners(obj, out) {
   obj.updateMatrixWorld(true);
   obj.traverse(o => {
-    if (!o.isMesh || o.isLineSegments2 || o.userData.kind === 'figure') return;
+    if (!o.isMesh || o.isLineSegments2 || o.userData.kind === 'figure' || o.userData.kind === 'you') return;
     o.geometry.computeBoundingBox();
     const bb = o.geometry.boundingBox;
     for (let c = 0; c < 8; c++) {
@@ -532,13 +737,13 @@ function extent(points) {
   return e;
 }
 
-function placeTriangle(landscape) {
+function placeTriangle(beside) {
   tri.position.set(0, 0, 0);
   const s = extent(boxCorners(stairs, []));
   const t = extent(boxCorners(tri, []));
   const tw = t.maxX - t.minX, th = t.maxY - t.minY;
   let x, y;
-  if (landscape) {
+  if (beside) {
     x = s.maxX + 1.6 + tw / 2;
     y = s.maxY - th / 2 - 0.4;
   } else {
@@ -550,46 +755,70 @@ function placeTriangle(landscape) {
   tri.position.copy(BX).multiplyScalar(x - cx).addScaledVector(BY, y - cy).addScaledVector(BZ, s.cz - t.cz);
 }
 
-function propMargins() {
-  const r = sel => { const el = $(sel); return el ? el.getBoundingClientRect() : { left: 0, right: 0, top: 0, bottom: 0, width: 0, height: 0 }; };
-  const wallDoor = r('.wall-door'), win = r('.side-window'), ceiling = r('.ceiling-door');
-  const counter = r('.counter');
-  return {
-    l: Math.max(24, wallDoor.right + 14),
-    r: Math.max(24, innerWidth - Math.min(win.left, counter.left) + 10),
-    t: Math.max(ceiling.bottom + 12, counter.bottom + 8, 56),
-    b: 76,
-  };
+// room left on each side of the print for the doors, in print px
+function margins() {
+  const u = S / 100;
+  return { l: 16 * u, r: 14 * u, t: 15 * u, b: 17 * u };
 }
 
-function fit() {
-  const W = innerWidth, H = innerHeight;
-  sizeWall();
-  if (!renderer) return;
-  renderer.setSize(W, H, false);
-  lineMat.resolution.set(W, H);
-  inkMat.uniforms.uPx.value = renderer.getPixelRatio();
-  placeTriangle(W / H > 1.05);
+function measureLayout(beside) {
+  placeTriangle(beside);
   const pts = boxCorners(stairs, []);
   boxCorners(tri, pts);
   // headroom for the figures on the highest steps
-  for (const p of tops) pts.push(p.clone().add(new THREE.Vector3(0, 0.6, 0)));
+  for (const p of tops) pts.push(p.clone().add(new THREE.Vector3(0, 0.7, 0)));
   const e = extent(pts);
-  const m = propMargins();
-  const aw = Math.max(80, W - m.l - m.r);
-  const ah = Math.max(80, H - m.t - m.b);
-  viewScale = Math.max((e.maxX - e.minX) / aw, (e.maxY - e.minY) / ah);
-  const dxp = (m.l + aw / 2) - W / 2;
-  const dyp = H / 2 - (m.t + ah / 2);
-  const tx = (e.minX + e.maxX) / 2 - dxp * viewScale;
-  const ty = (e.minY + e.maxY) / 2 - dyp * viewScale;
+  const m = margins();
+  const aw = Math.max(60, S - m.l - m.r);
+  const ah = Math.max(60, S - m.t - m.b);
+  const vs = Math.max((e.maxX - e.minX) / aw, (e.maxY - e.minY) / ah);
+  const dxp = (m.l + aw / 2) - S / 2;
+  const dyp = S / 2 - (m.t + ah / 2);
+  return {
+    beside, vs,
+    tx: (e.minX + e.maxX) / 2 - dxp * vs,
+    ty: (e.minY + e.maxY) / 2 - dyp * vs,
+    cz: e.cz,
+  };
+}
+
+const exitDoor = $('.exit-door');
+function placeExit() {
+  // just left of the lowest-looking step, feet on its baseline
+  camera.updateMatrixWorld(true);
+  const u = S / 100;
+  const p = tops[lowest].clone().project(camera);
+  const x = (p.x + 1) / 2 * S;
+  const y = (1 - p.y) / 2 * S;
+  const w = 5.5 * u, h = 10.5 * u;
+  exitDoor.style.left = clamp(x - 9 * u - w / 2, u, S - w - u).toFixed(1) + 'px';
+  exitDoor.style.top = clamp(y + 0.6 * u - h, u, S - h - u).toFixed(1) + 'px';
+}
+
+function fit() {
+  layoutPrint();
+  applyRoll();
+  sizeWall();
+  if (renderer) {
+    renderer.setSize(S, S, false);
+    lineMat.resolution.set(S, S);
+    inkMat.uniforms.uPx.value = renderer.getPixelRatio();
+  }
+  // whichever way the triangle fits bigger
+  const a = measureLayout(true);
+  const b = measureLayout(false);
+  const L = a.vs <= b.vs ? a : b;
+  placeTriangle(L.beside);
+  viewScale = L.vs;
   // rotate around a point at the scene's depth, so dragging orbits nicely
-  target.copy(BX).multiplyScalar(tx).addScaledVector(BY, ty).addScaledVector(BZ, e.cz);
-  camera.left = -W / 2 * viewScale;
-  camera.right = W / 2 * viewScale;
-  camera.top = H / 2 * viewScale;
-  camera.bottom = -H / 2 * viewScale;
+  target.copy(BX).multiplyScalar(L.tx).addScaledVector(BY, L.ty).addScaledVector(BZ, L.cz);
+  camera.left = -S / 2 * viewScale;
+  camera.right = S / 2 * viewScale;
+  camera.top = S / 2 * viewScale;
+  camera.bottom = -S / 2 * viewScale;
   camera.updateProjectionMatrix();
+  applyCamera();
+  placeExit();
 }
 
 // ---------- the camera, and how badly it's being looked at ----------
@@ -601,7 +830,6 @@ let broken = false;
 let drift = null;
 let lastInteract = performance.now();
 let nextDrift = performance.now() + 50000 + Math.random() * 20000;
-const held = new Set();
 
 const BREAK_LINES = [
   'it only works from here.',
@@ -621,14 +849,7 @@ function applyCamera() {
 }
 
 function updateCamera(dt, now) {
-  const keys = held.size > 0;
-  if (keys) {
-    const sx = (held.has('ArrowLeft') ? 1 : 0) - (held.has('ArrowRight') ? 1 : 0);
-    const sy = (held.has('ArrowUp') ? 1 : 0) - (held.has('ArrowDown') ? 1 : 0);
-    off.th = clamp(off.th + sx * dt * 0.9, -1.4, 1.4);
-    off.ph = clamp(off.ph + sy * dt * 0.7, -1.2, 0.8);
-    vel.th = vel.ph = 0;
-  } else if (!dragging) {
+  if (!dragging) {
     let goalTh = 0, goalPh = 0;
     if (drift) {
       if (now < drift.until) { goalTh = drift.th; goalPh = drift.ph; } else drift.released = true;
@@ -643,24 +864,24 @@ function updateCamera(dt, now) {
   const mag = Math.abs(off.th) + Math.abs(off.ph);
   if (!broken && mag > 0.03) {
     broken = true;
-    if (dragging || keys) say(cycle('break', BREAK_LINES));
+    if (dragging) say(cycle('break', BREAK_LINES));
     else if (drift) say('the room shifted a little. sorry.');
   }
-  if (broken && !dragging && !keys && mag < 0.002 && Math.abs(vel.th) + Math.abs(vel.ph) < 0.01) {
+  if (broken && !dragging && mag < 0.002 && Math.abs(vel.th) + Math.abs(vel.ph) < 0.01) {
     broken = false;
     off.th = off.ph = vel.th = vel.ph = 0;
     say(drift ? "fine now. it's fine." : cycle('fixed', FIXED_LINES));
     drift = null;
   }
   // now and then the room slips on its own, then catches itself
-  if (!reduceMotion && !drift && !dragging && !keys && !broken && now > nextDrift && now - lastInteract > 15000) {
+  if (!reduceMotion && !drift && !dragging && !broken && !rollAnim && now > nextDrift && now - lastInteract > 15000) {
     drift = { th: (Math.random() < 0.5 ? -1 : 1) * 0.09, ph: -0.04, until: now + 2200, released: false };
     nextDrift = now + 55000 + Math.random() * 25000;
   }
   applyCamera();
 }
 
-// ---------- your hands ----------
+// ---------- your hands: dragging the view ----------
 const stage = $('#stage');
 const raycaster = new THREE.Raycaster();
 const ndc = new THREE.Vector2();
@@ -673,14 +894,14 @@ stage.addEventListener('pointerdown', e => {
 });
 stage.addEventListener('pointermove', e => {
   if (!down || e.pointerId !== down.id) return;
-  const dx = e.clientX - down.x, dy = e.clientY - down.y;
-  if (!down.moved && Math.hypot(dx, dy) < 5) return;
+  const d = localDelta(e.clientX - down.x, e.clientY - down.y);
+  if (!down.moved && Math.hypot(d.x, d.y) < 5) return;
   down.moved = true;
   dragging = true;
   drift = null;
   stage.classList.add('dragging');
-  off.th = clamp(down.th - dx * 0.006, -1.4, 1.4);
-  off.ph = clamp(down.ph + dy * 0.005, -1.2, 0.8);
+  off.th = clamp(down.th - d.x * 0.006, -1.4, 1.4);
+  off.ph = clamp(down.ph + d.y * 0.005, -1.2, 0.8);
   vel.th = vel.ph = 0;
   lastInteract = performance.now();
 });
@@ -694,17 +915,6 @@ function release(e) {
 stage.addEventListener('pointerup', release);
 stage.addEventListener('pointercancel', release);
 
-const ARROWS = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
-stage.addEventListener('keydown', e => {
-  if (!ARROWS.includes(e.key)) return;
-  e.preventDefault();
-  held.add(e.key);
-  drift = null;
-  lastInteract = performance.now();
-});
-stage.addEventListener('keyup', e => { held.delete(e.key); });
-stage.addEventListener('blur', () => held.clear());
-
 const CLICK_LINES = {
   step: [
     "a step. it's the first step. it's also the last step.",
@@ -717,6 +927,11 @@ const CLICK_LINES = {
     "that one counts every step. it's on step one.",
     "they don't stop to rest. resting would mean admitting something.",
   ],
+  you: [
+    "that's you. floor 1. it suits you.",
+    "you can't click yourself up the stairs. arrows.",
+    'the mark on your head is the site. you are the site now. keep climbing.',
+  ],
   triangle: [
     'a triangle. three corners. all of them right angles. that is more than a triangle is allowed.',
     "it's solid. it's also not. drag and see.",
@@ -725,7 +940,8 @@ const CLICK_LINES = {
 };
 function clickAt(x, y) {
   if (!renderer) return;
-  ndc.set((x / innerWidth) * 2 - 1, -(y / innerHeight) * 2 + 1);
+  const p = toLocal(x, y);
+  ndc.set((p.x / S) * 2 - 1, -(p.y / S) * 2 + 1);
   raycaster.setFromCamera(ndc, camera);
   const targets = [];
   scene.traverse(o => { if (o.isMesh && !o.isLineSegments2) targets.push(o); });
@@ -735,21 +951,174 @@ function clickAt(x, y) {
   if (CLICK_LINES[kind]) say(cycle(kind, CLICK_LINES[kind]));
 }
 
-// ---------- doors and windows on the wrong walls ----------
+// ---------- climbing ----------
+const LAP_LINES = {
+  1: "one floor. you're on floor 1. you were on floor 1.",
+  3: "you've been going up for a while. ground floor.",
+  5: 'the stairs are impressed. you are still on floor 1.',
+  10: "at this point it's a lifestyle.",
+  25: 'twenty-five. the others have started a club. the meetings are on floor 1.',
+  50: 'fifty floors. same floor. the counter has stopped meaning anything. it keeps counting.',
+};
+const DOWN_LINES = [
+  "you went down. you arrived at the top. don't think about it.",
+  'down again. up again. same again.',
+  "going down is going up here. the stairs don't take sides.",
+];
+const held = new Set();
+let lastStepAt = performance.now();
+let sound = null;
+
+function lap(byYou, wentDown) {
+  floors++;
+  store.set('cizole.escher.floors', String(floors));
+  if (byYou) {
+    mine++;
+    lifetime++;
+    store.set('cizole.escher.laps', String(lifetime));
+    if (wentDown) say(cycle('down', DOWN_LINES));
+    else if (LAP_LINES[mine]) say(LAP_LINES[mine]);
+    if (mine === 3 && !following) {
+      following = true;
+      setTimeout(() => say("the others have decided you know the way. you don't. they're behind you now."), 3200);
+    }
+  }
+  renderCounters();
+}
+
+function step(dirn) {
+  if (you.hop || rollAnim) return;
+  const now = performance.now();
+  lastStepAt = now;
+  lastInteract = now;
+  you.steps++;
+  if (you.sitting) {
+    you.sitting = false;
+    say('up you get.');
+  }
+  you.hop = { from: you.k, to: you.k + dirn, start: now };
+  scratch();
+}
+
+function updateYou(now) {
+  if (you.hop) {
+    const u = clamp((now - you.hop.start) / (HOP_T * 1000), 0, 1);
+    you.k = you.hop.from + (you.hop.to - you.hop.from) * easeInOut(u);
+    if (u >= 1) {
+      you.k = you.hop.to;
+      you.hop = null;
+      if (you.k >= N) { you.k -= N; lap(true, false); }
+      if (you.k < 0) { you.k += N; lap(true, true); }
+    }
+  } else if (!rollAnim) {
+    if (held.has('up') && !held.has('down')) step(1);
+    else if (held.has('down') && !held.has('up')) step(-1);
+  }
+  if (!you.sitting && you.steps > 0 && now - lastStepAt > 20000 && !rollAnim) {
+    you.sitting = true;
+    say("you sat down. on the stairs. the stairs don't mind. they're still going up.");
+  }
+}
+
+const wrapDelta = d => ((d + N / 2) % N + N) % N - N / 2;
+function updateWalkers(dt) {
+  walkers.forEach((f, i) => {
+    f.prevK = f.k;
+    if (following) {
+      const want = ((you.k - 1.5 * (i + 1)) % N + N) % N;
+      const d = wrapDelta(want - f.k);
+      const maxStep = dt / FOLLOW_STEP;
+      f.k += clamp(d, -maxStep, maxStep);
+    } else {
+      f.k += dt / STEP_TIME;
+    }
+    if (f.k >= N) { f.k -= N; lap(false, false); }
+    if (f.k < 0) { f.k += N; }
+  });
+}
+
+// keys: arrows or wasd. up, right, w, d climb. down, left, s, a descend.
+const KEY_UP = ['ArrowUp', 'ArrowRight', 'w', 'W', 'd', 'D'];
+const KEY_DOWN = ['ArrowDown', 'ArrowLeft', 's', 'S', 'a', 'A'];
+const typing = el => el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable);
+addEventListener('keydown', e => {
+  if (typing(e.target) || e.ctrlKey || e.metaKey || e.altKey) return;
+  const up = KEY_UP.includes(e.key), dn = KEY_DOWN.includes(e.key);
+  if (!up && !dn) return;
+  e.preventDefault();
+  if (e.repeat) return;
+  held.add(up ? 'up' : 'down');
+  drift = null;
+});
+addEventListener('keyup', e => {
+  if (KEY_UP.includes(e.key)) held.delete('up');
+  if (KEY_DOWN.includes(e.key)) held.delete('down');
+});
+addEventListener('blur', () => held.clear());
+for (const [id, key] of [['#up', 'up'], ['#down', 'down']]) {
+  const b = $(id);
+  b.addEventListener('pointerdown', e => { e.preventDefault(); held.add(key); try { b.setPointerCapture(e.pointerId); } catch (err) { /* synthetic */ } });
+  const letGo = () => held.delete(key);
+  b.addEventListener('pointerup', letGo);
+  b.addEventListener('pointercancel', letGo);
+  b.addEventListener('lostpointercapture', letGo);
+  b.addEventListener('click', e => { if (e.detail === 0) step(key === 'up' ? 1 : -1); }); // keyboard-activated
+}
+
+// ---------- sound: a pen scratch per step, if you ask for it ----------
+const soundBtn = $('#sound');
+function scratch() {
+  if (!sound || !sound.on) return;
+  const ctx = sound.ctx;
+  const t = ctx.currentTime;
+  const src = ctx.createBufferSource();
+  src.buffer = sound.noise;
+  const bp = ctx.createBiquadFilter();
+  bp.type = 'bandpass';
+  bp.frequency.value = 1800 + Math.random() * 1400;
+  bp.Q.value = 1.2;
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.16, t + 0.008);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.07);
+  src.connect(bp).connect(g).connect(ctx.destination);
+  src.start(t, Math.random() * 0.4);
+  src.stop(t + 0.09);
+}
+soundBtn.addEventListener('click', () => {
+  if (!sound) {
+    const ctx = new AudioContext();
+    const noise = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+    const d = noise.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    sound = { ctx, noise, on: false };
+  }
+  sound.on = !sound.on;
+  if (sound.on) sound.ctx.resume();
+  soundBtn.textContent = sound.on ? 'sound: on' : 'sound: off';
+  soundBtn.classList.toggle('on', sound.on);
+  if (sound.on) scratch();
+});
+
+// ---------- doors on the wrong walls: click one and it becomes the floor ----------
+const GRAV_LINES = [
+  "that's the floor now. it was always the floor, for someone.",
+  'the exit does not rotate. it has seen this before.',
+  'everyone fell over. everyone got up. everyone is on floor 1.',
+  'the lamp is fine. the lamp is always fine.',
+  'the stairs still go up. up moved.',
+];
 const PROP_LINES = {
   ceiling: [
     "that door is on the ceiling. it's a normal door, for someone.",
     'someone knocks from the other side. from above. from below. from over there.',
-    "it opens. you don't want to know which way.",
   ],
   wall: [
     'that door is a floor now. please wipe your feet on it.',
     'it leads to this room. every door here does.',
-    'locked. from the ceiling side.',
   ],
   window: [
     'the window faces down. the view is excellent. the view is the floor.',
-    "it's raining sideways out there. that's up, for the rain.",
     "someone is looking in. it's you, from the other wall.",
   ],
   lamp: [
@@ -761,11 +1130,73 @@ const PROP_LINES = {
     "it thinks you're the one who's sideways.",
     "it's been walking up this wall all day. it's also still on floor 1.",
   ],
+  exit: [
+    'this is the exit. it exits to here.',
+    "you took the exit. you're at the top now. the top is here.",
+    'exit: taken. floor: 1.',
+  ],
 };
+const normAngle = a => Math.atan2(Math.sin(a), Math.cos(a));
+const floored = {};
+
+function turnTo(targetRoll, propName) {
+  const delta = normAngle(targetRoll - roll);
+  if (Math.abs(delta) < 0.01) {
+    say(cycle('already', ["it's already the floor. you're standing on it. sort of.", 'that one is the floor. it would like to stay the floor.']));
+    return;
+  }
+  const now = performance.now();
+  rollAnim = { from: roll, to: roll + delta, start: now, dur: ROLL_T * 1000 };
+  floored[propName] = (floored[propName] || 0) + 1;
+  if (!reduceMotion) {
+    for (const f of [you, ...walkers]) {
+      f.tumble = { start: now, dur: 1200, spin: (Math.random() < 0.5 ? -1 : 1) * TAU * (1 + Math.round(Math.random())), height: 0.35 + Math.random() * 0.3 };
+    }
+  }
+  you.sitting = false;
+  lastInteract = now;
+  lastStepAt = now; // falling over counts as getting up
+  const n = floored[propName];
+  if (n >= 3) say(`this door has been the floor ${n} times. it's getting comfortable.`);
+  else say(cycle('grav', GRAV_LINES));
+}
+
+function updateRoll(now) {
+  if (!rollAnim) return;
+  const u = rollAnim.dur ? clamp((now - rollAnim.start) / rollAnim.dur, 0, 1) : 1;
+  roll = rollAnim.from + (rollAnim.to - rollAnim.from) * easeInOut(u);
+  if (u >= 1) {
+    roll = normAngle(rollAnim.to);
+    rollAnim = null;
+  }
+  applyRoll();
+}
+
 for (const el of document.querySelectorAll('[data-prop]')) {
   el.addEventListener('click', () => {
     lastInteract = performance.now();
-    say(cycle('prop-' + el.dataset.prop, PROP_LINES[el.dataset.prop]));
+    const name = el.dataset.prop;
+    if (name === 'exit') {
+      if (you.hop || rollAnim) return;
+      you.k = highest;
+      you.sitting = false;
+      lastStepAt = performance.now();
+      say(cycle('exit', PROP_LINES.exit));
+      return;
+    }
+    if (el.dataset.grav !== undefined) {
+      if (rollAnim) return;
+      // upright means the door's own tilt plus the print's turn add up to nothing
+      const own = parseFloat(el.dataset.grav) * Math.PI / 180;
+      // a second click on the same door, once it's the floor, just talks about it
+      if (Math.abs(normAngle(-own - roll)) < 0.01 && Math.random() < 0.6) {
+        say(cycle('prop-' + name, PROP_LINES[name]));
+        return;
+      }
+      turnTo(-own, name);
+      return;
+    }
+    say(cycle('prop-' + name, PROP_LINES[name]));
   });
 }
 
@@ -773,7 +1204,7 @@ for (const el of document.querySelectorAll('[data-prop]')) {
 const wallWalker = $('.wall-walker');
 const ww = { y: 0.8, dir: -1 };
 function updateWallWalker(dt) {
-  const topY = innerHeight * 0.44, botY = innerHeight * 0.86;
+  const topY = S * 0.44, botY = S * 0.86;
   const speed = (reduceMotion ? 10 : 22) / Math.max(1, botY - topY);
   ww.y += ww.dir * speed * dt;
   if (ww.y < 0) { ww.y = 0; ww.dir = 1; }
@@ -788,17 +1219,18 @@ const AMBIENT = [
   "the stairs don't go anywhere. they're very committed to it.",
   'three of them have been climbing since before you got here.',
   "every step is up. you can drag it around and check. it's not.",
-  "the architect was asked to add an elevator. this was the elevator.",
+  'the doors work. click one. you will regret the ceiling one.',
+  'the exit is at the bottom of the stairs. so is the top.',
 ];
 const pageStart = performance.now();
 let nextAmbient = performance.now() + 24000;
 function ambient(now) {
   if (now < nextAmbient) return;
   nextAmbient = now + 26000 + Math.random() * 10000;
-  if (now - lastSay < 15000 || dragging || broken) return;
+  if (now - lastSay < 15000 || dragging || broken || rollAnim) return;
   const mins = Math.floor((now - pageStart) / 60000);
   if (mins >= 1 && Math.random() < 0.45) {
-    say(`you've been watching for ${mins} minute${mins === 1 ? '' : 's'}. everyone is still on the ground floor.`);
+    say(`you've been here for ${mins} minute${mins === 1 ? '' : 's'}. everyone is still on the ground floor. including you.`);
   } else {
     say(cycle('ambient', AMBIENT));
   }
@@ -809,7 +1241,7 @@ addEventListener('cizole:return', e => {
   const secs = Math.round(e.detail.awayMs / 1000);
   if (secs < 3) return;
   const span = secs < 120 ? `${secs}s` : `${Math.round(secs / 60)} minutes`;
-  say(`you left for ${span}. they kept climbing. still on floor 1.`);
+  say(`you left for ${span}. they kept climbing. you're still on floor 1. they saved your spot.`);
 });
 
 // ---------- the loop ----------
@@ -820,20 +1252,13 @@ function frame(now) {
   if (!running) return;
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
-  if (renderer) {
-    updateCamera(dt, now);
-    for (const f of figures) {
-      f.k += dt / STEP_TIME;
-      if (f.k >= N) {
-        f.k -= N;
-        floors++;
-        renderFloors();
-        store.set('cizole.escher.floors', String(floors));
-      }
-      placeFigure(f);
-    }
-    renderer.render(scene, camera);
-  }
+  updateRoll(now);
+  updateCamera(dt, now);
+  updateYou(now);
+  updateWalkers(dt);
+  for (const f of walkers) placeFigure(f, now);
+  placeFigure(you, now);
+  if (renderer) renderer.render(scene, camera);
   if (frameNo++ % 3 === 0) drawWall(now);
   updateWallWalker(dt);
   ambient(now);
@@ -843,9 +1268,13 @@ function frame(now) {
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
     running = false;
+    held.clear();
+    if (sound && sound.on) sound.ctx.suspend();
   } else if (!running) {
     running = true;
     last = performance.now();
+    lastStepAt = performance.now();
+    if (sound && sound.on) sound.ctx.resume();
     requestAnimationFrame(frame);
   }
 });
@@ -857,7 +1286,7 @@ addEventListener('resize', () => {
 
 fit();
 if (document.fonts) document.fonts.ready.then(fit);
-if (!renderer) say('no 3d here. the stairs are imaginary anyway.');
+if (!renderer) say('no 3d here. the stairs are imaginary anyway. the doors still work.');
 requestAnimationFrame(frame);
 window.__escherReady = true;
 </script>
