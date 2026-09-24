@@ -159,9 +159,13 @@
   function sleep() {
     asleep = true;
     say("shh. they're asleep.");
+    // one of them stays up. it doesn't trust you.
+    const sentry = eyes[Math.floor(Math.random() * eyes.length)];
     for (const e of eyes) {
+      if (e === sentry) continue;
       e.sleepTimer = setTimeout(() => e.el.classList.add('asleep'), Math.random() * 2500);
     }
+    setTimeout(() => { if (asleep) say("all asleep. except one. it doesn't trust you.", 4000); }, 4000);
   }
 
   function wake() {

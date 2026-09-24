@@ -376,6 +376,25 @@
     $('fact-btn').textContent = f === 0 ? 'another fact' : f < FACTS.length - 2 ? 'another fact' : 'start over';
     f = (f + 1) % FACTS.length;
   });
+
+  // the stamp card, from rooms.js (which loads after this script)
+  addEventListener('DOMContentLoaded', () => {
+    const rooms = (window.CIZOLE_ROOMS || []).filter(r => !r.defunct && r.slug !== 'about');
+    const seen = rooms.filter(r => (window.CIZOLE_VISITED || []).includes(r.slug)).length;
+    if (!rooms.length) return;
+    const row = document.createElement('div');
+    row.className = 'status-row';
+    const dot = document.createElement('i');
+    dot.className = 'dot ' + (seen === rooms.length ? 'ok' : seen ? 'warn' : 'bad');
+    const what = document.createElement('span');
+    what.className = 'what';
+    what.textContent = 'you, rooms visited';
+    const state = document.createElement('span');
+    state.className = 'state';
+    state.textContent = seen === rooms.length ? `all ${rooms.length}. there is no prize.` : `${seen} of ${rooms.length}`;
+    row.append(dot, what, state);
+    $('checked').insertAdjacentElement('beforebegin', row);
+  });
 })();
 </script>
 <script src="../assets/rooms.js"></script>

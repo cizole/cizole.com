@@ -715,7 +715,13 @@
     void plant.offsetWidth;
     plant.classList.add('talking');
     S.plantTalks++;
-    if (S.plantTalks === 1) return "\"oh. hi. i'm the plant. i know things. poke me if you get stuck.\"";
+    if (S.plantTalks === 1) {
+      let escapes = 0;
+      try { escapes = parseInt(localStorage.getItem('cizole.escape.count'), 10) || 0; } catch (err) { /* storage off */ }
+      if (escapes === 1) return "\"oh. you again. you got out last time. the door is locked again. it does that.\"";
+      if (escapes >= 2) return `"escape number ${escapes + 1}. at this point you live here. poke me if you get stuck. you won't."`;
+      return "\"oh. hi. i'm the plant. i know things. poke me if you get stuck.\"";
+    }
     let hint;
     if (!S.rugMoved) hint = "i've seen things under that rug.";
     else if (!S.drawerOpen) hint = 'that key belongs to something with a keyhole. desks love keys.';
@@ -785,6 +791,7 @@
 
   function escape() {
     S.escaped = true;
+    try { localStorage.setItem('cizole.escape.count', String((parseInt(localStorage.getItem('cizole.escape.count'), 10) || 0) + 1)); } catch (err) { /* storage off */ }
     S.uvOn = false;
     sync();
     stage.classList.add('door-open');
