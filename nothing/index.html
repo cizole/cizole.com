@@ -1,0 +1,668 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>nothing · cizole</title>
+<link rel="icon" href="../favicon.svg?v=2" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/site.css">
+<!--
+  hello. you're reading the source. that's one of the forty.
+  add ?source to the address to claim it.
+  the other thirty-nine are in the page. so is nothing.
+-->
+<style>
+  html, body { height: 100%; overflow: hidden; }
+  .stage {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    touch-action: none;
+  }
+  .word {
+    margin: 0;
+    color: var(--fg);
+    font-size: clamp(22px, 3vw, 30px);
+    cursor: default;
+    user-select: text;
+    -webkit-user-drag: none;
+    will-change: transform;
+    transition: opacity 0.4s;
+  }
+  .word.dragging { cursor: grabbing; user-select: none; }
+  .word.home { transition: transform 0.6s cubic-bezier(0.3, 1.4, 0.5, 1), opacity 0.4s; }
+  .word.gone { opacity: 0; }
+
+  /* what the page says, briefly, when something happens */
+  .say {
+    position: fixed;
+    z-index: 5;
+    max-width: min(340px, 80vw);
+    margin: 0;
+    color: var(--dim);
+    font-size: 13px;
+    line-height: 1.45;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.35s;
+  }
+  .say.on { opacity: 1; }
+  .letter {
+    position: fixed;
+    z-index: 4;
+    color: var(--dim);
+    font-size: 22px;
+    pointer-events: none;
+    animation: sink 1.3s ease-in forwards;
+  }
+  @keyframes sink { to { transform: translateY(46px); opacity: 0; } }
+
+  .hint {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: calc(50% + 64px);
+    margin: 0;
+    color: #4a463d;
+    font-size: 12px;
+    text-align: center;
+    pointer-events: none;
+  }
+  .hint[hidden] { display: none; }
+
+  .tally { position: fixed; right: 16px; bottom: 14px; z-index: 6; color: #57534a; font-size: 12px; }
+  .tally b { color: var(--dim); font-weight: 400; }
+  .tally[hidden] { display: none; }
+  .found {
+    position: fixed;
+    right: 16px;
+    bottom: 40px;
+    z-index: 6;
+    width: min(300px, calc(100vw - 32px));
+    max-height: 60vh;
+    overflow: auto;
+    padding: 12px 14px;
+    border: 1px solid var(--faint);
+    border-radius: 8px;
+    background: rgba(14, 13, 11, 0.96);
+    color: var(--dim);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .found[hidden] { display: none; }
+  .found p { margin: 0; }
+  .found-title { color: var(--fg); }
+  .found ol { margin: 6px 0 10px; padding-left: 24px; }
+  .found-end { color: var(--acid); }
+
+  .menu {
+    position: fixed;
+    z-index: 20;
+    padding: 4px;
+    border: 1px solid #34312b;
+    border-radius: 6px;
+    background: rgba(14, 13, 11, 0.97);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  }
+  .menu[hidden] { display: none; }
+  .menu button {
+    display: block;
+    min-width: 140px;
+    padding: 6px 12px;
+    border: 0;
+    border-radius: 4px;
+    background: none;
+    color: var(--fg);
+    font: 13px var(--font);
+    text-align: left;
+    cursor: pointer;
+  }
+  .menu button:hover { background: #1d1c19; color: var(--acid); }
+
+  /* a very small way out */
+  .pin { position: fixed; left: 71%; top: 83%; width: 4px; height: 4px; background: transparent; cursor: pointer; }
+  /* a button you can't see. it's in the tab order. */
+  .ghost {
+    position: fixed;
+    left: 38%;
+    top: 61%;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    overflow: hidden;
+    background: none;
+    color: transparent;
+    font-size: 1px;
+    opacity: 0;
+  }
+
+  .print-only { display: none; }
+  @media print {
+    body { background: #fff; }
+    body > * { display: none !important; }
+    .print-only { display: block !important; margin: 40vh 0 0; color: #000; font: 16px monospace; text-align: center; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .letter { animation: fade 1s forwards; }
+    @keyframes fade { to { opacity: 0; } }
+    .word.home { transition: opacity 0.4s; }
+  }
+</style>
+</head>
+<body>
+<a class="lobby-link" href="../">&larr; lobby</a>
+<button class="ghost" id="ghost" type="button">a button. it does nothing.</button>
+<main class="stage" id="stage">
+  <p class="word" id="word" draggable="false"><span id="text">nothing</span><span id="period">.</span></p>
+</main>
+<p class="hint" id="hint" hidden>try touching it.</p>
+<a class="pin" id="pin" href="../" tabindex="-1" aria-hidden="true"></a>
+<div class="menu" id="menu" hidden><button type="button" id="menu-item">nothing</button></div>
+<aside class="tally" id="tally" hidden>things found: <b id="count">0</b> of 40</aside>
+<section class="found" id="found" hidden>
+  <p class="found-title">what you found</p>
+  <ol id="found-list"></ol>
+  <p class="found-end">that's everything. it was nothing. thank you for checking.</p>
+</section>
+<p class="print-only">you printed nothing. it's on paper now.</p>
+
+<script>
+(() => {
+  const TOTAL = 40;
+  const $ = id => document.getElementById(id);
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const stage = $('stage');
+  const word = $('word');
+  const period = $('period');
+  const hint = $('hint');
+  const tally = $('tally');
+  const countEl = $('count');
+  const menu = $('menu');
+  const menuItem = $('menu-item');
+  const foundPanel = $('found');
+  const foundList = $('found-list');
+
+  // the forty. `name` is for the list at the end, `line` is what the page says.
+  const SECRETS = {
+    period: { name: 'the period', line: "the period. the end of nothing. there's more nothing after it." },
+    double: { name: 'the double click', line: "twice. still nothing. it doesn't add up." },
+    center: { name: 'the exact middle', line: "the exact middle of nothing. it's here. you're on it." },
+    corners: { name: 'all four corners', line: 'all four corners. nothing is a rectangle. now you know.' },
+    ten: { name: 'the same spot, ten times', line: "ten times. the same spot. nothing happened ten times. that's consistency." },
+    menu: { name: 'the menu with one thing in it', line: 'nothing. as requested.' },
+    select: { name: 'selecting it', line: "you selected nothing. it's yours now. it's not much." },
+    drag: { name: 'moving it', line: 'you moved nothing. it moved back. it lives there.' },
+    wheel: { name: 'scrolling past the end', line: 'there is no more. you scrolled anyway.' },
+    alphabet: { name: 'the whole alphabet', line: 'the whole alphabet. all 26 letters of nothing.' },
+    'word-nothing': { name: 'typing nothing', line: 'you typed it. it was already here.' },
+    'word-something': { name: 'typing something', line: 'something. no. we checked.' },
+    space: { name: 'the space bar', line: 'a space. the most nothing key.' },
+    hold: { name: 'holding a key', line: "you held it. it didn't do anything, for longer." },
+    escape: { name: 'escape', line: "there's nothing to escape from. you're already out." },
+    resize: { name: 'resizing', line: "you resized nothing. it fits any window. it doesn't care." },
+    narrow: { name: 'the narrow window', line: "it's tight in here. nothing minds. nothing is very small." },
+    fullscreen: { name: 'fullscreen', line: "fullscreen nothing. it's bigger now. it's the same." },
+    zoom: { name: 'zooming', line: 'you zoomed. nothing got bigger. nothing got smaller.' },
+    return: { name: 'leaving and coming back', line: "you left. nothing waited. it's good at that." },
+    still: { name: 'holding still for a minute', line: 'a minute without moving. nothing did the same. it won.' },
+    five: { name: 'five minutes', line: "five minutes. of nothing. that's a record. it isn't. nobody keeps records here." },
+    circle: { name: 'the circle', line: "a circle. around nothing. that's the shape it comes in." },
+    shake: { name: 'the shaking', line: "shaking doesn't help. it's not stuck. it's nothing." },
+    hover: { name: 'staring at the word', line: "you've been looking at the word for a while. it's just the one word." },
+    edge: { name: 'the edge', line: "the edge of nothing. it goes on a bit past here. don't." },
+    tab: { name: 'the invisible button', line: "you found the thing you can't see. it's a button. it does nothing." },
+    print: { name: 'printing it', line: "you printed nothing. it's on paper now." },
+    console: { name: 'nothing()', line: 'nothing() returned undefined. which is nothing. so it works.' },
+    hour: { name: 'the top of the hour', line: "it's exactly the hour. nothing is punctual." },
+    newyear: { name: 'the turn of the year', line: "the year is turning over. nothing carries over. that's the deal." },
+    light: { name: 'light mode', line: "it's brighter where you are. still nothing." },
+    longpress: { name: 'the long press', line: "you held it. it's still nothing. warmer, though." },
+    pinch: { name: 'the pinch', line: "you pinched nothing. it's the same size at every size." },
+    back: { name: 'the back button', line: "you can't leave nothing that easily. once more and it'll let you." },
+    hash: { name: 'the hash', line: 'a hash. nothing by that name.' },
+    later: { name: 'coming back another day', line: "you came back. on a different day. nothing changed. that's the point." },
+    link: { name: 'the very small way out', line: "you found the way out. it's very small. it works." },
+    arrows: { name: 'the arrow keys', line: "you've nudged nothing 25 pixels. it's still in the middle. of somewhere." },
+    source: { name: 'reading the source', line: "you read the source. that's the last one. or the first. depends when you got here." },
+  };
+
+  // ---------- memory ----------
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch (err) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (err) { /* private mode: nothing is remembered. fitting. */ } },
+    list(k) { try { const v = JSON.parse(this.get(k) || '[]'); return Array.isArray(v) ? v : []; } catch (err) { return []; } },
+  };
+  let found = store.list('cizole.nothing.found').filter(id => SECRETS[id]);
+  const corners = new Set(store.list('cizole.nothing.corners'));
+  const letters = new Set(store.list('cizole.nothing.letters'));
+
+  // ---------- saying things ----------
+  const central = [];
+  const lastSaid = {};
+  function say(line, x, y, key) {
+    const now = Date.now();
+    if (key && now - (lastSaid[key] || 0) < 4000) return;
+    if (key) lastSaid[key] = now;
+    const el = document.createElement('p');
+    el.className = 'say';
+    el.textContent = line;
+    document.body.appendChild(el);
+    const r = el.getBoundingClientRect();
+    if (x == null || y == null) {
+      // below the word, stacking if several arrive together
+      el.style.left = Math.max(8, (innerWidth - r.width) / 2) + 'px';
+      el.style.top = (innerHeight / 2 + 34 + central.length * 22) + 'px';
+      el.style.textAlign = 'center';
+      central.push(el);
+    } else {
+      el.style.left = Math.min(Math.max(8, x + 14), innerWidth - r.width - 8) + 'px';
+      el.style.top = Math.min(Math.max(8, y + 12), innerHeight - r.height - 8) + 'px';
+    }
+    requestAnimationFrame(() => el.classList.add('on'));
+    setTimeout(() => {
+      el.classList.remove('on');
+      setTimeout(() => {
+        el.remove();
+        const i = central.indexOf(el);
+        if (i >= 0) central.splice(i, 1);
+      }, 400);
+    }, 2600 + Math.min(2400, line.length * 25));
+  }
+
+  // ---------- finding things ----------
+  function find(id, x, y, line) {
+    const s = SECRETS[id];
+    if (!s) return;
+    const isNew = !found.includes(id);
+    if (isNew) {
+      found.push(id);
+      store.set('cizole.nothing.found', JSON.stringify(found));
+      render();
+    }
+    say(line || s.line, x, y, id);
+  }
+  function render() {
+    countEl.textContent = found.length;
+    tally.hidden = found.length === 0;
+    if (found.length) hint.hidden = true;
+    if (found.length >= TOTAL) finale();
+  }
+  function finale() {
+    foundList.textContent = '';
+    for (const id of found) {
+      const li = document.createElement('li');
+      li.textContent = SECRETS[id].name;
+      foundList.appendChild(li);
+    }
+    foundPanel.hidden = false;
+    tally.textContent = "that's everything.";
+  }
+  render();
+  setTimeout(() => { if (!found.length) hint.hidden = false; }, 180000);
+
+  // ---------- the word: position ----------
+  let dx = 0, dy = 0; // dragged offset, springs back
+  let nx = 0, ny = 0; // arrow-key nudges, stay
+  function place() { word.style.transform = `translate(${dx + nx}px, ${dy + ny}px)`; }
+
+  // ---------- attention ----------
+  let stillTimer = 0;
+  function activity() {
+    clearTimeout(stillTimer);
+    if (!found.includes('still')) stillTimer = setTimeout(() => find('still'), 60000);
+  }
+  activity();
+  setTimeout(() => find('five'), 300000);
+
+  let lastPointerType = 'mouse';
+  addEventListener('pointerdown', e => { lastPointerType = e.pointerType || 'mouse'; activity(); }, true);
+
+  // ---------- clicking ----------
+  let clickPt = null, clickN = 0, justDragged = false;
+  const CORNER_LINES = {
+    tl: 'the top-left corner. next to the exit. of course.',
+    tr: 'top right. nothing up here either.',
+    bl: "bottom left. it's the same down here.",
+    br: "bottom right. the last corner. or the first. they're corners.",
+  };
+  function cornerHit(c, x, y) {
+    corners.add(c);
+    store.set('cizole.nothing.corners', JSON.stringify([...corners]));
+    if (corners.size >= 4) find('corners', x, y);
+    else say(CORNER_LINES[c] + (corners.size === 3 ? ' one to go.' : ''), x, y, 'corner-' + c);
+  }
+  stage.addEventListener('click', e => {
+    if (justDragged) { justDragged = false; return; }
+    const x = e.clientX, y = e.clientY;
+    if (clickPt && Math.hypot(x - clickPt.x, y - clickPt.y) < 8) clickN++;
+    else { clickPt = { x, y }; clickN = 1; }
+    if (clickN === 10) find('ten', x, y);
+
+    const ddx = x - innerWidth / 2, ddy = y - innerHeight / 2;
+    if (Math.abs(ddx) <= 7 && Math.abs(ddy) <= 7) find('center', x, y);
+    else if (Math.hypot(ddx, ddy) < 60 && !found.includes('center')) {
+      const dir = Math.abs(ddx) > Math.abs(ddy) ? (ddx > 0 ? 'left' : 'right') : (ddy > 0 ? 'up' : 'down');
+      say(`close. the middle is a little to the ${dir}.`, x, y, 'near');
+    }
+
+    const M = 44;
+    const corner = x < M && y < M ? 'tl' : x > innerWidth - M && y < M ? 'tr'
+      : x < M && y > innerHeight - M ? 'bl' : x > innerWidth - M && y > innerHeight - M ? 'br' : null;
+    if (corner) cornerHit(corner, x, y);
+  });
+  period.addEventListener('click', e => find('period', e.clientX, e.clientY));
+  word.addEventListener('dblclick', e => {
+    if (lastPointerType === 'touch') return; // touch double-taps are counted below
+    find('double', e.clientX, e.clientY);
+  });
+
+  // ---------- the menu with one thing in it ----------
+  stage.addEventListener('contextmenu', e => {
+    e.preventDefault();
+    if (lastPointerType === 'touch') return; // a long press has its own secret
+    menu.style.left = Math.min(e.clientX, innerWidth - 160) + 'px';
+    menu.style.top = Math.min(e.clientY, innerHeight - 44) + 'px';
+    menu.hidden = false;
+  });
+  menuItem.addEventListener('click', e => {
+    menu.hidden = true;
+    word.classList.add('gone');
+    setTimeout(() => word.classList.remove('gone'), 1600);
+    find('menu', e.clientX, e.clientY);
+  });
+  addEventListener('pointerdown', e => {
+    if (!menu.hidden && !menu.contains(e.target)) menu.hidden = true;
+  }, true);
+
+  // ---------- touching the word: drag, double tap, long press ----------
+  let drag = null, lastTap = 0, longTimer = 0;
+  word.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    drag = { id: e.pointerId, sx: e.clientX - dx, sy: e.clientY - dy, moved: false };
+    if (e.pointerType === 'touch') {
+      const now = Date.now();
+      if (now - lastTap < 350) { find('double', e.clientX, e.clientY); lastTap = 0; } else lastTap = now;
+      clearTimeout(longTimer);
+      longTimer = setTimeout(() => { drag = null; find('longpress', e.clientX, e.clientY); }, 800);
+    }
+  });
+  addEventListener('pointermove', e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const mx = e.clientX - drag.sx, my = e.clientY - drag.sy;
+    if (!drag.moved) {
+      if (Math.hypot(mx - dx, my - dy) < 8) return;
+      drag.moved = true;
+      clearTimeout(longTimer);
+      try { getSelection().removeAllRanges(); } catch (err) { /* fine */ }
+      word.classList.add('dragging');
+      word.classList.remove('home');
+      try { word.setPointerCapture(e.pointerId); } catch (err) { /* synthetic pointer */ }
+    }
+    dx = mx;
+    dy = my;
+    place();
+  });
+  function endDrag(e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    clearTimeout(longTimer);
+    const moved = drag.moved;
+    drag = null;
+    if (!moved) return;
+    justDragged = true;
+    word.classList.remove('dragging');
+    word.classList.add('home');
+    find('drag', e.clientX, e.clientY);
+    dx = 0;
+    dy = 0;
+    place();
+  }
+  addEventListener('pointerup', endDrag);
+  addEventListener('pointercancel', endDrag);
+
+  // selecting it
+  let selHad = false;
+  document.addEventListener('selectionchange', () => {
+    const s = String(getSelection() || '').trim();
+    if (!s) { selHad = false; return; }
+    if (s.includes('nothing') && !selHad && !(drag && drag.moved)) { selHad = true; find('select'); }
+  });
+
+  // staring at it
+  let hoverTimer = 0;
+  word.addEventListener('pointerenter', e => {
+    if (e.pointerType === 'touch') return;
+    clearTimeout(hoverTimer);
+    hoverTimer = setTimeout(() => find('hover'), 10000);
+  });
+  word.addEventListener('pointerleave', () => clearTimeout(hoverTimer));
+
+  // ---------- the pointer, generally: edges, circles, shaking ----------
+  const pts = [];
+  let sectors = [];
+  function circleCheck(x, y) {
+    pts.push({ x, y });
+    if (pts.length > 48) pts.shift();
+    if (pts.length < 24) return;
+    let cx = 0, cy = 0;
+    for (const p of pts) { cx += p.x; cy += p.y; }
+    cx /= pts.length;
+    cy /= pts.length;
+    if (Math.hypot(x - cx, y - cy) < 20) return;
+    const s = Math.floor(((Math.atan2(y - cy, x - cx) + Math.PI) / (Math.PI * 2)) * 8) % 8;
+    if (sectors.length && sectors[sectors.length - 1] === s) return;
+    sectors.push(s);
+    if (sectors.length > 12) sectors.shift();
+    if (sectors.length < 9) return;
+    const tail = sectors.slice(-9);
+    let cw = true, ccw = true;
+    for (let i = 1; i < tail.length; i++) {
+      if ((tail[i - 1] + 1) % 8 !== tail[i]) cw = false;
+      if ((tail[i - 1] + 7) % 8 !== tail[i]) ccw = false;
+    }
+    if (cw || ccw) {
+      sectors = [];
+      pts.length = 0;
+      find('circle', x, y);
+    }
+  }
+  let lastX = null, lastDir = 0;
+  const flips = [];
+  function shakeCheck(x) {
+    const now = Date.now();
+    if (lastX !== null) {
+      const d = x - lastX;
+      if (Math.abs(d) > 10) {
+        const dir = Math.sign(d);
+        if (lastDir && dir !== lastDir) flips.push(now);
+        lastDir = dir;
+      }
+    }
+    lastX = x;
+    while (flips.length && now - flips[0] > 900) flips.shift();
+    if (flips.length >= 6) { flips.length = 0; find('shake', x, null); }
+  }
+  addEventListener('pointermove', e => {
+    if (e.pointerType === 'touch') return;
+    activity();
+    const x = e.clientX, y = e.clientY;
+    if (x <= 2 || y <= 2 || x >= innerWidth - 3 || y >= innerHeight - 3) find('edge', x, y);
+    circleCheck(x, y);
+    shakeCheck(x);
+  });
+
+  // scrolling where there is nothing to scroll
+  addEventListener('wheel', () => { activity(); find('wheel'); }, { passive: true });
+
+  // pinching (touch-action is none, so the browser lets us see it)
+  let pinchD = 0;
+  const dist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+  stage.addEventListener('touchstart', e => {
+    activity();
+    pinchD = e.touches.length === 2 ? dist(e.touches) : 0;
+  }, { passive: true });
+  stage.addEventListener('touchmove', e => {
+    if (e.touches.length === 2 && pinchD && Math.abs(dist(e.touches) - pinchD) > 40) {
+      pinchD = 0;
+      find('pinch');
+    }
+  }, { passive: true });
+
+  // ---------- the keyboard ----------
+  let buf = '';
+  let holdTimer = 0;
+  let nudges = 0;
+  function letterFx(ch) {
+    const el = document.createElement('span');
+    el.className = 'letter';
+    el.textContent = ch;
+    const r = word.getBoundingClientRect();
+    el.style.left = (r.left + Math.random() * r.width) + 'px';
+    el.style.top = (r.top + 4) + 'px';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1400);
+  }
+  function typed(ch) {
+    const c = ch.toLowerCase();
+    buf = (buf + c).slice(-12);
+    if (/^[a-z]$/.test(c)) {
+      letterFx(ch);
+      letters.add(c);
+      store.set('cizole.nothing.letters', JSON.stringify([...letters]));
+      if (letters.size >= 26) find('alphabet');
+    }
+    if (buf.endsWith('nothing')) find('word-nothing');
+    if (buf.endsWith('something')) find('word-something');
+  }
+  addEventListener('keydown', e => {
+    if (e.target && /^(input|textarea|select)$/i.test(e.target.tagName)) return;
+    activity();
+    if (e.key === 'Escape') {
+      if (!menu.hidden) { menu.hidden = true; return; }
+      find('escape');
+      return;
+    }
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (!e.repeat) {
+      clearTimeout(holdTimer);
+      holdTimer = setTimeout(() => find('hold'), 3000);
+    }
+    if (e.key === ' ') {
+      e.preventDefault();
+      if (!e.repeat) find('space');
+      return;
+    }
+    if (e.key.startsWith('Arrow')) {
+      e.preventDefault();
+      if (e.key === 'ArrowLeft') nx--;
+      if (e.key === 'ArrowRight') nx++;
+      if (e.key === 'ArrowUp') ny--;
+      if (e.key === 'ArrowDown') ny++;
+      place();
+      if (++nudges === 25) find('arrows');
+      return;
+    }
+    if (e.key.length === 1 && !e.repeat) typed(e.key);
+  });
+  addEventListener('keyup', () => clearTimeout(holdTimer));
+
+  // the button you can't see
+  const ghost = $('ghost');
+  ghost.addEventListener('focus', () => find('tab'));
+  ghost.addEventListener('click', () => say('it did nothing. as designed.'));
+
+  // the very small way out
+  $('pin').addEventListener('click', e => {
+    e.preventDefault();
+    find('link', e.clientX, e.clientY);
+    setTimeout(() => location.assign('../'), 1300);
+  });
+
+  // ---------- the window ----------
+  const loadW = innerWidth, loadH = innerHeight, loadAt = Date.now();
+  let dpr = devicePixelRatio || 1;
+  let resizeTimer = 0;
+  const isFull = () => !!document.fullscreenElement || (innerWidth === screen.width && innerHeight === screen.height);
+  addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      if (Math.abs((devicePixelRatio || 1) - dpr) > 0.01) {
+        dpr = devicePixelRatio || 1;
+        find('zoom');
+      } else if (Date.now() - loadAt > 1500 && (Math.abs(innerWidth - loadW) > 40 || Math.abs(innerHeight - loadH) > 110)) {
+        find('resize');
+      }
+      if (innerWidth < 360) find('narrow');
+      if (isFull()) find('fullscreen');
+    }, 350);
+  });
+  document.addEventListener('fullscreenchange', () => { if (document.fullscreenElement) find('fullscreen'); });
+
+  addEventListener('cizole:return', e => {
+    activity();
+    if ((e.detail && e.detail.awayMs) > 1500) find('return');
+  });
+  addEventListener('beforeprint', () => find('print'));
+  try {
+    matchMedia('(prefers-color-scheme: light)').addEventListener('change', e => { if (e.matches) find('light'); });
+  } catch (err) { /* older browsers: the theme is whatever it was */ }
+
+  const hashLine = () => {
+    const h = decodeURIComponent(location.hash.slice(1)).toLowerCase();
+    return h === 'something' ? "#something. that's not in here either." : `#${h}. nothing by that name.`;
+  };
+  addEventListener('hashchange', () => { if (location.hash.length > 1) find('hash', null, null, hashLine()); });
+
+  // the back button: the first press is refused, the second is allowed
+  let backUsed = false;
+  try { history.pushState({ nothing: true }, '', location.href); } catch (err) { /* fine */ }
+  addEventListener('popstate', () => {
+    if (backUsed) return;
+    backUsed = true;
+    find('back');
+  });
+
+  // the clock
+  let lastHour = -1;
+  setInterval(() => {
+    const d = new Date();
+    if (d.getMinutes() === 0 && d.getSeconds() < 25 && d.getHours() !== lastHour) {
+      lastHour = d.getHours();
+      find('hour');
+    }
+  }, 20000);
+
+  // the console
+  window.nothing = function nothing() {
+    find('console');
+    return undefined;
+  };
+  console.log('%cnothing', 'font: 700 28px monospace; color: #c8ff3d; background: #0e0d0b; padding: 6px 12px;');
+  console.log("this is the console for nothing. there's a function called nothing(). it does what you'd expect.");
+
+  // ---------- things that are true on arrival ----------
+  const onLoad = [];
+  const d = new Date();
+  if (d.getMinutes() === 0) onLoad.push(['hour']);
+  if ((d.getMonth() === 11 && d.getDate() === 31) || (d.getMonth() === 0 && d.getDate() === 1)) onLoad.push(['newyear']);
+  if (matchMedia('(prefers-color-scheme: light)').matches) onLoad.push(['light']);
+  const first = store.get('cizole.nothing.first');
+  const today = d.toDateString();
+  if (!first) store.set('cizole.nothing.first', today);
+  else if (first !== today) onLoad.push(['later']);
+  if (new URLSearchParams(location.search).has('source')) onLoad.push(['source']);
+  if (location.hash.length > 1) onLoad.push(['hash', hashLine()]);
+  if (innerWidth < 360) onLoad.push(['narrow']);
+  if (isFull()) onLoad.push(['fullscreen']);
+  onLoad.forEach(([id, line], i) => setTimeout(() => find(id, null, null, line), 900 + i * 1400));
+})();
+</script>
+<script src="../assets/rooms.js"></script>
+<script src="../assets/away.js"></script>
+</body>
+</html>
