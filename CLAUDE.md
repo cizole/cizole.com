@@ -33,7 +33,6 @@ Room ideas not built yet (numbers continue from the lobby):
 - links: leave while you still can
 - the light switch: turning the lights off makes something in the room move
 - a single checkbox whose label keeps changing after you check it
-- nothing: a page called "nothing" with an absurd amount of hidden interaction
 - uptime: "cizole.com: operational / cole: questionable / motivation: intermittent / cat interference: elevated"
 
 ## How the repo works
