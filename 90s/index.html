@@ -11,231 +11,602 @@
 <link rel="stylesheet" href="../assets/site.css">
 <style>
   [hidden] { display: none !important; }
-  body { overflow-x: hidden; }
   .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-  .page { max-width: 1040px; margin: 0 auto; padding: 56px 16px 40px; }
-  .room {
-    position: relative;
-    overflow: hidden;
-    border-radius: 12px;
-    background: #1d1b24;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  .marker { font-family: "Permanent Marker", cursive; }
+  .page {
+    --w: max(300px, min(calc(100vw - 32px), calc((100dvh - 170px) * 1.6), 1150px));
+    padding: 56px 16px 24px;
   }
-  .obj { padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
-  .obj:focus-visible, .btn95:focus-visible { outline: 2px solid var(--acid); outline-offset: 2px; }
+  .stage-wrap { width: var(--w); margin: 0 auto; }
+  .stage {
+    position: relative;
+    width: var(--w);
+    height: calc(var(--w) / 1.6);
+    overflow: hidden;
+    border-radius: 10px;
+    background: #1b2233;
+    container-type: size;
+    user-select: none;
+  }
+  .obj {
+    position: absolute;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
+  .obj:focus-visible { outline: 2px solid var(--acid); outline-offset: 2px; }
 
-  /* ---------- wall ---------- */
+  /* ---------- the bedroom ---------- */
   .wall {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    gap: 18px 24px;
-    padding: 20px 24px 10px;
-    min-height: 160px;
+    position: absolute;
+    inset: 0 0 34% 0;
     background:
-      repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.018) 0 2px, transparent 2px 26px),
-      linear-gradient(#25222f, #1d1b24);
+      radial-gradient(ellipse at 76% 42%, rgba(110, 160, 255, 0.17), transparent 38%),
+      radial-gradient(ellipse at 97% 34%, rgba(255, 190, 110, 0.2), transparent 26%),
+      radial-gradient(circle at 30% 40%, rgba(255, 255, 255, 0.03) 0 2cqw, transparent 2.3cqw) 0 0 / 7cqw 6cqw,
+      radial-gradient(circle at 60% 70%, rgba(0, 0, 0, 0.06) 0 2.6cqw, transparent 2.9cqw) 0 0 / 9cqw 7cqw,
+      linear-gradient(#2d3c59, #22304a);
   }
-  .calendar {
-    flex: none;
-    width: 172px;
-    padding-bottom: 8px;
-    border-radius: 2px;
-    background: #f3efe4;
-    color: #222;
-    text-align: left;
-    transform: rotate(-1.5deg);
-    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.45);
-    transition: transform 0.2s;
-  }
-  .is-y2k .calendar { transform: rotate(5deg); }
-  .cal-pic, .cal-title, .cal-note { display: block; }
-  .cal-pic {
-    position: relative;
-    height: 52px;
-    overflow: hidden;
-    background: linear-gradient(#6fb7dc, #cdeefc);
-  }
-  .cal-pic::before, .cal-pic::after {
+  .wall::before {
     content: "";
     position: absolute;
-    bottom: 0;
-    background: #fff;
-    clip-path: polygon(50% 0, 100% 100%, 0 100%);
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 1cqw;
+    background: linear-gradient(#141b2b, transparent);
   }
-  .cal-pic::before { left: 10px; width: 90px; height: 42px; background: linear-gradient(#fff 35%, #8fa3b8 36%); }
-  .cal-pic::after { left: 70px; width: 110px; height: 34px; background: linear-gradient(#fff 30%, #72879c 31%); }
-  .cal-title { margin: 6px 0 4px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-align: center; }
-  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px 0; padding: 0 8px; font-size: 9px; text-align: center; }
-  .cal-grid .h { font-weight: 700; color: #8a2a22; }
-  .cal-grid .mark { position: relative; color: #c0271d; font-weight: 700; }
-  .cal-grid .mark::after {
-    content: "";
+  .carpet {
     position: absolute;
-    inset: -2px 0;
-    border: 1.5px solid #d22;
-    border-radius: 50%;
+    inset: 66% 0 0 0;
+    background:
+      radial-gradient(circle, rgba(255, 90, 170, 0.3) 0.1cqw, transparent 0.16cqw) 0 0 / 1.9cqw 1.3cqw,
+      radial-gradient(circle, rgba(80, 220, 210, 0.26) 0.1cqw, transparent 0.16cqw) 0.9cqw 0.6cqw / 2.3cqw 1.5cqw,
+      radial-gradient(circle, rgba(255, 220, 90, 0.22) 0.08cqw, transparent 0.14cqw) 0.4cqw 1cqw / 1.7cqw 1.9cqw,
+      linear-gradient(#383d61, #2b2f4d);
   }
-  .cal-note { min-height: 1.2em; padding: 3px 10px 0; color: #d22; font-family: "Permanent Marker", cursive; font-size: 12px; text-align: right; }
+  .baseboard { position: absolute; left: 0; right: 0; top: 65%; height: 1.3cqw; background: linear-gradient(#b9b3a4, #8f897c); opacity: 0.55; }
+  .vignette {
+    position: absolute;
+    inset: 0;
+    z-index: 44;
+    background: radial-gradient(ellipse at 55% 45%, transparent 55%, rgba(0, 0, 12, 0.45));
+    pointer-events: none;
+  }
+  .flicker {
+    position: absolute;
+    inset: 0;
+    z-index: 45;
+    background: rgba(0, 0, 10, 0.82);
+    opacity: 0;
+    pointer-events: none;
+  }
+  /* two short flashes of light per 1.3s: well under three per second */
+  .is-y2k .flicker { animation: flicker 1.3s steps(1) infinite; }
+  @keyframes flicker {
+    0% { opacity: 0.8; }
+    20% { opacity: 0; }
+    30% { opacity: 0.8; }
+    62% { opacity: 0; }
+    70% { opacity: 0.65; }
+  }
+  .flash { position: absolute; inset: 0; z-index: 46; background: #fff; opacity: 0; pointer-events: none; }
+  .flash.go { animation: flash 0.7s ease-out; }
+  @keyframes flash { from { opacity: 0.9; } to { opacity: 0; } }
 
-  .poster {
-    position: relative;
-    flex: none;
-    width: 118px;
-    height: 150px;
+  /* holiday lights */
+  .lights { left: 1%; top: 0.6%; width: 58%; height: 9%; }
+  .lights svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .bulb { animation: twinkle 2.6s ease-in-out infinite alternate; }
+  .bulb.dead { animation: none; opacity: 0.22; }
+  @keyframes twinkle { from { opacity: 0.55; } to { opacity: 1; } }
+  .is-y2k .bulb { animation: none; opacity: 0.12; }
+
+  /* window */
+  .window {
+    left: 3%;
+    top: 11%;
+    width: 18%;
+    height: 38%;
     overflow: hidden;
-    border: 4px solid #f1f1f1;
+    border: 0.9cqw solid #d8d2c2;
+    border-radius: 0.3cqw;
+    background: linear-gradient(#0a1430, #1c2c52 70%, #2a3a60);
+    box-shadow: inset 0 0 0 0.25cqw #b8b1a0, 0 0.6cqw 1.2cqw rgba(0, 0, 0, 0.4);
+  }
+  .window > span, .window > canvas { position: absolute; }
+  .stars {
+    inset: 0;
+    background:
+      radial-gradient(circle, #fff 0 0.08cqw, transparent 0.12cqw) 0 0 / 3.1cqw 2.7cqw,
+      radial-gradient(circle, rgba(255, 255, 255, 0.7) 0 0.06cqw, transparent 0.1cqw) 1.4cqw 1.1cqw / 4.3cqw 3.3cqw;
+    opacity: 0.7;
+  }
+  .ground { left: 0; right: 0; bottom: 0; height: 13%; background: linear-gradient(#e8eef8, #b8c4d8); }
+  .house { bottom: 11%; background: #0b1120; clip-path: polygon(0 35%, 50% 0, 100% 35%, 100% 100%, 0 100%); }
+  .house.a { left: -4%; width: 42%; height: 34%; }
+  .house.b { left: 37%; width: 32%; height: 26%; }
+  .house.c { left: 66%; width: 44%; height: 38%; }
+  .hwin { position: absolute; width: 1cqw; height: 0.9cqw; background: #ffd76a; box-shadow: 0 0 0.8cqw rgba(255, 215, 106, 0.8); }
+  .is-y2k .hwin { background: #1c2030; box-shadow: none; }
+  .snow { left: 0; right: 0; top: -12cqw; bottom: 0; background: radial-gradient(circle, rgba(255, 255, 255, 0.95) 0 0.14cqw, transparent 0.19cqw) 0 0 / 2.2cqw 2.2cqw; animation: snow-a 1.6s linear infinite; }
+  .snow.b { background-size: 3.4cqw 3.1cqw; background-position: 1.1cqw 0.7cqw; opacity: 0.7; animation: snow-b 3.2s linear infinite; }
+  @keyframes snow-a { to { transform: translateY(2.2cqw); } }
+  @keyframes snow-b { to { transform: translateY(3.1cqw); } }
+  .muntin.v { left: 50%; top: 0; bottom: 0; width: 0.6cqw; margin-left: -0.3cqw; background: #d8d2c2; }
+  .muntin.h { left: 0; right: 0; top: 48%; height: 0.6cqw; background: #d8d2c2; }
+  .curtain { top: -1cqw; bottom: -1cqw; width: 20%; background: repeating-linear-gradient(90deg, #6b1f3a 0 0.7cqw, #7d2745 0.7cqw 1.4cqw); box-shadow: inset -0.4cqw 0 0.6cqw rgba(0, 0, 0, 0.35); }
+  .curtain.l { left: -0.4cqw; }
+  .curtain.r { right: -0.4cqw; }
+  .window canvas { inset: 0; width: 100%; height: 100%; pointer-events: none; }
+
+  /* poster */
+  .poster {
+    left: 23.5%;
+    top: 10%;
+    width: 8.5%;
+    height: 30%;
+    overflow: hidden;
+    border: 0.35cqw solid #f1f1f1;
     background: linear-gradient(#ff5fa2, #ffb347 55%, #2b2d6e 56%, #16163a);
     transform: rotate(2deg);
-    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 0.5cqw 1cqw rgba(0, 0, 0, 0.45);
   }
   .poster::before {
     content: "";
     position: absolute;
-    left: -10px;
-    right: -10px;
+    left: -10%;
+    right: -10%;
     bottom: 0;
-    height: 70px;
+    height: 45%;
     background: #f4f8ff;
     clip-path: polygon(0 100%, 30% 25%, 48% 55%, 70% 0, 100% 100%);
   }
-  .poster .board {
-    position: absolute;
-    left: 42px;
-    top: 58px;
-    width: 34px;
-    height: 7px;
-    border-radius: 4px;
-    background: #111;
-    transform: rotate(-24deg);
-  }
-  .poster .rider {
-    position: absolute;
-    left: 54px;
-    top: 42px;
-    width: 8px;
-    height: 16px;
-    border-radius: 4px 4px 2px 2px;
-    background: #111;
-    transform: rotate(-24deg);
-  }
-  .poster .word {
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 8px;
-    color: #fff23b;
-    font-family: "Permanent Marker", cursive;
-    font-size: 22px;
-    font-style: italic;
-    text-align: center;
-    text-shadow: 2px 2px 0 #b3006b;
-  }
+  .poster .word { position: absolute; left: 0; right: 0; top: 0.5cqw; color: #fff23b; font-family: "Permanent Marker", cursive; font-size: 1.7cqw; font-style: italic; text-align: center; text-shadow: 0.15cqw 0.15cqw 0 #b3006b; }
+  .poster .rider { position: absolute; left: 46%; top: 31%; width: 0.7cqw; height: 1.4cqw; border-radius: 0.4cqw 0.4cqw 0.2cqw 0.2cqw; background: #111; transform: rotate(-24deg); }
+  .poster .board { position: absolute; left: 32%; top: 42%; width: 3cqw; height: 0.6cqw; border-radius: 0.4cqw; background: #111; transform: rotate(-24deg); }
 
-  .sticky {
-    flex: none;
-    width: 128px;
-    padding: 10px 10px 12px;
+  /* corkboard */
+  .cork {
+    position: absolute;
+    left: 34%;
+    top: 11%;
+    width: 15%;
+    height: 25%;
+    border: 0.6cqw solid #7a5230;
+    border-radius: 0.3cqw;
+    background:
+      radial-gradient(circle, rgba(90, 50, 20, 0.35) 0.1cqw, transparent 0.16cqw) 0 0 / 0.7cqw 0.6cqw,
+      radial-gradient(circle, rgba(255, 230, 190, 0.2) 0.08cqw, transparent 0.14cqw) 0.3cqw 0.3cqw / 0.9cqw 0.8cqw,
+      #b98a55;
+    box-shadow: 0 0.5cqw 1cqw rgba(0, 0, 0, 0.4);
+  }
+  .cork-hit { inset: 0; }
+  .ticket {
+    position: absolute;
+    left: 6%;
+    top: 9%;
+    width: 38%;
+    padding: 0.3cqw;
+    background: repeating-linear-gradient(90deg, #f4efe0 0 0.4cqw, #ece4cf 0.4cqw 0.8cqw);
+    color: #2a4a8a;
+    font: 700 0.55cqw/1.2 var(--font);
+    text-align: center;
+    transform: rotate(-6deg);
+    box-shadow: 0 0.15cqw 0.3cqw rgba(0, 0, 0, 0.3);
+    pointer-events: none;
+  }
+  .cork-note {
+    position: absolute;
+    right: 7%;
+    top: 7%;
+    width: 30%;
+    padding: 0.3cqw;
     background: #fff27a;
     color: #222;
-    font-family: "Permanent Marker", cursive;
-    font-size: 13px;
-    line-height: 1.3;
+    font-size: 0.72cqw;
+    line-height: 1.2;
+    transform: rotate(5deg);
+    box-shadow: 0 0.15cqw 0.3cqw rgba(0, 0, 0, 0.3);
+    pointer-events: none;
+  }
+  .pin { position: absolute; top: -0.25cqw; left: 45%; width: 0.6cqw; height: 0.6cqw; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #ff8a8a, #c0271d); box-shadow: 0 0.15cqw 0.2cqw rgba(0, 0, 0, 0.4); }
+  .photos { position: absolute; left: 4%; right: 4%; bottom: 5%; height: 52%; pointer-events: none; }
+  .photo-hint { position: absolute; left: 6%; bottom: 18%; color: #3a2410; font-size: 0.66cqw; opacity: 0.85; }
+  .print {
+    position: absolute;
+    width: 4.2cqw;
+    padding: 0.2cqw 0.2cqw 0.45cqw;
+    border: 0;
+    background: #f4f1ea;
+    box-shadow: 0 0.2cqw 0.35cqw rgba(0, 0, 0, 0.35);
+    cursor: pointer;
+    pointer-events: auto;
+  }
+  .print img { display: block; width: 100%; height: auto; }
+  .print:focus-visible { outline: 2px solid var(--acid); outline-offset: 2px; }
+
+  /* calendar */
+  .calendar {
+    left: 51%;
+    top: 12%;
+    width: 7cqw;
+    padding-bottom: 0.4cqw;
+    border-radius: 0.15cqw;
+    background: #f3efe4;
+    color: #222;
+    text-align: left;
+    transform: rotate(-1.5deg);
+    box-shadow: 0 0.5cqw 1cqw rgba(0, 0, 0, 0.45);
+    transition: transform 0.2s;
+  }
+  .is-y2k .calendar { transform: rotate(7deg); }
+  .cal-pic, .cal-title, .cal-note { display: block; }
+  .cal-pic { position: relative; height: 2.6cqw; overflow: hidden; background: linear-gradient(#6fb7dc, #cdeefc); }
+  .cal-pic::before, .cal-pic::after { content: ""; position: absolute; bottom: 0; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+  .cal-pic::before { left: 0.5cqw; width: 4.4cqw; height: 2.1cqw; background: linear-gradient(#fff 35%, #8fa3b8 36%); }
+  .cal-pic::after { left: 3.4cqw; width: 5cqw; height: 1.7cqw; background: linear-gradient(#fff 30%, #72879c 31%); }
+  .cal-title { margin: 0.3cqw 0 0.2cqw; font-size: 0.6cqw; font-weight: 700; letter-spacing: 0.06em; text-align: center; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.05cqw 0; padding: 0 0.35cqw; font-size: 0.48cqw; text-align: center; }
+  .cal-grid .h { font-weight: 700; color: #8a2a22; }
+  .cal-grid .mark { position: relative; color: #c0271d; font-weight: 700; }
+  .cal-grid .mark::after { content: ""; position: absolute; inset: -0.1cqw 0; border: 0.08cqw solid #d22; border-radius: 50%; }
+  .cal-note { min-height: 1em; padding: 0.15cqw 0.45cqw 0; color: #d22; font-family: "Permanent Marker", cursive; font-size: 0.7cqw; text-align: right; }
+
+  .sticky {
+    position: absolute;
+    left: 50.3%;
+    top: 37%;
+    z-index: 3;
+    width: 8.5cqw;
+    padding: 0.5cqw 0.6cqw;
+    background: #fff27a;
+    color: #222;
+    font-size: 0.9cqw;
+    line-height: 1.25;
     transform: rotate(3deg);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 0.4cqw 0.8cqw rgba(0, 0, 0, 0.45);
     animation: stick 0.45s cubic-bezier(0.3, 1.5, 0.5, 1);
   }
-  @keyframes stick { from { transform: translateY(-30px) rotate(-8deg); opacity: 0; } }
+  @keyframes stick { from { transform: translateY(-3cqw) rotate(-8deg); opacity: 0; } }
 
+  /* red led wall clock */
   .clock {
-    flex: none;
-    margin-left: auto;
-    padding: 8px 14px 6px;
-    border-radius: 6px;
+    left: 71%;
+    top: 5.5%;
+    padding: 0.45cqw 0.9cqw 0.3cqw;
+    border-radius: 0.4cqw;
     background: #111013;
     color: #ff3b2f;
     font-family: "VT323", monospace;
     line-height: 1;
     text-align: right;
-    text-shadow: 0 0 6px rgba(255, 59, 47, 0.7);
-    box-shadow: inset 0 0 0 2px #2a2830, 0 6px 14px rgba(0, 0, 0, 0.45);
+    text-shadow: 0 0 0.5cqw rgba(255, 59, 47, 0.7);
+    box-shadow: inset 0 0 0 0.15cqw #2a2830, 0 0.5cqw 1cqw rgba(0, 0, 0, 0.45);
   }
-  .clock .date { display: block; font-size: 18px; }
-  .clock .time { display: block; font-size: 36px; }
+  .clock .date { display: block; font-size: 1.2cqw; }
+  .clock .time { display: block; font-size: 2.6cqw; }
 
-  /* ---------- desk ---------- */
-  .desk {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 180px;
-    align-items: end;
-    gap: 22px;
-    padding: 8px 24px 0;
-  }
-  .surface { height: 18px; background: linear-gradient(#95633d, #7a4f2d); box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.14); }
-  .items {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-end;
-    justify-content: space-around;
-    gap: 26px 18px;
-    padding: 18px 24px 24px;
-    background: linear-gradient(#7a4f2d, #5f3b20);
-  }
-  .item { display: flex; flex-direction: column; align-items: center; gap: 8px; }
-  .item-label { color: rgba(235, 229, 214, 0.55); font-size: 11px; }
+  /* desk + lamp */
+  .desk-top { position: absolute; left: 60%; top: 51%; width: 39%; height: 3.4%; border-radius: 0.3cqw; background: linear-gradient(#8a6a4a, #6a4d33); box-shadow: 0 0.5cqw 0.8cqw rgba(0, 0, 0, 0.35); }
+  .desk-front { position: absolute; left: 60.5%; top: 54.3%; width: 38%; height: 2.4%; background: #5a4029; }
+  .desk-leg { position: absolute; top: 56.6%; width: 1.1%; height: 16%; background: #4a3422; }
+  .desk-leg.l { left: 61.4%; }
+  .desk-leg.r { left: 97%; }
+  .lamp { left: 95.6%; top: 35.5%; width: 3.4%; height: 16%; }
+  .lamp .shade { position: absolute; left: 0; right: 0; top: 0; height: 30%; border-radius: 1.2cqw 1.2cqw 0.2cqw 0.2cqw; background: linear-gradient(#3a6a4a, #24462f); box-shadow: 0 0.6cqw 1.4cqw 0.3cqw rgba(255, 200, 120, 0.35); }
+  .lamp .neck { position: absolute; left: 45%; top: 28%; width: 0.35cqw; bottom: 8%; background: #b8b8b0; }
+  .lamp .base { position: absolute; left: 12%; right: 12%; bottom: 0; height: 10%; border-radius: 0.4cqw; background: #24462f; }
 
-  /* the crt */
-  .crt { display: flex; flex-direction: column; align-items: center; }
-  .bezel {
-    width: 100%;
-    max-width: 640px;
-    padding: 26px 30px 14px;
-    border-radius: 18px 18px 14px 14px;
+  /* crt on the desk */
+  .crt { left: 66.5%; top: 23%; width: 17.5%; height: 28.5%; }
+  .crt .case {
+    position: absolute;
+    inset: 0 0 8% 0;
+    border-radius: 1cqw 1cqw 0.8cqw 0.8cqw;
     background: linear-gradient(160deg, #e3dcc6, #cfc6ab 60%, #bdb398);
-    box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.5), inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 14px 30px rgba(0, 0, 0, 0.45);
+    box-shadow: inset 0 0.2cqw 0 rgba(255, 255, 255, 0.5), inset 0 -0.4cqw 0 rgba(0, 0, 0, 0.12), 0 0.8cqw 1.6cqw rgba(0, 0, 0, 0.45);
   }
-  .screen {
-    position: relative;
-    aspect-ratio: 4 / 3;
+  .crt .foot { position: absolute; left: 30%; right: 30%; bottom: 0; height: 9%; border-radius: 0 0 0.5cqw 0.5cqw; background: linear-gradient(#c8bea3, #a89f84); }
+  .crt .brand { position: absolute; left: 11%; bottom: 13%; color: #6b6450; font: 700 0.55cqw var(--font); letter-spacing: 0.2em; }
+  .crt .power-led { position: absolute; right: 10%; bottom: 14%; width: 0.5cqw; height: 0.5cqw; border-radius: 50%; background: #4be36a; box-shadow: 0 0 0.4cqw #4be36a; }
+  .mini {
+    position: absolute;
+    left: 11%;
+    top: 8%;
+    width: 78%;
+    height: 64%;
     overflow: hidden;
-    border-radius: 22px / 16px;
-    background: #0a1210;
-    box-shadow: 0 0 0 6px #2a2a2a;
+    border-radius: 12% / 14%;
+    background: #008080;
+    box-shadow: inset 0 0 1.2cqw rgba(0, 0, 0, 0.6), 0 0 0 0.35cqw #2a2a2a;
   }
-  .screen::after {
+  .mini::before {
+    content: "";
+    position: absolute;
+    left: 28%;
+    top: 26%;
+    width: 44%;
+    height: 42%;
+    border-top: 0.55cqw solid #000080;
+    background: #c0c0c0;
+  }
+  .mini::after {
     content: "";
     position: absolute;
     inset: 0;
-    z-index: 7;
-    border-radius: inherit;
-    background: radial-gradient(ellipse at 28% 18%, rgba(255, 255, 255, 0.09), transparent 45%);
-    box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.55);
-    pointer-events: none;
+    background: repeating-linear-gradient(rgba(0, 0, 0, 0.18) 0 1px, transparent 1px 3px), radial-gradient(ellipse at 28% 18%, rgba(255, 255, 255, 0.12), transparent 50%);
   }
-  .glass { position: absolute; inset: 0; }
-  .scanlines {
+  .mini[data-state="dialing"]::before { animation: blink90 0.6s steps(1) infinite; }
+  .mini[data-state="online"] { background: #0b0b3b radial-gradient(#fff 0.08cqw, transparent 0.12cqw) 0 0 / 1.4cqw 1.4cqw; }
+  .mini[data-state="online"]::before {
+    left: 12%;
+    top: 12%;
+    width: 76%;
+    height: 7%;
+    border: 0;
+    background: linear-gradient(90deg, #ff3b3b, #ffa53b, #fff23b, #3bff5a, #3bdcff, #6b5bff, #ff3bd9);
+    box-shadow: 0 2.2cqw 0 -0.2cqw #ffd400, 0 4.2cqw 0 -0.5cqw rgba(255, 255, 255, 0.5);
+  }
+  .is-y2k .mini { background: #000 repeating-linear-gradient(0deg, rgba(59, 255, 90, 0.75) 0 1px, transparent 1px 3px); filter: hue-rotate(110deg); }
+  .is-y2k .mini::before { display: none; }
+  @keyframes blink90 { 50% { visibility: hidden; } }
+
+  /* modem, keyboard, mouse, pager */
+  .modem {
+    left: 85.3%;
+    top: 47.4%;
+    width: 10.8%;
+    height: 4.1%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5cqw;
+    border-radius: 0.3cqw 0.3cqw 0.15cqw 0.15cqw;
+    background: linear-gradient(#3a3a40, #232327);
+    box-shadow: 0 0.4cqw 0.7cqw rgba(0, 0, 0, 0.45);
+  }
+  .mled { width: 0.45cqw; height: 0.45cqw; border-radius: 50%; background: #3a1512; }
+  .mled.on { background: #ff4a3a; box-shadow: 0 0 0.4cqw #ff4a3a; }
+  .keyboard {
+    left: 67%;
+    top: 51.3%;
+    width: 15.5%;
+    height: 2.5%;
+    border-radius: 0.25cqw;
+    background:
+      repeating-linear-gradient(90deg, #cdc4a9 0 0.75cqw, #b7ad90 0.75cqw 0.85cqw) 0.3cqw 0.25cqw / calc(100% - 0.6cqw) 0.5cqw no-repeat,
+      repeating-linear-gradient(90deg, #cdc4a9 0 0.75cqw, #b7ad90 0.75cqw 0.85cqw) 0.6cqw 0.9cqw / calc(100% - 1.2cqw) 0.5cqw no-repeat,
+      linear-gradient(#ddd5bd, #c4bba0);
+    box-shadow: 0 0.25cqw 0.4cqw rgba(0, 0, 0, 0.35);
+  }
+  .mouse { left: 83.4%; top: 51.4%; width: 1.5%; height: 2.4%; border-radius: 50% 50% 45% 45%; background: linear-gradient(90deg, #d3cab0, #e3dcc6 40%, #cbc2a7); box-shadow: 0 0.2cqw 0.3cqw rgba(0, 0, 0, 0.35); }
+  .pager {
+    left: 89.6%;
+    top: 51.1%;
+    width: 5.6%;
+    height: 3%;
+    border-radius: 0.5cqw;
+    background: linear-gradient(145deg, rgba(172, 112, 224, 0.95), rgba(96, 46, 152, 0.95));
+    box-shadow: inset 0 0.15cqw 0 rgba(255, 255, 255, 0.35), 0 0.3cqw 0.5cqw rgba(0, 0, 0, 0.45);
+  }
+  .pager-lcd {
     position: absolute;
-    inset: 0;
-    z-index: 6;
-    background: repeating-linear-gradient(rgba(0, 0, 0, 0.14) 0 1px, transparent 1px 3px);
+    left: 7%;
+    right: 26%;
+    top: 16%;
+    height: 68%;
+    padding: 0 0.2cqw;
+    overflow: hidden;
+    border-radius: 0.15cqw;
+    background: #9fb08a;
+    color: #1e2a18;
+    font: 0.95cqw/1.25 "VT323", monospace;
+    text-align: right;
+    white-space: nowrap;
+  }
+  .pager-dot { position: absolute; right: 9%; top: 36%; width: 0.4cqw; height: 0.4cqw; border-radius: 50%; background: #3a2a4a; }
+  .pager.unread .pager-dot { background: #7dff6a; box-shadow: 0 0 0.4cqw #7dff6a; animation: blink90 1s steps(1) infinite; }
+  .pager.buzz { animation: buzz 0.08s linear 14; }
+  @keyframes buzz { 50% { translate: 0.15cqw 0; } }
+
+  /* the tower, under the desk */
+  .tower { left: 88.2%; top: 56%; width: 6.8%; height: 16.6%; border-radius: 0.3cqw 0.3cqw 0.15cqw 0.15cqw; background: linear-gradient(90deg, #cfc6ab, #e0d8c0 30%, #d4cbb0); box-shadow: inset -0.3cqw 0 0 rgba(0, 0, 0, 0.1), 0 0.8cqw 1.4cqw rgba(0, 0, 0, 0.45); }
+  .tower > span { position: absolute; }
+  .tower .bay { left: 10%; right: 10%; height: 11%; border: 1px solid #b7ad90; background: linear-gradient(#e6dfca, #cfc6ab); }
+  .tower .bay.burner { top: 6%; }
+  .tower .bay.blank { top: 19%; }
+  .tower .floppy { left: 22%; right: 22%; top: 35%; height: 5%; border: 1px solid #b7ad90; background: #d9d1b8 linear-gradient(#2f5fa7, #2f5fa7) 50% 20% / 50% 40% no-repeat; }
+  .tower .vents { left: 14%; right: 14%; top: 46%; height: 26%; background: repeating-linear-gradient(#bfb59a 0 0.12cqw, transparent 0.12cqw 0.45cqw); opacity: 0.8; }
+  .tower .power { left: 50%; bottom: 10%; width: 1.3cqw; height: 1.3cqw; margin-left: -0.65cqw; border: 1px solid #a89f84; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #e6dfca, #bfb59a); }
+  .tower .pled { left: 22%; bottom: 5%; width: 0.35cqw; height: 0.35cqw; border-radius: 50%; background: #4be36a; box-shadow: 0 0 0.3cqw #4be36a; }
+  .tower .hdd-led { right: 22%; bottom: 5%; width: 0.35cqw; height: 0.35cqw; border-radius: 50%; background: #5a4414; }
+  .tower.hdd .hdd-led { animation: hdd 0.22s steps(1) infinite; }
+  @keyframes hdd { 50% { background: #ffb030; box-shadow: 0 0 0.3cqw #ffb030; } }
+
+  /* the cd spindle, on the desk */
+  .spindle { left: 61.3%; top: 42.5%; width: 4.4%; height: 9%; }
+  .spindle > span { position: absolute; }
+  .spindle .s-base { left: 0; right: 0; bottom: 0; height: 0.6cqw; border-radius: 50%; background: #1b1b1f; }
+  .spindle .s-stack { left: 8%; right: 8%; bottom: 0.3cqw; display: flex; flex-direction: column-reverse; }
+  .spindle .s-stack i { height: 0.22cqw; margin-top: -0.04cqw; border-radius: 50%; background: linear-gradient(90deg, #cfd3da, #f4f6fa 30%, #b9c8ff 45%, #ffd1f0 55%, #e9edf3 70%, #aeb4bf); }
+  .spindle .s-post { left: 50%; bottom: 0.3cqw; width: 0.25cqw; height: 80%; margin-left: -0.125cqw; background: #2a2a30; }
+  .spindle .s-dome { left: 2%; right: 2%; bottom: 0.2cqw; height: 92%; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 50% 50% 0.3cqw 0.3cqw / 30% 30% 0.3cqw 0.3cqw; background: linear-gradient(90deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.22) 20%, rgba(255, 255, 255, 0.04) 40%, rgba(255, 255, 255, 0.1)); }
+  .cd-pop {
+    position: absolute;
+    left: 63.5%;
+    top: 22%;
+    z-index: 20;
+    width: 7cqw;
+    height: 7cqw;
+    margin-left: -3.5cqw;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle, #1b1b1f 0 8%, #e8ebf0 8.5% 15%, transparent 15.5%),
+      conic-gradient(from 20deg, #dfe3ea, #b9c8ff, #ffd1f0, #fff6c7, #c9ffe8, #dfe3ea, #b9c8ff, #dfe3ea);
+    box-shadow: 0 0.8cqw 1.6cqw rgba(0, 0, 0, 0.5);
     pointer-events: none;
   }
-  .view { position: absolute; inset: 0; overflow-x: hidden; overflow-y: auto; }
-  .bezel-foot { display: flex; align-items: center; gap: 12px; margin-top: 12px; color: #6b6450; font-size: 10px; }
-  .crt-brand { font-weight: 700; letter-spacing: 0.3em; }
-  .degauss {
-    margin-left: auto;
-    padding: 3px 8px;
-    border: 1px solid #a89f84;
-    border-radius: 3px;
-    background: #d6ceb5;
-    color: #4a4436;
-    font: 10px var(--font);
-    cursor: pointer;
+  .cd-pop.pop { animation: cdpop 0.35s ease-out; }
+  @keyframes cdpop { from { transform: translateY(3cqw) scale(0.6); opacity: 0; } }
+  .cd-pop span { position: absolute; left: 50%; top: 62%; color: #1a1a1a; font-size: 0.75cqw; white-space: nowrap; transform: translateX(-50%) rotate(-6deg); }
+
+  /* the bed */
+  .bed { left: 0.5%; top: 47%; width: 33%; height: 40%; }
+  .bed > span { position: absolute; }
+  .bed .headboard { left: 0; top: 0; width: 6%; height: 82%; border-radius: 0.6cqw 0.6cqw 0 0; background: linear-gradient(90deg, #4a3526, #6a4d38); }
+  .bed .mattress {
+    left: 4%;
+    right: 1%;
+    top: 30%;
+    height: 44%;
+    border-radius: 1.2cqw 1.2cqw 0.5cqw 0.5cqw;
+    background:
+      repeating-linear-gradient(90deg, rgba(20, 30, 70, 0.55) 0 1.2cqw, transparent 1.2cqw 2.6cqw),
+      repeating-linear-gradient(0deg, rgba(20, 30, 70, 0.5) 0 1.2cqw, transparent 1.2cqw 2.6cqw),
+      repeating-linear-gradient(90deg, transparent 0 1.9cqw, rgba(40, 140, 70, 0.45) 1.9cqw 2.2cqw, transparent 2.2cqw 2.6cqw),
+      repeating-linear-gradient(0deg, transparent 0 1.9cqw, rgba(255, 220, 120, 0.35) 1.9cqw 2.05cqw, transparent 2.05cqw 2.6cqw),
+      #a3262c;
+    box-shadow: inset 0 -1cqw 1.5cqw rgba(0, 0, 0, 0.3), 0 0.6cqw 1cqw rgba(0, 0, 0, 0.35);
   }
-  .degauss:active { background: #c9c0a6; }
+  .bed .pillow { left: 7%; top: 18%; width: 22%; height: 20%; border-radius: 1.2cqw; background: radial-gradient(circle at 40% 35%, #fbfaf4, #d8d4c6); box-shadow: 0 0.3cqw 0.5cqw rgba(0, 0, 0, 0.3); }
+  .bed .frame { left: 3%; right: 0; top: 72%; height: 14%; border-radius: 0.3cqw; background: linear-gradient(#5a4029, #3e2c1c); }
+  .bed .bleg { top: 85%; width: 2%; height: 15%; background: #3e2c1c; }
+  .bed .bleg.l { left: 5%; }
+  .bed .bleg.r { right: 2%; }
+
+  /* things on the bed */
+  .petegg {
+    left: 11.4%;
+    top: 55.2%;
+    width: 3.2%;
+    height: 5.8%;
+    border-radius: 50% 50% 46% 46% / 56% 56% 44% 44%;
+    background: radial-gradient(circle at 34% 26%, rgba(255, 255, 255, 0.55), transparent 30%), linear-gradient(160deg, #5cded2, #1c8a96);
+    box-shadow: 0 0.3cqw 0.5cqw rgba(0, 0, 0, 0.4);
+  }
+  .petegg canvas { position: absolute; left: 17%; top: 28%; width: 66%; height: 36%; border-radius: 0.15cqw; image-rendering: pixelated; }
+  .cdp { left: 16%; top: 57.2%; width: 6.6%; height: 4.2%; }
+  .cdp > span { position: absolute; }
+  .cdp .c-body { inset: 0; border-radius: 50%; background: linear-gradient(#d4d9e1, #8f96a3); box-shadow: 0 0.3cqw 0.5cqw rgba(0, 0, 0, 0.4), inset 0 -0.25cqw 0 rgba(0, 0, 0, 0.2); }
+  .cdp .c-lid { left: 14%; right: 14%; top: 10%; bottom: 22%; overflow: hidden; border-radius: 50%; background: rgba(30, 36, 52, 0.45); }
+  .cdp .c-squash { position: absolute; inset: 0; transform: scaleY(0.5); }
+  .cdp .c-disc {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 3.6cqw;
+    height: 3.6cqw;
+    margin: -1.8cqw 0 0 -1.8cqw;
+    border-radius: 50%;
+    background: radial-gradient(circle, #1b1b1f 0 8%, #e8ebf0 8.5% 15%, transparent 15.5%), conic-gradient(#dfe3ea, #b9c8ff, #ffd1f0, #fff6c7, #c9ffe8, #dfe3ea);
+  }
+  .cdp:not(.loaded) .c-disc { display: none; }
+  .cdp.playing .c-disc { animation: spin 1s linear infinite; }
+  .cdp.jolt { animation: jolt 0.12s 3; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes jolt { 50% { translate: 0.2cqw -0.25cqw; } }
+  .phones { left: 23.4%; top: 55.2%; width: 6%; height: 5.2%; }
+  .phones > span { position: absolute; }
+  .phones .band { left: 12%; right: 12%; top: 0; height: 90%; border: 0.35cqw solid #3a3d44; border-bottom: 0; border-radius: 2.5cqw 2.5cqw 0 0; }
+  .phones .cup { bottom: 0; width: 1.8cqw; height: 1.8cqw; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #ffb06a, #e8641a); box-shadow: inset 0 0 0 0.2cqw #d4561a; }
+  .phones .cup.l { left: 0; }
+  .phones .cup.r { right: 0; }
+
+  /* nightstand and what's on it */
+  .nightstand { left: 33.6%; top: 59.5%; width: 9%; height: 22%; }
+  .nightstand > span { position: absolute; }
+  .nightstand .n-top { left: -3%; right: -3%; top: 0; height: 11%; border-radius: 0.3cqw; background: linear-gradient(#7a5a3e, #5e4430); }
+  .nightstand .n-body { left: 0; right: 0; top: 11%; bottom: 8%; background: linear-gradient(90deg, #5e4430, #6e5038 50%, #5e4430); }
+  .nightstand .n-drawer { left: 9%; right: 9%; top: 22%; height: 28%; border: 0.15cqw solid #3e2c1c; }
+  .nightstand .n-drawer::after { content: ""; position: absolute; left: 44%; top: 40%; width: 12%; height: 22%; border-radius: 50%; background: #c9a24a; }
+  .nightstand .n-leg { bottom: 0; width: 8%; height: 9%; background: #3e2c1c; }
+  .nightstand .n-leg.l { left: 6%; }
+  .nightstand .n-leg.r { right: 6%; }
+  .ball { left: 34.2%; top: 55%; width: 3.2cqw; height: 3.2cqw; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #707070, #0b0b0b 60%); box-shadow: 0 0.3cqw 0.5cqw rgba(0, 0, 0, 0.5); }
+  .ball .b-win { position: absolute; left: 28%; top: 30%; width: 44%; height: 44%; border-radius: 50%; background: radial-gradient(#1a2a6a, #050a20); }
+  .ball .b-tri { position: absolute; inset: 22%; background: #2f5fdc; clip-path: polygon(50% 0, 100% 100%, 0 100%); opacity: 0; transition: opacity 0.6s; }
+  .ball.answering .b-tri { opacity: 1; }
+  .ball.shake { animation: bshake 0.5s ease-in-out; }
+  @keyframes bshake { 20% { translate: -0.4cqw 0; } 40% { translate: 0.4cqw -0.2cqw; } 60% { translate: -0.3cqw 0; } 80% { translate: 0.2cqw 0; } }
+  .camera { left: 37.9%; top: 56.6%; width: 3.1%; height: 3.8%; border-radius: 0.25cqw; background: linear-gradient(#ffd23b, #e8a21a); box-shadow: 0 0.25cqw 0.4cqw rgba(0, 0, 0, 0.4); }
+  .camera > span { position: absolute; }
+  .camera .lens { left: 28%; top: 20%; width: 1.2cqw; height: 1.2cqw; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #6a7aa8, #111 60%); box-shadow: 0 0 0 0.15cqw #222; }
+  .camera .flashwin { right: 8%; top: 12%; width: 0.8cqw; height: 0.45cqw; background: linear-gradient(#fff, #cfd6e0); }
+  .camera .cam-label { left: 8%; bottom: 6%; color: #7a2a00; font: 700 0.42cqw var(--font); }
+  .tube { left: 41.3%; top: 52.8%; width: 1.2%; height: 7.4%; overflow: hidden; border: 0.12cqw solid rgba(255, 255, 255, 0.45); border-radius: 0.6cqw 0.6cqw 0.3cqw 0.3cqw; background: rgba(255, 255, 255, 0.08); }
+  .tube .t-fill { position: absolute; left: 8%; right: 8%; bottom: 2%; height: 0; background: repeating-linear-gradient(0deg, #ff5fa2 0 0.22cqw, #3bdcff 0.22cqw 0.44cqw, #fff23b 0.44cqw 0.66cqw, #7dff6a 0.66cqw 0.88cqw); transition: height 0.4s; }
+
+  /* inflatable chair */
+  .chair { left: 44%; top: 55%; width: 13%; height: 31%; transform-origin: 50% 100%; transition: transform 0.35s ease-out; }
+  .chair-body { position: absolute; inset: 0; transform-origin: 50% 100%; }
+  .chair.squish .chair-body { animation: squish 0.35s ease-out; }
+  @keyframes squish { 40% { transform: scale(1.06, 0.9); } 70% { transform: scale(0.98, 1.03); } }
+  .chair-body > i {
+    position: absolute;
+    background: radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.55), rgba(200, 130, 255, 0.55) 22%, rgba(120, 60, 210, 0.62) 70%);
+    box-shadow: inset 0 0 1.2cqw rgba(60, 20, 120, 0.6), 0 0.6cqw 1cqw rgba(0, 0, 0, 0.3);
+  }
+  .chair-body .back { left: 13%; right: 13%; top: 0; height: 60%; border-radius: 45% 45% 30% 30%; }
+  .chair-body .arm { top: 38%; width: 32%; height: 44%; border-radius: 50%; }
+  .chair-body .arm.l { left: 0; }
+  .chair-body .arm.r { right: 0; }
+  .chair-body .seat { left: 15%; right: 15%; top: 58%; height: 34%; border-radius: 50%; }
+
+  /* pogs */
+  #pog-stack { left: 49%; top: 92%; width: 3.8cqw; height: 5cqw; margin: -4cqw 0 0 -1.9cqw; }
+  .sdisc, .slam-disc {
+    position: absolute;
+    left: 0;
+    width: 3.8cqw;
+    height: 2cqw;
+    border-radius: 50%;
+    background: radial-gradient(ellipse, #d8dbe2 0 30%, #aab0bb 31% 36%, #d0d4db 37%);
+    box-shadow: 0 0.2cqw 0 #8b909b, 0 0.3cqw 0.35cqw rgba(0, 0, 0, 0.35);
+  }
+  .slammer { left: 57%; top: 93%; z-index: 31; width: 3.4cqw; height: 1.9cqw; margin: -0.95cqw 0 0 -1.7cqw; touch-action: none; cursor: grab; }
+  .slammer .slam-disc { width: 100%; height: 100%; background: radial-gradient(ellipse at 50% 60%, #ffb300 0 18%, #ff3b00 30%, transparent 44%), linear-gradient(#4a4d55, #202227); box-shadow: 0 0.25cqw 0 #111, 0 0.4cqw 0.5cqw rgba(0, 0, 0, 0.45); }
+  .slammer.held { cursor: grabbing; transform: scale(1.12); }
+  .pog { position: absolute; z-index: 30; width: 3.6cqw; height: 3.6cqw; margin: -1.8cqw 0 0 -1.8cqw; transform-style: preserve-3d; pointer-events: none; }
+  .pog > i { position: absolute; inset: 0; border-radius: 50%; backface-visibility: hidden; }
+  .pog .p-back { background: radial-gradient(circle, #d8dbe2 0 30%, #aab0bb 31% 34%, #d0d4db 35%); box-shadow: inset 0 0 0 0.25cqw #e9ebef; transform: rotateX(180deg); }
+  .pogface { box-shadow: inset 0 0 0 0.25cqw #f4f4f4; }
+  .pogface b { position: absolute; inset: 0; display: grid; place-items: center; color: var(--c); font: 700 var(--fs, 0.9cqw) var(--font); letter-spacing: -0.02em; }
+  .pog.won .pogface { box-shadow: inset 0 0 0 0.25cqw #f4f4f4, 0 0 1cqw 0.3cqw rgba(255, 242, 122, 0.8); }
+
+  /* ---------- hud ---------- */
+  .hud { width: var(--w); margin: 12px auto 0; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+  .caption { margin: 0; min-height: 2.8em; font-size: 15px; line-height: 1.4; transition: opacity 0.2s; }
+  .caption.fade { opacity: 0; }
+  .toggles { flex: none; display: flex; gap: 8px; }
+  .pill { padding: 6px 12px; border: 1px solid var(--faint); border-radius: 999px; background: #1a1916; color: var(--dim); font: 13px var(--font); cursor: pointer; }
+  .pill.on { border-color: var(--acid); color: var(--acid); }
+  .rotate-hint { display: none; width: var(--w); margin: 10px auto 0; color: var(--dim); font-size: 12px; }
+  @media (orientation: portrait) and (max-width: 600px) { .rotate-hint { display: block; } }
+
+  /* ---------- close-ups ---------- */
+  .overlay { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; padding: 16px; overflow-y: auto; background: rgba(8, 10, 22, 0.76); }
+  .panel { position: relative; width: min(760px, 100%); padding: 14px 16px 16px; border: 1px solid #2c3450; border-radius: 16px; background: #141827; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6); }
+  .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 12px; color: var(--dim); font-size: 13px; }
+  .close-x { padding: 6px 12px; border: 1px solid #3a4260; border-radius: 999px; background: #1d2236; color: var(--fg); font: 13px var(--font); cursor: pointer; }
+  .close-x:hover { border-color: var(--acid); color: var(--acid); }
+  .ov-caption { min-height: 2.8em; margin: 12px 0 0; font-size: 14px; line-height: 1.4; transition: opacity 0.2s; }
+  .ov-caption.fade { opacity: 0; }
+
+  /* the monitor, up close */
+  .bezel { padding: 22px 26px 12px; border-radius: 18px 18px 14px 14px; background: linear-gradient(160deg, #e3dcc6, #cfc6ab 60%, #bdb398); box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.5), inset 0 -4px 0 rgba(0, 0, 0, 0.12); }
+  .screen { position: relative; aspect-ratio: 4 / 3; overflow: hidden; border-radius: 22px / 16px; background: #0a1210; box-shadow: 0 0 0 6px #2a2a2a; }
+  .screen::after { content: ""; position: absolute; inset: 0; z-index: 7; border-radius: inherit; background: radial-gradient(ellipse at 28% 18%, rgba(255, 255, 255, 0.09), transparent 45%); box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.55); pointer-events: none; }
+  .glass { position: absolute; inset: 0; }
+  .scanlines { position: absolute; inset: 0; z-index: 6; background: repeating-linear-gradient(rgba(0, 0, 0, 0.14) 0 1px, transparent 1px 3px); pointer-events: none; }
+  .view { position: absolute; inset: 0; overflow-x: hidden; overflow-y: auto; }
+  .bezel-foot { display: flex; align-items: center; gap: 12px; margin-top: 10px; color: #6b6450; font-size: 10px; }
+  .crt-brand { font-weight: 700; letter-spacing: 0.3em; }
+  .degauss { margin-left: auto; padding: 3px 8px; border: 1px solid #a89f84; border-radius: 3px; background: #d6ceb5; color: #4a4436; font: 10px var(--font); cursor: pointer; }
   .crt-led { width: 6px; height: 6px; border-radius: 50%; background: #4be36a; box-shadow: 0 0 5px #4be36a; }
-  .crt-stand { width: 34%; height: 18px; border-radius: 0 0 8px 8px; background: linear-gradient(#c8bea3, #a89f84); }
   .screen.degaussing .glass { animation: degauss 1s ease-out; }
   @keyframes degauss {
     0% { transform: scale(1.03) skewX(3deg); filter: hue-rotate(0deg) saturate(3); }
@@ -243,82 +614,27 @@
     60% { transform: scale(1.01) skewX(1deg); filter: hue-rotate(300deg) saturate(2); }
     100% { transform: none; filter: none; }
   }
-
-  /* generic 90s gui bits (inside the crt) */
-  .win {
-    width: min(300px, 90%);
-    border: 2px solid;
-    border-color: #fff #404040 #404040 #fff;
-    background: #c0c0c0;
-    color: #000;
-    font: 12px/1.4 Arial, Helvetica, sans-serif;
-    box-shadow: 1px 1px 0 #000;
-  }
-  .win-title {
-    display: flex;
-    justify-content: space-between;
-    padding: 3px 5px;
-    background: linear-gradient(90deg, #000080, #1084d0);
-    color: #fff;
-    font-weight: 700;
-  }
+  .win { width: min(300px, 90%); border: 2px solid; border-color: #fff #404040 #404040 #fff; background: #c0c0c0; color: #000; font: 12px/1.4 Arial, Helvetica, sans-serif; box-shadow: 1px 1px 0 #000; }
+  .win-title { display: flex; justify-content: space-between; padding: 3px 5px; background: linear-gradient(90deg, #000080, #1084d0); color: #fff; font-weight: 700; }
   .win-body { padding: 12px; }
   .win-body label { display: grid; grid-template-columns: 76px 1fr; align-items: center; margin-bottom: 6px; }
-  .win-body input {
-    min-width: 0;
-    padding: 2px 4px;
-    border: 2px solid;
-    border-color: #404040 #fff #fff #404040;
-    background: #fff;
-    color: #000;
-    font: inherit;
-  }
+  .win-body input { min-width: 0; padding: 2px 4px; border: 2px solid; border-color: #404040 #fff #fff #404040; background: #fff; color: #000; font: inherit; }
   .win-status { min-height: 2.8em; margin: 10px 0 8px; }
   .win-buttons { display: flex; justify-content: flex-end; gap: 6px; }
-  .btn95 {
-    padding: 4px 14px;
-    border: 2px solid;
-    border-color: #fff #404040 #404040 #fff;
-    background: #c0c0c0;
-    color: #000;
-    font: 12px Arial, Helvetica, sans-serif;
-    cursor: pointer;
-  }
+  .btn95 { padding: 4px 14px; border: 2px solid; border-color: #fff #404040 #404040 #fff; background: #c0c0c0; color: #000; font: 12px Arial, Helvetica, sans-serif; cursor: pointer; }
   .btn95:active { border-color: #404040 #fff #fff #404040; }
   .btn95:disabled { color: #808080; cursor: default; }
+  .btn95:focus-visible { outline: 2px solid var(--acid); outline-offset: 2px; }
   .win-icons { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 12px; }
   .icon-pc { position: relative; width: 26px; height: 20px; border: 2px solid #808080; background: #000080; }
   .icon-pc::after { content: ""; position: absolute; left: 6px; right: 6px; bottom: -8px; height: 4px; background: #808080; }
-  .icon-globe { width: 22px; height: 22px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #7fd3ff, #1c6fb8 60%, #0b3a66); box-shadow: inset -3px -2px 0 rgba(0, 0, 0, 0.25); }
-  .icon-dots { width: 40px; font: 700 14px monospace; letter-spacing: 2px; color: #000080; }
-
+  .icon-globe { width: 22px; height: 22px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #7fd3ff, #1c6fb8 60%, #0b3a66); }
+  .icon-dots { width: 40px; color: #000080; font: 700 14px monospace; letter-spacing: 2px; }
   .view.connect { display: grid; place-items: center; background: #008080; }
-
-  /* ---------- the homepage ---------- */
   .view.home { display: flex; flex-direction: column; overflow: hidden; }
-  .toolbar {
-    flex: none;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 3px;
-    border-bottom: 2px solid #808080;
-    background: #c0c0c0;
-    font: 11px Arial, Helvetica, sans-serif;
-  }
+  .toolbar { flex: none; display: flex; align-items: center; gap: 4px; padding: 3px; border-bottom: 2px solid #808080; background: #c0c0c0; font: 11px Arial, Helvetica, sans-serif; }
   .toolbar .btn95 { padding: 1px 6px; font-size: 11px; }
-  .address {
-    flex: 1;
-    min-width: 0;
-    padding: 1px 4px;
-    overflow: hidden;
-    border: 2px solid;
-    border-color: #404040 #fff #fff #404040;
-    background: #fff;
-    color: #000;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
+  .address { flex: 1; min-width: 0; padding: 1px 4px; overflow: hidden; border: 2px solid; border-color: #404040 #fff #fff #404040; background: #fff; color: #000; white-space: nowrap; text-overflow: ellipsis; }
   .hp {
     flex: 1;
     min-height: 0;
@@ -333,599 +649,439 @@
     font-size: 14px;
     text-align: center;
   }
-  .hp h1 {
-    margin: 4px 0 10px;
-    font-size: 26px;
-    line-height: 1.15;
-    background: linear-gradient(90deg, #ff3b3b, #ffa53b, #fff23b, #3bff5a, #3bdcff, #6b5bff, #ff3bd9);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
+  .hp h1 { margin: 4px 0 10px; font-size: 26px; line-height: 1.15; background: linear-gradient(90deg, #ff3b3b, #ffa53b, #fff23b, #3bff5a, #3bdcff, #6b5bff, #ff3bd9); -webkit-background-clip: text; background-clip: text; color: transparent; }
   .hp h2 { margin: 18px 0 8px; color: #ffff00; font-size: 18px; text-decoration: underline; }
-  .hp p { margin: 8px auto; max-width: 440px; }
+  .hp p { max-width: 440px; margin: 8px auto; }
   .hp a { color: #00ffff; }
   .hp a:visited { color: #ff66ff; }
-  .marquee {
-    overflow: hidden;
-    margin: 6px 0 10px;
-    padding: 3px 0;
-    border: 2px ridge #888;
-    background: #000;
-    color: #00ff00;
-    font-family: "Times New Roman", serif;
-    white-space: nowrap;
-  }
+  .marquee { overflow: hidden; margin: 6px 0 10px; padding: 3px 0; border: 2px ridge #888; background: #000; color: #00ff00; font-family: "Times New Roman", serif; white-space: nowrap; }
   .marquee span { display: inline-block; padding-left: 100%; animation: marquee 16s linear infinite; }
   @keyframes marquee { to { transform: translateX(-100%); } }
   .blink { animation: blink90 1s steps(1) infinite; }
-  @keyframes blink90 { 50% { visibility: hidden; } }
-  .new {
-    display: inline-block;
-    margin: 0 4px;
-    padding: 0 5px;
-    background: #ff0000;
-    color: #ffff00;
-    font-size: 11px;
-    font-weight: 700;
-    transform: rotate(-8deg);
-  }
+  .new { display: inline-block; margin: 0 4px; padding: 0 5px; background: #ff0000; color: #ffff00; font-size: 11px; font-weight: 700; transform: rotate(-8deg); }
   .counter { display: inline-flex; gap: 2px; vertical-align: middle; }
-  .counter b {
-    width: 15px;
-    border: 1px solid #555;
-    background: #000;
-    color: #7cfc00;
-    font: 400 18px/1.1 "VT323", monospace;
-  }
-  hr.rainbow {
-    height: 6px;
-    margin: 18px 0;
-    border: 0;
-    background: linear-gradient(90deg, #ff3b3b, #ffa53b, #fff23b, #3bff5a, #3bdcff, #6b5bff, #ff3bd9);
-  }
+  .counter b { width: 15px; border: 1px solid #555; background: #000; color: #7cfc00; font: 400 18px/1.1 "VT323", monospace; }
+  hr.rainbow { height: 6px; margin: 18px 0; border: 0; background: linear-gradient(90deg, #ff3b3b, #ffa53b, #fff23b, #3bff5a, #3bdcff, #6b5bff, #ff3bd9); }
   .links { margin: 0 auto; padding: 0; list-style: none; }
   .links li { margin: 5px 0; }
   .links li::before { content: "* "; color: #ffff00; }
-
-  .uc {
-    width: 230px;
-    margin: 10px auto;
-    border: 3px solid #111;
-    background: #ffd400;
-    color: #111;
-    font: 700 13px Arial, Helvetica, sans-serif;
-    letter-spacing: 0.06em;
-    box-shadow: 3px 3px 0 #000;
-  }
+  .uc { width: 230px; margin: 10px auto; border: 3px solid #111; background: #ffd400; color: #111; font: 700 13px Arial, Helvetica, sans-serif; letter-spacing: 0.06em; box-shadow: 3px 3px 0 #000; }
   .uc.scanning { animation: scanin 1.4s steps(10) both; }
-  @keyframes scanin {
-    from { clip-path: inset(0 0 100% 0); }
-    to { clip-path: inset(0 0 0 0); }
-  }
+  @keyframes scanin { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 0 0); } }
   .uc-stripes { height: 12px; background: repeating-linear-gradient(45deg, #111 0 8px, #ffd400 8px 16px); animation: stripes 0.8s linear infinite; }
   @keyframes stripes { to { background-position: 22.63px 0; } }
   .uc-mid { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 8px 6px; }
   .worker { position: relative; flex: none; width: 26px; height: 32px; }
-  .worker .head { position: absolute; left: 8px; top: 0; width: 8px; height: 8px; border-radius: 50%; background: #111; }
-  .worker .body { position: absolute; left: 11px; top: 8px; width: 2px; height: 13px; background: #111; }
-  .worker .leg { position: absolute; top: 20px; width: 2px; height: 11px; background: #111; transform-origin: top; }
-  .worker .leg.l { left: 11px; transform: rotate(20deg); }
-  .worker .leg.r { left: 11px; transform: rotate(-20deg); }
-  .worker .shovel {
-    position: absolute;
-    left: 12px;
-    top: 10px;
-    width: 2px;
-    height: 20px;
-    background: #6b4a2e;
-    transform-origin: top;
-    animation: dig 0.7s ease-in-out infinite alternate;
-  }
+  .worker > span { position: absolute; }
+  .worker .head { left: 8px; top: 0; width: 8px; height: 8px; border-radius: 50%; background: #111; }
+  .worker .body { left: 11px; top: 8px; width: 2px; height: 13px; background: #111; }
+  .worker .leg { left: 11px; top: 20px; width: 2px; height: 11px; background: #111; transform-origin: top; }
+  .worker .leg.l { transform: rotate(20deg); }
+  .worker .leg.r { transform: rotate(-20deg); }
+  .worker .shovel { left: 12px; top: 10px; width: 2px; height: 20px; background: #6b4a2e; transform-origin: top; animation: dig 0.7s ease-in-out infinite alternate; }
   .worker .shovel::after { content: ""; position: absolute; left: -3px; bottom: -4px; width: 8px; height: 6px; border-radius: 0 0 4px 4px; background: #555; }
   @keyframes dig { from { transform: rotate(-35deg); } to { transform: rotate(-65deg); } }
-
   .gb-form { display: grid; gap: 6px; max-width: 300px; margin: 0 auto; font: 12px Arial, Helvetica, sans-serif; text-align: left; }
-  .gb-form input, .gb-form textarea {
-    width: 100%;
-    padding: 3px 5px;
-    border: 2px inset #aaa;
-    background: #fff;
-    color: #000;
-    font: 13px Arial, Helvetica, sans-serif;
-  }
+  .gb-form input, .gb-form textarea { width: 100%; padding: 3px 5px; border: 2px inset #aaa; background: #fff; color: #000; font: 13px Arial, Helvetica, sans-serif; }
   .gb-form textarea { height: 54px; resize: vertical; }
   .gb-form .btn95 { justify-self: center; }
   .gb-list { max-width: 340px; margin: 14px auto 0; padding: 0; list-style: none; text-align: left; }
   .gb-list li { margin-bottom: 6px; padding: 6px 8px; border: 1px dashed #6b6bff; background: rgba(0, 0, 40, 0.65); overflow-wrap: anywhere; }
   .gb-name { color: #ffff00; font-weight: 700; }
   .gb-date { color: #aaa; font-size: 11px; }
-  .webring {
-    max-width: 360px;
-    margin: 20px auto 8px;
-    padding: 6px;
-    border: 3px outset #c0c0c0;
-    background: #c0c0c0;
-    color: #000;
-    font: 12px Arial, Helvetica, sans-serif;
-  }
+  .webring { max-width: 360px; margin: 20px auto 8px; padding: 6px; border: 3px outset #c0c0c0; background: #c0c0c0; color: #000; font: 12px Arial, Helvetica, sans-serif; }
   .webring a { color: #0000ee; }
   .webring a:visited { color: #551a8b; }
   .webring b { display: block; margin-bottom: 4px; }
   .hp-foot { color: #bbb; font-family: "Times New Roman", serif; font-size: 11px; }
   .hp-error { position: absolute; inset: 0; z-index: 4; display: grid; place-items: center; background: rgba(0, 0, 0, 0.3); }
-
-  /* y2k garbage */
-  .garble {
-    position: absolute;
-    inset: 0;
-    z-index: 5;
-    display: none;
-    padding: 8px;
-    overflow: hidden;
-    background: rgba(0, 0, 0, 0.88);
-    color: #3bff5a;
-    font: 13px/1.05 "VT323", monospace;
-    white-space: pre-wrap;
-    word-break: break-all;
-    pointer-events: none;
-  }
+  .garble { position: absolute; inset: 0; z-index: 5; display: none; padding: 8px; overflow: hidden; background: rgba(0, 0, 0, 0.88); color: #3bff5a; font: 13px/1.05 "VT323", monospace; white-space: pre-wrap; word-break: break-all; pointer-events: none; }
   .is-y2k .garble { display: block; }
   .is-y2k .screen { filter: hue-rotate(110deg) saturate(1.6); }
   .is-y2k .glass { animation: tear 0.14s steps(2) infinite; }
-  @keyframes tear {
-    0% { transform: translateX(0) skewX(0deg); }
-    50% { transform: translateX(-6px) skewX(4deg); }
-    100% { transform: translateX(5px) skewX(-3deg); }
-  }
+  @keyframes tear { 0% { transform: translateX(0) skewX(0deg); } 50% { transform: translateX(-6px) skewX(4deg); } 100% { transform: translateX(5px) skewX(-3deg); } }
 
-  /* the tower + modem */
-  .tower-col { display: flex; flex-direction: column; align-items: center; }
-  .modem {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
-    width: 164px;
-    height: 36px;
-    margin-bottom: 4px;
-    border-radius: 4px 4px 2px 2px;
-    background: linear-gradient(#3a3a40, #232327);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.45);
-  }
-  .mled { display: flex; flex-direction: column; align-items: center; gap: 3px; color: #8d8d95; font-size: 7px; letter-spacing: 0.04em; }
-  .mled i { width: 5px; height: 5px; border-radius: 50%; background: #3a1512; }
-  .mled.on i { background: #ff4a3a; box-shadow: 0 0 5px #ff4a3a; }
-  .tower {
-    position: relative;
-    width: 150px;
-    height: 290px;
-    border-radius: 4px 4px 2px 2px;
-    background: linear-gradient(90deg, #cfc6ab, #e0d8c0 30%, #d4cbb0);
-    box-shadow: inset -5px 0 0 rgba(0, 0, 0, 0.1), 0 14px 30px rgba(0, 0, 0, 0.45);
-  }
-  .tower .bay { position: absolute; left: 14px; right: 14px; border: 1px solid #b7ad90; background: linear-gradient(#e6dfca, #cfc6ab); }
-  .tower .bay.burner { top: 18px; height: 30px; }
-  .tower .bay.burner::after { content: ""; position: absolute; left: 10px; right: 30px; top: 13px; height: 2px; background: #9d9479; }
-  .tower .bay.blank { top: 54px; height: 30px; }
-  .tower .floppy { position: absolute; left: 30px; right: 30px; top: 100px; height: 14px; border: 1px solid #b7ad90; background: #d9d1b8; }
-  .tower .floppy::before { content: ""; position: absolute; left: 10px; right: 10px; top: 5px; height: 3px; background: #3a3528; }
-  .tower .floppy::after { content: ""; position: absolute; left: 22px; width: 40px; top: 1px; height: 5px; background: #2f5fa7; }
-  .tower .power { position: absolute; left: 50%; bottom: 44px; width: 26px; height: 26px; margin-left: -13px; border: 1px solid #a89f84; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #e6dfca, #bfb59a); }
-  .tower .pled { position: absolute; left: 44px; bottom: 22px; width: 5px; height: 5px; border-radius: 50%; background: #4be36a; box-shadow: 0 0 5px #4be36a; }
-  .tower .hdd-led { position: absolute; right: 44px; bottom: 22px; width: 5px; height: 5px; border-radius: 50%; background: #5a4414; }
-  .tower.hdd .hdd-led { animation: hdd 0.22s steps(1) infinite; }
-  @keyframes hdd { 50% { background: #ffb030; box-shadow: 0 0 5px #ffb030; } }
-  .tower .vents { position: absolute; left: 20px; right: 20px; top: 136px; height: 70px; background: repeating-linear-gradient(#bfb59a 0 2px, transparent 2px 7px); opacity: 0.8; }
-
-  /* keyboard + mouse */
-  .kbd-set { display: flex; align-items: flex-end; gap: 14px; }
-  .keyboard {
-    width: 250px;
-    height: 70px;
-    padding: 8px;
-    border-radius: 6px;
-    background:
-      repeating-linear-gradient(90deg, #cdc4a9 0 15px, #b7ad90 15px 17px) 8px 8px / calc(100% - 16px) 11px no-repeat,
-      repeating-linear-gradient(90deg, #cdc4a9 0 15px, #b7ad90 15px 17px) 14px 22px / calc(100% - 22px) 11px no-repeat,
-      repeating-linear-gradient(90deg, #cdc4a9 0 15px, #b7ad90 15px 17px) 18px 36px / calc(100% - 28px) 11px no-repeat,
-      linear-gradient(#cdc4a9, #cdc4a9) 60px 50px / 120px 11px no-repeat,
-      linear-gradient(#ddd5bd, #c4bba0);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
-  }
-  .mouse {
-    width: 36px;
-    height: 54px;
-    border-radius: 18px 18px 16px 16px;
-    background: linear-gradient(90deg, #d3cab0, #e3dcc6 40%, #cbc2a7);
-    box-shadow: inset 0 18px 0 -16px #9d9479, 0 6px 10px rgba(0, 0, 0, 0.4);
-  }
-
-  /* pager */
-  .pager {
-    position: relative;
-    width: 118px;
-    height: 66px;
-    border-radius: 10px 10px 13px 13px;
-    background: linear-gradient(145deg, rgba(172, 112, 224, 0.95), rgba(96, 46, 152, 0.95));
-    box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.35), 0 8px 14px rgba(0, 0, 0, 0.45);
-  }
-  .pager::before { content: ""; position: absolute; left: 30px; right: 30px; top: -6px; height: 8px; border-radius: 4px 4px 0 0; background: #2b1f38; }
-  .pager-lcd {
-    position: absolute;
-    left: 10px;
-    right: 10px;
-    top: 12px;
-    height: 26px;
-    padding: 0 5px;
-    overflow: hidden;
-    border-radius: 3px;
-    background: #9fb08a;
-    color: #1e2a18;
-    font: 21px/26px "VT323", monospace;
-    text-align: right;
-    white-space: nowrap;
-    box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.35);
-  }
-  .pager-dot { position: absolute; right: 12px; bottom: 9px; width: 7px; height: 7px; border-radius: 50%; background: #3a2a4a; }
-  .pager.unread .pager-dot { background: #7dff6a; box-shadow: 0 0 6px #7dff6a; animation: blink90 1s steps(1) infinite; }
-  .pager-btn { position: absolute; bottom: 8px; width: 16px; height: 6px; border-radius: 3px; background: #3b2555; }
-  .pager-btn.a { left: 14px; }
-  .pager-btn.b { left: 36px; }
-  .pager.buzz { animation: buzz 0.08s linear 14; }
-  @keyframes buzz { 50% { translate: 2px 0; } }
-
-  /* pocket pet */
+  /* the pet, up close */
+  .pet-panel { width: min(340px, 100%); }
   .egg {
     position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 172px;
-    height: 206px;
-    padding-top: 36px;
+    width: 220px;
+    height: 262px;
+    margin: 20px auto 0;
+    padding-top: 46px;
     border-radius: 50% 50% 46% 46% / 56% 56% 44% 44%;
-    background:
-      radial-gradient(circle at 34% 26%, rgba(255, 255, 255, 0.55), transparent 28%),
-      linear-gradient(160deg, rgba(92, 222, 210, 0.95), rgba(28, 138, 150, 0.95));
+    background: radial-gradient(circle at 34% 26%, rgba(255, 255, 255, 0.55), transparent 28%), linear-gradient(160deg, rgba(92, 222, 210, 0.95), rgba(28, 138, 150, 0.95));
     box-shadow: inset 0 -8px 16px rgba(0, 0, 0, 0.2), 0 10px 18px rgba(0, 0, 0, 0.45);
   }
-  .egg::before {
-    content: "";
-    position: absolute;
-    top: -15px;
-    left: 50%;
-    width: 18px;
-    height: 18px;
-    margin-left: -9px;
-    border: 3px solid #bfc3c8;
-    border-radius: 50%;
-  }
+  .egg::before { content: ""; position: absolute; top: -15px; left: 50%; width: 18px; height: 18px; margin-left: -9px; border: 3px solid #bfc3c8; border-radius: 50%; }
   .lcd-frame { padding: 6px; border-radius: 8px; background: #26352f; box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5); }
-  #pet-lcd { display: block; width: 120px; height: 78px; border-radius: 3px; image-rendering: pixelated; }
-  .pet-btns { display: flex; gap: 12px; margin-top: 12px; }
-  .pet-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 3px;
-    padding: 0;
-    border: 0;
-    background: none;
-    color: #073538;
-    font: 700 9px var(--font);
-    cursor: pointer;
-  }
-  .pet-btn i {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: radial-gradient(circle at 35% 35%, #fff, #ece6ff 35%, #b9b0e0);
-    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
-  }
+  #pet-lcd { display: block; width: 160px; height: 104px; border-radius: 3px; image-rendering: pixelated; }
+  .pet-btns { display: flex; gap: 14px; margin-top: 14px; }
+  .pet-btn { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 0; border: 0; background: none; color: #073538; font: 700 10px var(--font); cursor: pointer; }
+  .pet-btn i { width: 22px; height: 22px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff, #ece6ff 35%, #b9b0e0); box-shadow: 0 2px 0 rgba(0, 0, 0, 0.35); }
   .pet-btn:active i { transform: translateY(1px); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.35); }
   .pet-btn:focus-visible { outline: 2px solid var(--acid); outline-offset: 2px; }
-  .pet-status { max-width: 200px; min-height: 1.4em; color: rgba(235, 229, 214, 0.75); font-size: 11px; text-align: center; }
-  .pet-hatch {
-    padding: 3px 10px;
-    border: 1px solid #3a372f;
-    border-radius: 999px;
-    background: #1a1916;
-    color: var(--fg);
-    font: 11px var(--font);
-    cursor: pointer;
-  }
+  .pet-status { min-height: 1.4em; margin: 14px 0 0; color: rgba(235, 229, 214, 0.75); font-size: 12px; text-align: center; }
+  .pet-hatch { display: block; margin: 8px auto 0; }
 
-  /* cd spindle */
-  .spindle-wrap { position: relative; }
-  .spindle { position: relative; display: block; width: 120px; height: 112px; }
-  .spindle-base { position: absolute; left: 0; right: 0; bottom: 0; height: 16px; border-radius: 50%; background: #1b1b1f; }
-  .cd-stack { position: absolute; left: 8px; right: 8px; bottom: 8px; display: flex; flex-direction: column-reverse; }
-  .cd-stack i {
-    height: 5px;
-    margin-top: -1px;
+  /* the cd player, up close */
+  .cd-panel { width: min(640px, 100%); }
+  .cd-grid { display: grid; grid-template-columns: 250px 1fr; gap: 20px; align-items: start; }
+  .player { position: relative; width: 250px; height: 250px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #e9edf3, #b7bdc8 55%, #8b919c); box-shadow: inset 0 -6px 12px rgba(0, 0, 0, 0.25), 0 10px 22px rgba(0, 0, 0, 0.5); }
+  .player.jolt { animation: jolt 0.12s 3; }
+  .player-lid { position: absolute; left: 30px; top: 16px; width: 190px; height: 190px; border-radius: 50%; background: rgba(20, 24, 36, 0.35); box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.35); }
+  .player-disc {
+    position: absolute;
+    inset: 12px;
     border-radius: 50%;
-    background: linear-gradient(90deg, #cfd3da, #f4f6fa 30%, #b9c8ff 45%, #ffd1f0 55%, #e9edf3 70%, #aeb4bf);
-    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+    background: radial-gradient(circle, #1b1b1f 0 7%, #e8ebf0 7.5% 13%, transparent 13.5%), conic-gradient(from 20deg, #dfe3ea, #b9c8ff, #ffd1f0, #fff6c7, #c9ffe8, #dfe3ea, #b9c8ff, #dfe3ea);
   }
-  .spindle-post { position: absolute; left: 50%; bottom: 8px; width: 6px; height: 84px; margin-left: -3px; background: #2a2a30; }
-  .spindle-dome {
-    position: absolute;
-    left: 2px;
-    right: 2px;
-    bottom: 6px;
-    height: 96px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 50% 50% 8px 8px / 30% 30% 8px 8px;
-    background: linear-gradient(90deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.22) 20%, rgba(255, 255, 255, 0.04) 40%, rgba(255, 255, 255, 0.1));
-  }
-  .cd-face {
-    position: absolute;
-    left: 50%;
-    bottom: 122px;
-    z-index: 5;
-    width: 124px;
-    height: 124px;
-    margin-left: -62px;
-    border-radius: 50%;
-    background:
-      radial-gradient(circle, #1b1b1f 0 8%, #e8ebf0 8.5% 15%, transparent 15.5%),
-      conic-gradient(from 20deg, #dfe3ea, #b9c8ff, #ffd1f0, #fff6c7, #c9ffe8, #dfe3ea, #b9c8ff, #dfe3ea);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
-    pointer-events: none;
-  }
-  .cd-face.pop { animation: cdpop 0.35s ease-out; }
-  @keyframes cdpop { from { transform: translateY(40px) scale(0.6); opacity: 0; } }
-  .cd-label {
-    position: absolute;
-    left: 50%;
-    top: 62%;
-    color: #1a1a1a;
-    font-family: "Permanent Marker", cursive;
-    font-size: 13px;
-    white-space: nowrap;
-    transform: translateX(-50%) rotate(-6deg);
-  }
+  .player-disc.none { background: rgba(0, 0, 0, 0.25); }
+  .player-disc.spin { animation: spin 1.1s linear infinite; }
+  .player-disc span { position: absolute; left: 50%; top: 64%; color: #1a1a1a; font: 15px "Permanent Marker", cursive; white-space: nowrap; transform: translateX(-50%) rotate(-6deg); }
+  .player-lcd { position: absolute; left: 50%; bottom: 10px; width: 136px; margin-left: -68px; padding: 2px 6px; border-radius: 4px; background: #9fb08a; color: #1e2a18; font: 20px/1 "VT323", monospace; text-align: center; box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.35); }
+  .player-btns { display: flex; justify-content: center; gap: 8px; margin-top: 12px; }
+  .player-btns button, .disc-list button, .shake-btn { padding: 6px 10px; border: 1px solid #3a4260; border-radius: 999px; background: #1d2236; color: var(--fg); font: 12px var(--font); cursor: pointer; }
+  .player-btns button:hover, .disc-list button:hover { border-color: var(--acid); color: var(--acid); }
+  .player-esp { margin: 8px 0 0; color: var(--dim); font-size: 12px; text-align: center; }
+  .disc-list { display: grid; gap: 6px; }
+  .disc-list p { margin: 0 0 4px; color: var(--dim); font-size: 12px; }
+  .disc-list button { border-radius: 8px; font: 15px "Permanent Marker", cursive; text-align: left; }
+  .disc-list button.loaded { border-color: var(--acid); color: var(--acid); }
+  .shake-btn { margin-top: 10px; }
 
-  /* ---------- controls + caption ---------- */
-  .controls { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
-  .pill {
-    padding: 6px 12px;
-    border: 1px solid #3a372f;
-    border-radius: 999px;
-    background: #1a1916;
-    color: var(--fg);
-    font: 13px var(--font);
-    cursor: pointer;
-  }
-  .pill.on { border-color: var(--acid); color: var(--acid); }
-  .caption { min-height: 1.5em; margin: 12px 0 0; font-size: 15px; transition: opacity 0.2s; }
-  .caption.fade { opacity: 0; }
+  /* photos + the pog binder */
+  .photo-panel { width: min(640px, 100%); }
+  .photo-big { margin: 0; padding: 14px 14px 18px; background: #f4f1ea; color: #222; transform: rotate(-1deg); box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5); }
+  .photo-big img { display: block; width: 100%; height: auto; }
+  .photo-big figcaption { margin-top: 10px; font: 16px "Permanent Marker", cursive; }
+  .binder { width: min(700px, 100%); }
+  .pog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 16px 12px; }
+  .pog-card { display: grid; justify-items: center; gap: 6px; color: var(--fg); font-size: 11px; text-align: center; }
+  .pog-card .disc { position: relative; display: block; width: 64px; height: 64px; border-radius: 50%; --fs: 16px; }
+  .pog-card .disc.unknown { background: radial-gradient(circle, #2a2f45, #1a1e2e); box-shadow: inset 0 0 0 3px #3a4260; }
+  .pog-card .count { color: var(--dim); }
 
-  @media (max-width: 720px) {
-    .desk { grid-template-columns: 1fr; }
-    .tower-col { flex-direction: row; align-items: flex-end; justify-content: center; gap: 14px; }
-    .tower { width: 110px; height: 190px; }
-    .tower .vents { top: 124px; height: 30px; }
-    .tower .power { bottom: 28px; }
-    .tower .pled, .tower .hdd-led { bottom: 12px; }
-    .modem { margin-bottom: 0; }
-    .poster { display: none; }
-  }
-  @media (max-width: 560px) {
-    .bezel { padding: 16px 14px 10px; }
-    .screen { aspect-ratio: auto; height: 64vh; }
-    .wall { padding: 16px; }
-    .calendar { width: 150px; }
-    .keyboard { width: 200px; }
+  @media (max-width: 600px) {
+    .cd-grid { grid-template-columns: 1fr; }
+    .player { margin: 0 auto; }
+    .bezel { padding: 14px 12px 10px; }
+    .screen { aspect-ratio: auto; height: 60vh; }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .marquee span { padding-left: 0; animation: none; white-space: normal; }
+    .snow, .bulb, .blink, .pager.unread .pager-dot, .uc-stripes, .worker .shovel, .uc.scanning, .marquee span { animation: none; }
     .marquee { white-space: normal; }
-    .blink, .pager.unread .pager-dot { animation: none; }
-    .uc-stripes, .worker .shovel, .uc.scanning { animation: none; }
-    .pager.buzz { animation: none; }
-    .is-y2k .glass { animation: none; }
-    .screen.degaussing .glass { animation: none; filter: hue-rotate(90deg); }
+    .marquee span { padding-left: 0; }
+    .is-y2k .flicker { animation: none; opacity: 0.5; }
+    .is-y2k .glass, .screen.degaussing .glass { animation: none; }
+    .pager.buzz, .cdp.jolt, .player.jolt, .ball.shake, .chair.squish .chair-body, .sticky, .cd-pop.pop { animation: none; }
+    .cdp.playing .c-disc, .player-disc.spin { animation: none; }
+    .mini[data-state="dialing"]::before { animation: none; }
+    .flash.go { animation-duration: 0.3s; }
     .tower.hdd .hdd-led { animation: none; background: #ffb030; }
-    .sticky, .cd-face.pop { animation: none; }
   }
 </style>
 </head>
 <body>
 <a class="lobby-link" href="../">&larr; lobby</a>
 <h1 class="sr-only">the 90s</h1>
+<main class="page">
+  <div class="stage-wrap">
+    <div class="stage" id="stage">
+      <div class="wall"></div>
+      <div class="carpet"></div>
+      <div class="baseboard"></div>
 
-<div class="page">
-  <div class="room">
-    <div class="wall">
-      <button class="obj calendar" type="button" id="calendar" aria-label="wall calendar">
+      <button class="obj lights" type="button" data-obj="lights" aria-label="holiday lights">
+        <svg viewBox="0 0 580 60" preserveAspectRatio="none" aria-hidden="true" id="lights-svg"></svg>
+      </button>
+
+      <button class="obj window" type="button" data-obj="window" aria-label="window, snowing outside">
+        <span class="stars"></span>
+        <span class="house a"><i class="hwin" style="left:30%;top:52%"></i><i class="hwin" style="left:62%;top:52%"></i></span>
+        <span class="house b"><i class="hwin" style="left:42%;top:55%"></i></span>
+        <span class="house c"><i class="hwin" style="left:22%;top:50%"></i><i class="hwin" style="left:52%;top:50%"></i></span>
+        <span class="ground"></span>
+        <span class="snow"></span>
+        <span class="snow b"></span>
+        <canvas id="fireworks" width="180" height="200"></canvas>
+        <span class="muntin v"></span><span class="muntin h"></span>
+        <span class="curtain l"></span><span class="curtain r"></span>
+      </button>
+
+      <button class="obj poster" type="button" data-obj="poster" aria-label="poster that says extreme">
+        <span class="word">EXTREME</span><span class="rider"></span><span class="board"></span>
+      </button>
+
+      <div class="cork">
+        <button class="obj cork-hit" type="button" data-obj="cork" aria-label="corkboard"></button>
+        <div class="ticket"><i class="pin"></i>LIFT TICKET<br>DEC 1999 &middot; ADULT</div>
+        <div class="cork-note marker"><i class="pin"></i>call dave</div>
+        <div class="photos" id="photos"><span class="photo-hint marker" id="photo-hint">photos go here</span></div>
+      </div>
+
+      <button class="obj calendar" type="button" data-obj="calendar" aria-label="wall calendar">
         <span class="cal-pic" aria-hidden="true"></span>
         <span class="cal-title" id="cal-title"></span>
         <span class="cal-grid" id="cal-grid" aria-hidden="true"></span>
         <span class="cal-note" id="cal-note"></span>
       </button>
-      <button class="obj poster" type="button" id="poster" aria-label="poster">
-        <span class="word">EXTREME</span><span class="rider"></span><span class="board"></span>
-      </button>
-      <div class="sticky" id="sticky" hidden>y2k: handled. you're welcome. -- the intern</div>
-      <button class="obj clock" type="button" id="clock" aria-label="clock">
+      <div class="sticky marker" id="sticky" hidden>y2k: handled. you're welcome. -- the intern</div>
+
+      <button class="obj clock" type="button" data-obj="clock" aria-label="clock">
         <span class="date" id="clock-date">1999-12-31</span>
         <span class="time" id="clock-time">23:59:00</span>
       </button>
+
+      <div class="desk-top"></div>
+      <div class="desk-front"></div>
+      <div class="desk-leg l"></div>
+      <div class="desk-leg r"></div>
+
+      <button class="obj lamp" type="button" data-obj="lamp" aria-label="desk lamp"><span class="shade"></span><span class="neck"></span><span class="base"></span></button>
+
+      <button class="obj spindle" type="button" id="spindle" aria-label="spindle of burned cds. click to take one.">
+        <span class="s-base"></span>
+        <span class="s-post"></span>
+        <span class="s-stack"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+        <span class="s-dome"></span>
+      </button>
+      <div class="cd-pop" id="cd-pop" hidden><span class="marker" id="cd-pop-label"></span></div>
+
+      <button class="obj crt" type="button" id="crt" aria-label="the computer monitor. click to use the computer.">
+        <span class="case"></span>
+        <span class="mini" id="mini" data-state="offline"></span>
+        <span class="brand">CIZOLE</span>
+        <span class="power-led"></span>
+        <span class="foot"></span>
+      </button>
+      <button class="obj modem" type="button" id="modem" aria-label="modem">
+        <i class="mled" data-led="hs"></i><i class="mled" data-led="aa"></i><i class="mled" data-led="cd"></i><i class="mled" data-led="oh"></i>
+        <i class="mled" data-led="rd"></i><i class="mled" data-led="sd"></i><i class="mled" data-led="tr"></i><i class="mled" data-led="mr"></i>
+      </button>
+      <button class="obj keyboard" type="button" id="keyboard" aria-label="keyboard"></button>
+      <button class="obj mouse" type="button" id="mouse" aria-label="ball mouse"></button>
+      <button class="obj pager" type="button" id="pager" aria-label="pager">
+        <span class="pager-lcd" id="pager-lcd">- - - -</span>
+        <span class="pager-dot"></span>
+      </button>
+      <button class="obj tower" type="button" id="tower" aria-label="beige tower computer">
+        <span class="bay burner" data-part="burner"></span>
+        <span class="bay blank"></span>
+        <span class="floppy" data-part="floppy"></span>
+        <span class="vents"></span>
+        <span class="power" data-part="power"></span>
+        <span class="pled"></span>
+        <span class="hdd-led"></span>
+      </button>
+
+      <button class="obj bed" type="button" data-obj="bed" aria-label="bed with a plaid comforter">
+        <span class="headboard"></span>
+        <span class="mattress"></span>
+        <span class="pillow"></span>
+        <span class="frame"></span>
+        <span class="bleg l"></span><span class="bleg r"></span>
+      </button>
+      <button class="obj petegg" type="button" id="petegg" aria-label="pocket pet. click to pick it up."><canvas id="pet-mini" width="40" height="26"></canvas></button>
+      <button class="obj cdp" type="button" id="cdp" aria-label="portable cd player. click to use it.">
+        <span class="c-body"></span>
+        <span class="c-lid"><span class="c-squash"><i class="c-disc"></i></span></span>
+      </button>
+      <button class="obj phones" type="button" id="phones" aria-label="foam headphones"><span class="band"></span><span class="cup l"></span><span class="cup r"></span></button>
+
+      <button class="obj nightstand" type="button" data-obj="nightstand" aria-label="nightstand">
+        <span class="n-top"></span><span class="n-body"></span><span class="n-drawer"></span>
+        <span class="n-leg l"></span><span class="n-leg r"></span>
+      </button>
+      <button class="obj ball" type="button" id="ball" aria-label="fortune ball toy. ask it something."><span class="b-win"><span class="b-tri"></span></span></button>
+      <button class="obj camera" type="button" id="camera" aria-label="disposable camera"><span class="lens"></span><span class="flashwin"></span><span class="cam-label">snap!</span></button>
+      <button class="obj tube" type="button" id="tube" aria-label="pog collection tube"><span class="t-fill" id="tube-fill"></span></button>
+
+      <button class="obj chair" type="button" id="chair" aria-label="inflatable chair">
+        <span class="chair-body"><i class="back"></i><i class="arm l"></i><i class="arm r"></i><i class="seat"></i></span>
+      </button>
+
+      <button class="obj" type="button" id="pog-stack" aria-label="a stack of pogs, face down"></button>
+      <button class="obj slammer" type="button" id="slammer" aria-label="the slammer. drag it onto the stack, or press enter."><i class="slam-disc"></i></button>
+
+      <div class="vignette" aria-hidden="true"></div>
+      <div class="flicker" aria-hidden="true"></div>
+      <div class="flash" id="flash" aria-hidden="true"></div>
     </div>
+  </div>
 
-    <div class="desk">
-      <div class="crt">
-        <div class="bezel">
-          <div class="screen" id="screen">
-            <div class="glass">
-              <div class="view connect" id="view-connect">
-                <div class="win" role="group" aria-label="dial-up connection">
-                  <div class="win-title"><span id="win-title">cizole online</span><span aria-hidden="true">_ x</span></div>
-                  <div class="win-body">
-                    <div class="win-icons" aria-hidden="true"><span class="icon-pc"></span><span class="icon-dots" id="icon-dots"></span><span class="icon-globe"></span></div>
-                    <label>user name <input value="cole" readonly tabindex="-1"></label>
-                    <label>password <input value="********" readonly tabindex="-1"></label>
-                    <label>dial <input value="555-0199" readonly tabindex="-1"></label>
-                    <p class="win-status" id="win-status" role="status">not connected.</p>
-                    <div class="win-buttons"><button class="btn95" type="button" id="connect">connect</button></div>
-                  </div>
-                </div>
+  <div class="hud">
+    <p class="caption" id="caption" role="status" data-caption></p>
+    <div class="toggles">
+      <button class="pill" type="button" id="shake" hidden>shake: off</button>
+      <button class="pill" type="button" id="sound">sound: off</button>
+    </div>
+  </div>
+  <p class="rotate-hint">tip: the bedroom is bigger sideways.</p>
+</main>
+
+<div class="overlay" id="crt-wrap" hidden>
+  <div class="panel" role="dialog" aria-label="the computer">
+    <div class="panel-head"><span>the computer. it stays connected when you walk away.</span><button class="close-x" type="button" data-close>back to the room</button></div>
+    <div class="bezel">
+      <div class="screen" id="screen">
+        <div class="glass">
+          <div class="view connect" id="view-connect">
+            <div class="win" role="group" aria-label="dial-up connection">
+              <div class="win-title"><span id="win-title">cizole online</span><span aria-hidden="true">_ x</span></div>
+              <div class="win-body">
+                <div class="win-icons" aria-hidden="true"><span class="icon-pc"></span><span class="icon-dots" id="icon-dots"></span><span class="icon-globe"></span></div>
+                <label>user name <input value="cole" readonly tabindex="-1"></label>
+                <label>password <input value="********" readonly tabindex="-1"></label>
+                <label>dial <input value="555-0199" readonly tabindex="-1"></label>
+                <p class="win-status" id="win-status" role="status">not connected.</p>
+                <div class="win-buttons"><button class="btn95" type="button" id="connect">connect</button></div>
               </div>
-
-              <div class="view home" id="view-home" hidden>
-                <div class="toolbar">
-                  <button class="btn95" type="button" id="nav-back">&lt; back</button>
-                  <button class="btn95" type="button" id="nav-fwd">fwd &gt;</button>
-                  <span class="address">http://www.cizole.com/~cole/index.htm</span>
-                  <button class="btn95" type="button" id="disconnect">disconnect</button>
-                </div>
-                <div class="hp" id="hp">
-                  <h1>welcome to cole's homepage!!!</h1>
-                  <div class="marquee"><span>~*~ thanx 4 visiting my page!!! ~*~ sign my guestbook!!! ~*~ this page is best viewed at 800x600 ~*~ now with more under construction ~*~ y2k is coming. i have backed up my files to a floppy. ~*~</span></div>
-                  <div class="uc" role="img" aria-label="under construction">
-                    <div class="uc-stripes"></div>
-                    <div class="uc-mid">
-                      <span class="worker" aria-hidden="true"><span class="head"></span><span class="body"></span><span class="leg l"></span><span class="leg r"></span><span class="shovel"></span></span>
-                      <span>UNDER<br>CONSTRUCTION</span>
-                    </div>
-                    <div class="uc-stripes"></div>
-                  </div>
-                  <p>you are visitor number <span class="counter" id="counter"></span></p>
-                  <p><span class="new blink">NEW!</span> updated 12/30/99 <span class="new blink">NEW!</span></p>
-                  <h2>about me</h2>
-                  <p>hi!!! my name is cole and this is my homepage on the world wide web. i like computers, snowboarding, mountains, building stuff, and weather. yes, weather. my computer has a 28.8k modem and a cd burner. i am very powerful.</p>
-                  <hr class="rainbow">
-                  <h2>cool links</h2>
-                  <ul class="links">
-                    <li><a href="../">the best page on the whole internet</a></li>
-                    <li><a href="#" data-dead="dave moved his page. he did not say where.">dave's page (moved??)</a></li>
-                    <li><a href="#" data-dead="the download stopped at 97%. as is tradition.">free screensavers!!!</a></li>
-                    <li><a href="#" data-dead="coming soon. it has been coming soon since 1998.">my snowboarding pics (coming soon)</a></li>
-                    <li><a href="#" data-dead="the weather page is down due to weather.">the weather page</a></li>
-                  </ul>
-                  <hr class="rainbow">
-                  <h2>sign my guestbook!!!</h2>
-                  <form class="gb-form" id="gb-form">
-                    <label>name <input id="gb-name" maxlength="24" autocomplete="off"></label>
-                    <label>message <textarea id="gb-msg" maxlength="200"></textarea></label>
-                    <button class="btn95" type="submit">sign it!!!</button>
-                  </form>
-                  <ul class="gb-list" id="gb-list"></ul>
-                  <div class="webring">
-                    <b>~ the cizole webring ~</b>
-                    <a id="ring-prev" href="../80s/">&lt;&lt; prev</a> |
-                    <a id="ring-random" href="../eyes/">random</a> |
-                    <a id="ring-next" href="../eyes/">next &gt;&gt;</a> |
-                    <a href="#" data-dead="webring membership is closed. it was always closed.">join</a>
-                  </div>
-                  <p class="hp-foot">best viewed in 800x600 with your eyes open.<br>made with a text editor and too much free time.<br>last updated: 12/30/99 &middot; (c) 1999 cole. do not steal my backgrounds.</p>
-                </div>
-                <div class="hp-error" id="hp-error" hidden>
-                  <div class="win" role="alertdialog" aria-label="error">
-                    <div class="win-title"><span>error</span><span aria-hidden="true">x</span></div>
-                    <div class="win-body">
-                      <p class="win-status" id="hp-error-msg"></p>
-                      <div class="win-buttons"><button class="btn95" type="button" id="hp-error-ok">ok</button></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="garble" id="garble" aria-hidden="true"></div>
             </div>
-            <div class="scanlines" aria-hidden="true"></div>
           </div>
-          <div class="bezel-foot">
-            <span class="crt-brand">CIZOLE</span>
-            <span>15" color monitor</span>
-            <button class="degauss" type="button" id="degauss">degauss</button>
-            <span class="crt-led" aria-hidden="true"></span>
-          </div>
-        </div>
-        <div class="crt-stand" aria-hidden="true"></div>
-      </div>
 
-      <div class="tower-col">
-        <button class="obj modem" type="button" id="modem" aria-label="modem">
-          <span class="mled" data-led="hs"><i></i>HS</span>
-          <span class="mled" data-led="aa"><i></i>AA</span>
-          <span class="mled" data-led="cd"><i></i>CD</span>
-          <span class="mled" data-led="oh"><i></i>OH</span>
-          <span class="mled" data-led="rd"><i></i>RD</span>
-          <span class="mled" data-led="sd"><i></i>SD</span>
-          <span class="mled" data-led="tr"><i></i>TR</span>
-          <span class="mled" data-led="mr"><i></i>MR</span>
-        </button>
-        <button class="obj tower" type="button" id="tower" aria-label="beige tower computer">
-          <span class="bay burner" data-part="burner"></span>
-          <span class="bay blank"></span>
-          <span class="floppy" data-part="floppy"></span>
-          <span class="vents"></span>
-          <span class="power" data-part="power"></span>
-          <span class="pled"></span>
-          <span class="hdd-led"></span>
-        </button>
+          <div class="view home" id="view-home" hidden>
+            <div class="toolbar">
+              <button class="btn95" type="button" id="nav-back">&lt; back</button>
+              <button class="btn95" type="button" id="nav-fwd">fwd &gt;</button>
+              <span class="address">http://www.cizole.com/~cole/index.htm</span>
+              <button class="btn95" type="button" id="disconnect">disconnect</button>
+            </div>
+            <div class="hp" id="hp">
+              <h1>welcome to cole's homepage!!!</h1>
+              <div class="marquee"><span>~*~ thanx 4 visiting my page!!! ~*~ sign my guestbook!!! ~*~ this page is best viewed at 800x600 ~*~ now with more under construction ~*~ y2k is coming. i have backed up my files to a floppy. ~*~</span></div>
+              <div class="uc" role="img" aria-label="under construction">
+                <div class="uc-stripes"></div>
+                <div class="uc-mid">
+                  <span class="worker" aria-hidden="true"><span class="head"></span><span class="body"></span><span class="leg l"></span><span class="leg r"></span><span class="shovel"></span></span>
+                  <span>UNDER<br>CONSTRUCTION</span>
+                </div>
+                <div class="uc-stripes"></div>
+              </div>
+              <p>you are visitor number <span class="counter" id="counter"></span></p>
+              <p><span class="new blink">NEW!</span> updated 12/30/99 <span class="new blink">NEW!</span></p>
+              <h2>about me</h2>
+              <p>hi!!! my name is cole and this is my homepage on the world wide web. i like computers, snowboarding, mountains, building stuff, and weather. yes, weather. my computer has a 28.8k modem and a cd burner. i am very powerful.</p>
+              <hr class="rainbow">
+              <h2>cool links</h2>
+              <ul class="links">
+                <li><a href="../" target="_blank" rel="noopener">the best page on the whole internet</a></li>
+                <li><a href="#" data-dead="dave moved his page. he did not say where.">dave's page (moved??)</a></li>
+                <li><a href="#" data-dead="the download stopped at 97%. as is tradition.">free screensavers!!!</a></li>
+                <li><a href="#" data-dead="coming soon. it has been coming soon since 1998.">my snowboarding pics (coming soon)</a></li>
+                <li><a href="#" data-dead="the weather page is down due to weather.">the weather page</a></li>
+              </ul>
+              <hr class="rainbow">
+              <h2>sign my guestbook!!!</h2>
+              <form class="gb-form" id="gb-form">
+                <label>name <input id="gb-name" maxlength="24" autocomplete="off"></label>
+                <label>message <textarea id="gb-msg" maxlength="200"></textarea></label>
+                <button class="btn95" type="submit">sign it!!!</button>
+              </form>
+              <ul class="gb-list" id="gb-list"></ul>
+              <div class="webring">
+                <b>~ the cizole webring ~</b>
+                <a id="ring-prev" href="../80s/" target="_blank" rel="noopener">&lt;&lt; prev</a> |
+                <a id="ring-random" href="../eyes/" target="_blank" rel="noopener">random</a> |
+                <a id="ring-next" href="../other-window/" target="_blank" rel="noopener">next &gt;&gt;</a> |
+                <a href="#" data-dead="webring membership is closed. it was always closed.">join</a>
+                <br><small>(opens in a new window. you'll stay connected here.)</small>
+              </div>
+              <p class="hp-foot">best viewed in 800x600 with your eyes open.<br>made with a text editor and too much free time.<br>last updated: 12/30/99 &middot; (c) 1999 cole. do not steal my backgrounds.</p>
+            </div>
+            <div class="hp-error" id="hp-error" hidden>
+              <div class="win" role="alertdialog" aria-label="error">
+                <div class="win-title"><span>error</span><span aria-hidden="true">x</span></div>
+                <div class="win-body">
+                  <p class="win-status" id="hp-error-msg"></p>
+                  <div class="win-buttons"><button class="btn95" type="button" id="hp-error-ok">ok</button></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="garble" id="garble" aria-hidden="true"></div>
+        </div>
+        <div class="scanlines" aria-hidden="true"></div>
+      </div>
+      <div class="bezel-foot">
+        <span class="crt-brand">CIZOLE</span>
+        <span>15" color monitor</span>
+        <button class="degauss" type="button" id="degauss">degauss</button>
+        <span class="crt-led" aria-hidden="true"></span>
       </div>
     </div>
-    <div class="surface" aria-hidden="true"></div>
-
-    <div class="items">
-      <div class="item">
-        <button class="obj pager" type="button" id="pager" aria-label="pager">
-          <span class="pager-lcd" id="pager-lcd">- - - -</span>
-          <span class="pager-btn a"></span><span class="pager-btn b"></span>
-          <span class="pager-dot"></span>
-        </button>
-        <span class="item-label">pager</span>
-      </div>
-      <div class="item">
-        <div class="kbd-set">
-          <button class="obj keyboard" type="button" id="keyboard" aria-label="keyboard"></button>
-          <button class="obj mouse" type="button" id="mouse" aria-label="mouse"></button>
-        </div>
-        <span class="item-label">keyboard, mouse</span>
-      </div>
-      <div class="item" id="pet">
-        <div class="egg">
-          <div class="lcd-frame"><canvas id="pet-lcd" width="40" height="26" aria-label="pocket pet screen"></canvas></div>
-          <div class="pet-btns">
-            <button class="pet-btn" type="button" data-pet="feed"><i></i>feed</button>
-            <button class="pet-btn" type="button" data-pet="play"><i></i>play</button>
-            <button class="pet-btn" type="button" data-pet="clean"><i></i>clean</button>
-          </div>
-        </div>
-        <span class="pet-status" id="pet-status"></span>
-        <button class="pet-hatch" type="button" data-pet="hatch" id="pet-hatch" hidden>hatch a new one</button>
-      </div>
-      <div class="item spindle-wrap">
-        <div class="cd-face" id="cd-face" hidden><span class="cd-label" id="cd-label"></span></div>
-        <button class="obj spindle" type="button" id="spindle" aria-label="spindle of burned cds">
-          <span class="spindle-base"></span>
-          <span class="spindle-post"></span>
-          <span class="cd-stack"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
-          <span class="spindle-dome"></span>
-        </button>
-        <span class="item-label">cd spindle</span>
-      </div>
-    </div>
+    <p class="ov-caption" data-caption aria-hidden="true"></p>
   </div>
-
-  <div class="controls">
-    <button class="pill" type="button" id="sound">sound: off</button>
-  </div>
-  <p class="caption" id="caption" role="status"></p>
 </div>
 
+<div class="overlay" id="pet-wrap" hidden>
+  <div class="panel pet-panel" id="pet-panel" role="dialog" aria-label="pocket pet">
+    <div class="panel-head"><span>pocket pet</span><button class="close-x" type="button" data-close>put it down</button></div>
+    <div class="egg">
+      <div class="lcd-frame"><canvas id="pet-lcd" width="40" height="26" aria-label="pocket pet screen"></canvas></div>
+      <div class="pet-btns">
+        <button class="pet-btn" type="button" data-pet="feed"><i></i>feed</button>
+        <button class="pet-btn" type="button" data-pet="play"><i></i>play</button>
+        <button class="pet-btn" type="button" data-pet="clean"><i></i>clean</button>
+      </div>
+    </div>
+    <p class="pet-status" id="pet-status"></p>
+    <button class="close-x pet-hatch" type="button" data-pet="hatch" id="pet-hatch" hidden>hatch a new one</button>
+    <p class="ov-caption" data-caption aria-hidden="true"></p>
+  </div>
+</div>
+
+<div class="overlay" id="cd-wrap" hidden>
+  <div class="panel cd-panel" role="dialog" aria-label="portable cd player">
+    <div class="panel-head"><span>portable cd player. the music keeps playing when you walk away.</span><button class="close-x" type="button" data-close>back to the room</button></div>
+    <div class="cd-grid">
+      <div>
+        <div class="player" id="player">
+          <div class="player-lid"><div class="player-disc none" id="player-disc"><span id="player-label"></span></div></div>
+          <div class="player-lcd" id="player-lcd">NO DISC</div>
+        </div>
+        <div class="player-btns">
+          <button type="button" data-cd="prev">|&lt;&lt;</button>
+          <button type="button" data-cd="play">play</button>
+          <button type="button" data-cd="stop">stop</button>
+          <button type="button" data-cd="next">&gt;&gt;|</button>
+        </div>
+        <p class="player-esp" id="player-esp">anti-skip protection: 3 sec</p>
+      </div>
+      <div class="disc-list" id="disc-list"><p>the spindle. pick a disc.</p></div>
+    </div>
+    <p class="ov-caption" data-caption aria-hidden="true"></p>
+  </div>
+</div>
+
+<div class="overlay" id="photo-wrap" hidden>
+  <div class="panel photo-panel" role="dialog" aria-label="a photo">
+    <div class="panel-head"><span>from the corkboard</span><button class="close-x" type="button" data-close>pin it back up</button></div>
+    <figure class="photo-big"><img id="photo-img" alt="a slightly blurry flash photo of the bedroom"><figcaption id="photo-cap"></figcaption></figure>
+  </div>
+</div>
+
+<div class="overlay" id="pog-wrap" hidden>
+  <div class="panel binder" role="dialog" aria-label="pog collection">
+    <div class="panel-head"><span id="pog-head">pog collection</span><button class="close-x" type="button" data-close>close the binder</button></div>
+    <div class="pog-grid" id="pog-grid"></div>
+  </div>
+</div>
 <script>
 (() => {
   const $ = s => document.querySelector(s);
   const pick = arr => arr[Math.floor(Math.random() * arr.length)];
   const rand = (a, b) => a + Math.random() * (b - a);
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const TAU = Math.PI * 2;
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const isTouch = matchMedia('(pointer: coarse)').matches;
+  const stage = $('#stage');
   const store = {
     get(key, fallback) {
       try {
@@ -936,8 +1092,12 @@
       }
     },
     set(key, value) {
-      try { localStorage.setItem(key, JSON.stringify(value)); } catch (err) { /* private mode */ }
+      try { localStorage.setItem(key, JSON.stringify(value)); return true; } catch (err) { return false; }
     },
+  };
+  const cycle = lines => {
+    let i = 0;
+    return () => (i < lines.length ? lines[i++] : pick(lines));
   };
 
   // shared state (declared up front: several features read these)
@@ -945,85 +1105,104 @@
   let y2kDone = false;
   let y2kAt = 0;
   let pageCurrent = null;
+  let netState = 'offline'; // offline | dialing | online | lost
 
-  // ---------- caption ----------
-  const captionEl = $('#caption');
+  // ---------- caption (the room's, and a copy inside whatever close-up is open) ----------
+  const capEls = [...document.querySelectorAll('[data-caption]')];
   let captionTimer;
   function say(text) {
     clearTimeout(captionTimer);
-    captionEl.classList.add('fade');
+    capEls.forEach(c => c.classList.add('fade'));
     captionTimer = setTimeout(() => {
-      captionEl.textContent = text;
-      captionEl.classList.remove('fade');
+      capEls.forEach(c => {
+        c.textContent = text;
+        c.classList.remove('fade');
+      });
     }, 180);
   }
 
-  // ---------- sound (off until asked) ----------
-  let ctx = null;
-  let master = null;
-  let noiseBuf = null;
-  let soundOn = false;
+  // ---------- sound: nothing is created until someone clicks something ----------
+  const CD_LEVEL = 0.5;
+  const audio = { ctx: null, on: false };
   const soundBtn = $('#sound');
+  let userMuted = false;
   function initAudio() {
-    ctx = new AudioContext();
-    master = ctx.createGain();
-    master.gain.value = 0.8;
-    master.connect(ctx.destination);
-    noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
-    const d = noiseBuf.getChannelData(0);
-    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    if (audio.ctx) return;
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const comp = ctx.createDynamicsCompressor();
+    comp.threshold.value = -16;
+    comp.ratio.value = 3;
+    const master = ctx.createGain();
+    master.gain.value = 0;
+    master.connect(comp).connect(ctx.destination);
+    const sfx = ctx.createGain();
+    sfx.gain.value = 0.8;
+    sfx.connect(master);
+    const cdBus = ctx.createGain();
+    cdBus.gain.value = CD_LEVEL;
+    cdBus.connect(master);
+    const noise = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+    const nd = noise.getChannelData(0);
+    for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+    const curve = new Float32Array(1024);
+    for (let i = 0; i < curve.length; i++) curve[i] = Math.tanh((i / 512 - 1) * 6);
+    Object.assign(audio, { ctx, master, sfx, cdBus, noise, curve });
   }
-  const audible = () => soundOn && ctx !== null;
+  function setSound(on) {
+    audio.on = on;
+    soundBtn.textContent = on ? 'sound: on' : 'sound: off';
+    soundBtn.classList.toggle('on', on);
+    if (on) {
+      initAudio();
+      audio.ctx.resume().catch(() => {});
+    }
+    if (audio.ctx) audio.master.gain.setTargetAtTime(on ? 0.9 : 0, audio.ctx.currentTime, 0.05);
+  }
   soundBtn.addEventListener('click', () => {
-    soundOn = !soundOn;
-    if (soundOn && !ctx) initAudio();
-    if (ctx) (soundOn ? ctx.resume() : ctx.suspend()).catch(() => {});
-    soundBtn.textContent = soundOn ? 'sound: on' : 'sound: off';
-    soundBtn.classList.toggle('on', soundOn);
-    say(soundOn ? 'sound on. the modem has been waiting for this.' : 'sound off. the house is quiet again.');
+    setSound(!audio.on);
+    userMuted = !audio.on;
+    say(audio.on ? 'sound on. the modem has been waiting for this.' : 'sound off. the house is quiet again.');
   });
-  document.addEventListener('visibilitychange', () => {
-    if (!ctx) return;
-    (document.hidden || !soundOn ? ctx.suspend() : ctx.resume()).catch(() => {});
-  });
+  const audible = () => audio.on && audio.ctx !== null;
 
   function tone(freqs, start, dur, vol, type = 'sine') {
     for (const f of freqs) {
-      const o = ctx.createOscillator();
+      const o = audio.ctx.createOscillator();
       o.type = type;
       o.frequency.value = f;
-      const g = ctx.createGain();
+      const g = audio.ctx.createGain();
       g.gain.setValueAtTime(0.0001, start);
       g.gain.linearRampToValueAtTime(vol, start + 0.01);
       g.gain.setValueAtTime(vol, start + Math.max(0.012, dur - 0.02));
       g.gain.linearRampToValueAtTime(0.0001, start + dur);
-      o.connect(g).connect(master);
+      o.connect(g).connect(audio.sfx);
       o.start(start);
       o.stop(start + dur + 0.03);
     }
   }
   function hiss(start, dur, freq, q, vol) {
-    const s = ctx.createBufferSource();
-    s.buffer = noiseBuf;
+    const s = audio.ctx.createBufferSource();
+    s.buffer = audio.noise;
     s.loop = true;
-    const f = ctx.createBiquadFilter();
+    const f = audio.ctx.createBiquadFilter();
     f.type = 'bandpass';
     f.frequency.value = freq;
     f.Q.value = q;
-    const g = ctx.createGain();
+    const g = audio.ctx.createGain();
     g.gain.setValueAtTime(0.0001, start);
     g.gain.linearRampToValueAtTime(vol, start + 0.03);
     g.gain.setValueAtTime(vol, start + Math.max(0.035, dur - 0.05));
     g.gain.linearRampToValueAtTime(0.0001, start + dur);
-    s.connect(f).connect(g).connect(master);
+    s.connect(f).connect(g).connect(audio.sfx);
     s.start(start);
     s.stop(start + dur + 0.05);
   }
+  const now0 = () => audio.ctx.currentTime + 0.01;
   // a rough impression of a 28.8k modem saying hello
   function playDialup() {
     if (!audible()) return;
     const DTMF = { '0': [941, 1336], '1': [697, 1209], '5': [770, 1336], '9': [852, 1477] };
-    const t0 = ctx.currentTime + 0.05;
+    const t0 = audio.ctx.currentTime + 0.05;
     tone([350, 440], t0, 0.7, 0.04);
     let t = t0 + 0.8;
     for (const digit of '5550199') {
@@ -1045,41 +1224,30 @@
   }
   function beeps(n, freq) {
     if (!audible()) return;
-    const t = ctx.currentTime + 0.02;
+    const t = now0();
     for (let i = 0; i < n; i++) tone([freq], t + i * 0.16, 0.09, 0.05, 'square');
   }
-  function chirp() {
-    if (audible()) tone([2200], ctx.currentTime + 0.01, 0.05, 0.03, 'square');
-  }
-  function thunk() {
+  function chirp() { if (audible()) tone([2200], now0(), 0.05, 0.03, 'square'); }
+  function sweep(type, f0, f1, dur, vol) {
     if (!audible()) return;
-    const t = ctx.currentTime + 0.01;
-    const o = ctx.createOscillator();
-    o.frequency.setValueAtTime(160, t);
-    o.frequency.exponentialRampToValueAtTime(45, t + 0.6);
-    const g = ctx.createGain();
-    g.gain.setValueAtTime(0.25, t);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.7);
-    o.connect(g).connect(master);
+    const t = now0();
+    const o = audio.ctx.createOscillator();
+    o.type = type;
+    o.frequency.setValueAtTime(f0, t);
+    o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    const g = audio.ctx.createGain();
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.05);
+    o.connect(g).connect(audio.sfx);
     o.start(t);
-    o.stop(t + 0.75);
-    hiss(t, 0.2, 400, 0.6, 0.08);
+    o.stop(t + dur + 0.08);
   }
-  function crash() {
-    if (!audible()) return;
-    const t = ctx.currentTime + 0.01;
-    hiss(t, 0.7, 900, 0.4, 0.12);
-    const o = ctx.createOscillator();
-    o.type = 'sawtooth';
-    o.frequency.setValueAtTime(1200, t);
-    o.frequency.exponentialRampToValueAtTime(60, t + 1.2);
-    const g = ctx.createGain();
-    g.gain.setValueAtTime(0.06, t);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 1.3);
-    o.connect(g).connect(master);
-    o.start(t);
-    o.stop(t + 1.35);
-  }
+  const thunk = () => { sweep('sine', 160, 45, 0.6, 0.25); if (audible()) hiss(now0(), 0.2, 400, 0.6, 0.08); };
+  const crash = () => { if (audible()) hiss(now0(), 0.7, 900, 0.4, 0.12); sweep('sawtooth', 1200, 60, 1.2, 0.06); };
+  const squeak = () => sweep('triangle', 620 + Math.random() * 200, 1100, 0.18, 0.08);
+  const airHiss = () => { if (audible()) hiss(now0(), 0.5, 3000, 0.5, 0.05); };
+  const shutter = () => { if (!audible()) return; hiss(now0(), 0.03, 4000, 1, 0.12); hiss(now0() + 0.12, 0.35, 900, 3, 0.05); };
+  const thud = () => { sweep('sine', 120, 40, 0.25, 0.35); if (audible()) for (let i = 0; i < 6; i++) hiss(now0() + 0.08 + i * 0.05, 0.03, 2500 + i * 300, 3, 0.04); };
 
   // ---------- modem lights + hard drive ----------
   const LED_KEYS = ['hs', 'aa', 'cd', 'oh', 'rd', 'sd', 'tr', 'mr'];
@@ -1114,44 +1282,78 @@
 
   // ---------- the calendar ----------
   const MONTHS = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
-  const calTitle = $('#cal-title');
-  const calGrid = $('#cal-grid');
-  const calNote = $('#cal-note');
   function renderCalendar(year, month, mark, note) {
-    calTitle.textContent = `${MONTHS[month]} ${year}`.toUpperCase();
-    calGrid.textContent = '';
+    $('#cal-title').textContent = `${MONTHS[month]} ${year}`.toUpperCase();
+    const grid = $('#cal-grid');
+    grid.textContent = '';
     for (const h of ['s', 'm', 't', 'w', 't', 'f', 's']) {
       const el = document.createElement('span');
       el.className = 'h';
       el.textContent = h;
-      calGrid.appendChild(el);
+      grid.appendChild(el);
     }
     const first = new Date(year, month, 1).getDay();
     const days = new Date(year, month + 1, 0).getDate();
-    for (let i = 0; i < first; i++) calGrid.appendChild(document.createElement('span'));
+    for (let i = 0; i < first; i++) grid.appendChild(document.createElement('span'));
     for (let d = 1; d <= days; d++) {
       const el = document.createElement('span');
       el.textContent = d;
       if (d === mark) el.className = 'mark';
-      calGrid.appendChild(el);
+      grid.appendChild(el);
     }
-    calNote.textContent = note || '';
+    $('#cal-note').textContent = note || '';
   }
   renderCalendar(1999, 11, 31, 'y2k??');
 
-  // ---------- the crt: dial-up ----------
+  // ---------- close-ups ----------
+  let openOverlay = null;
+  let returnFocus = null;
+  const onClose = {};
+  function openOv(id, from) {
+    if (openOverlay) closeOv(true);
+    const el = document.getElementById(id);
+    el.hidden = false;
+    openOverlay = el;
+    returnFocus = from || null;
+    const f = el.querySelector('[data-close]');
+    if (f) f.focus();
+  }
+  function closeOv(quiet) {
+    if (!openOverlay) return;
+    const el = openOverlay;
+    openOverlay = null;
+    el.hidden = true;
+    if (!quiet && onClose[el.id]) onClose[el.id]();
+    if (returnFocus && returnFocus.focus) returnFocus.focus();
+    returnFocus = null;
+  }
+  const isOpen = id => Boolean(openOverlay && openOverlay.id === id);
+  document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => closeOv()));
+  document.querySelectorAll('.overlay').forEach(o => o.addEventListener('click', e => { if (e.target === o) closeOv(); }));
+  addEventListener('keydown', e => {
+    if (e.key === 'Escape' && openOverlay) {
+      e.preventDefault();
+      closeOv();
+    }
+  });
+
+  // ---------- the computer: dial-up ----------
   const views = { connect: $('#view-connect'), home: $('#view-home') };
   const winTitle = $('#win-title');
   const winStatus = $('#win-status');
   const connectBtn = $('#connect');
   const iconDots = $('#icon-dots');
   const hp = $('#hp');
-  let netState = 'offline'; // offline | dialing | online | lost
+  const mini = $('#mini');
   let netTimers = [];
   let momTimer = null;
   let dotsTimer = null;
   let connections = 0;
 
+  function setNet(s) {
+    netState = s;
+    mini.dataset.state = s;
+  }
   function showView(name) {
     for (const [key, el] of Object.entries(views)) el.hidden = key !== name;
   }
@@ -1163,7 +1365,6 @@
     iconDots.textContent = '';
   }
   const at = (ms, fn) => netTimers.push(setTimeout(fn, ms));
-
   function dialog(title, status, button, disabled) {
     winTitle.textContent = title;
     winStatus.textContent = status;
@@ -1174,7 +1375,7 @@
   function dial() {
     if (netState === 'dialing') return;
     clearNet();
-    netState = 'dialing';
+    setNet('dialing');
     showView('connect');
     dialog('cizole online', 'dialing 555-0199...', 'connecting...', true);
     leds({ oh: true });
@@ -1196,11 +1397,10 @@
     });
     at(6500, goOnline);
   }
-
   function goOnline() {
     clearInterval(dotsTimer);
     iconDots.textContent = '';
-    netState = 'online';
+    setNet('online');
     connections++;
     showView('home');
     hp.scrollTop = 0;
@@ -1208,7 +1408,6 @@
     say(connections === 1 ? "connected. you're on the internet. it's mostly this page." : 'reconnected. the page is exactly how you left it.');
     momTimer = setTimeout(momPicksUp, connections === 1 ? rand(40000, 70000) : rand(90000, 180000));
   }
-
   // dial-up pages arrive one piece at a time
   function revealHomepage() {
     const blocks = [...hp.children];
@@ -1228,7 +1427,6 @@
     }));
     at(250 + blocks.length * 260, () => busy(false));
   }
-
   function momPicksUp() {
     if (netState !== 'online') return;
     if (document.hidden || y2kRunning) {
@@ -1236,19 +1434,20 @@
       return;
     }
     clearNet();
-    netState = 'lost';
+    setNet('lost');
     busy(false);
     leds({});
     showView('connect');
     dialog('connection lost', 'you have been disconnected. (mom picked up the phone.)', 'reconnect', false);
-    if (audible()) hiss(ctx.currentTime + 0.01, 0.25, 1200, 0.8, 0.06);
-    say('someone picked up the phone downstairs.');
+    if (audible()) hiss(now0(), 0.25, 1200, 0.8, 0.06);
+    say(isOpen('crt-wrap')
+      ? 'someone picked up the phone downstairs.'
+      : "someone picked up the phone downstairs. the computer got disconnected. you weren't even using it.");
   }
-
   connectBtn.addEventListener('click', dial);
   $('#disconnect').addEventListener('click', () => {
     clearNet();
-    netState = 'offline';
+    setNet('offline');
     busy(false);
     leds({});
     showView('connect');
@@ -1265,6 +1464,31 @@
     setTimeout(() => { if (!busyTimer && !y2kRunning) ledEls.rd.classList.toggle('on', Boolean(ledBase.rd)); }, 300);
   }, 2500);
 
+  const crtEl = $('#crt');
+  function useComputer(from) {
+    openOv('crt-wrap', from);
+    if (netState === 'offline') say("the computer. it's on. it's always on. the modem is waiting.");
+    else if (netState === 'lost') say('the computer. it got disconnected while you were gone. it happens.');
+  }
+  crtEl.addEventListener('click', () => useComputer(crtEl));
+  onClose['crt-wrap'] = () => {
+    if (netState === 'online' || netState === 'dialing') say("you step away from the computer. it's still connected. the phone line is still tied up.");
+    else say('you step away from the computer.');
+  };
+
+  let degaussCount = 0;
+  $('#degauss').addEventListener('click', () => {
+    const scr = $('#screen');
+    scr.classList.remove('degaussing');
+    void scr.offsetWidth;
+    scr.classList.add('degaussing');
+    setTimeout(() => scr.classList.remove('degaussing'), 1100);
+    thunk();
+    say(degaussCount++ === 0
+      ? 'degaussed. the colors went wobbly and came back. deeply satisfying.'
+      : 'degaussed again. it did not need it. you just like the sound.');
+  });
+
   // ---------- the homepage ----------
   const visits = (Number(store.get('cizole.90s.visits', 0)) || 0) + 1;
   store.set('cizole.90s.visits', visits);
@@ -1274,7 +1498,6 @@
     b.textContent = digit;
     counter.appendChild(b);
   }
-
   const hpError = $('#hp-error');
   hp.addEventListener('click', e => {
     const a = e.target.closest('a[data-dead]');
@@ -1287,14 +1510,18 @@
   });
   $('#hp-error-ok').addEventListener('click', () => { hpError.hidden = true; });
 
-  const RING = ['eyes', 'button', 'trip', 'escape', 'server-room', 'funky-town', 'roomba-room', 'fish-tank', 'blacklight', 'game-room', '70s', '80s', '90s'];
+  // the webring: every link opens in a new window so this connection survives
+  const RING = ['eyes', 'button', 'trip', 'escape', 'server-room', 'funky-town', 'roomba-room', 'fish-tank', 'blacklight', 'game-room', '70s', '80s', '90s', 'other-window', 'junk-drawer', 'basement', 'weather'];
   const here = RING.indexOf('90s');
   $('#ring-prev').href = `../${RING[(here - 1 + RING.length) % RING.length]}/`;
   $('#ring-next').href = `../${RING[(here + 1) % RING.length]}/`;
   $('#ring-random').addEventListener('click', e => {
-    e.preventDefault();
-    location.href = `../${pick(RING.filter(r => r !== '90s'))}/`;
+    e.currentTarget.href = `../${pick(RING.filter(r => r !== '90s'))}/`;
+    say('the webring opened another window. you are still connected here. the phone line is still ours.');
   });
+  ['#ring-prev', '#ring-next'].forEach(sel => $(sel).addEventListener('click', () => {
+    say('the webring opened another window. you are still connected here.');
+  }));
 
   const GB_KEY = 'cizole.90s.guestbook';
   const SEED = [
@@ -1348,7 +1575,7 @@
     ['411', 'they need information. they did not say which.'],
     ['121', 'call me. they will not pick up.'],
     ['5550199', 'that is your own number. you paged yourself. why.'],
-    ['911 911', 'mom. call home. now.'],
+    ['911 911', 'mom. call home. you are home. she is downstairs.'],
     ['1234', 'someone is testing their pager. it works. good for them.'],
     ['07734 07734', "hello hello. they're persistent."],
   ];
@@ -1361,27 +1588,23 @@
     pagerEl.classList.add('buzz');
   }
   function page() {
-    const options = PAGES.filter(p => !pageCurrent || p[0] !== pageCurrent.code);
-    const [code, text] = pick(options);
+    const [code, text] = pick(PAGES.filter(p => !pageCurrent || p[0] !== pageCurrent.code));
     pageCurrent = { code, text };
     pagerLcd.textContent = code;
     pagerEl.classList.add('unread');
     buzzPager();
     beeps(3, 2750);
-    say('the pager is buzzing.');
+    say('the pager on the desk is buzzing.');
   }
   function schedulePage(first) {
     setTimeout(() => {
       if (!document.hidden && !y2kRunning) page();
       schedulePage(false);
-    }, first ? rand(12000, 20000) : rand(45000, 90000));
+    }, first ? rand(14000, 22000) : rand(45000, 90000));
   }
   schedulePage(true);
   pagerEl.addEventListener('click', () => {
-    if (y2kRunning) {
-      say('the pager is receiving only zeros. it seems upset.');
-      return;
-    }
+    if (y2kRunning) { say('the pager is receiving only zeros. it seems upset.'); return; }
     if (pageCurrent && pagerEl.classList.contains('unread')) {
       pagerEl.classList.remove('unread');
       say(`${pageCurrent.code}: ${pageCurrent.text}`);
@@ -1392,9 +1615,10 @@
     }
   });
 
-  // ---------- the pocket pet ----------
+  // ---------- the pocket pet (on the bed; picks up into a close-up) ----------
   const lcd = $('#pet-lcd');
   const lg = lcd.getContext('2d');
+  const miniLcd = $('#pet-mini').getContext('2d');
   const LW = 40;
   const LH = 26;
   const INK = '#1e2a18';
@@ -1406,7 +1630,6 @@
   const POOP_EVERY = 12 * MIN;
   const FARM_AFTER = 36 * 60 * MIN; // a day and a half with no care at all
   const PET_KEY = 'cizole.90s.pet';
-
   const POOP = ['..#..', '.###.', '#####'];
   const BOWL = ['#...#', '#####', '.###.'];
   const HEART = ['.#.#.', '#####', '.###.', '..#..'];
@@ -1416,7 +1639,6 @@
     '9': ['###', '#.#', '###', '..#', '###'],
     '/': ['..#', '..#', '.#.', '#..', '#..'],
   };
-
   const hatchPet = gen => {
     const now = Date.now();
     return { born: now, fed: now, played: now, cleaned: now, gen, farm: false, farmSeen: false };
@@ -1424,8 +1646,8 @@
   let pet = store.get(PET_KEY, null);
   let hatching = false;
   let hatchStart = 0;
-  const valid = p => p && ['born', 'fed', 'played', 'cleaned', 'gen'].every(k => typeof p[k] === 'number');
-  if (!valid(pet)) {
+  const validPet = p => p && ['born', 'fed', 'played', 'cleaned', 'gen'].every(k => typeof p[k] === 'number');
+  if (!validPet(pet)) {
     pet = hatchPet(1);
     hatching = true;
     hatchStart = performance.now();
@@ -1439,7 +1661,6 @@
   }
   checkFarm();
   savePet();
-
   function needs(now = Date.now()) {
     return {
       hungry: now - pet.fed > HUNGRY_AFTER,
@@ -1453,14 +1674,13 @@
     if (!n.hungry && !n.bored) return 'happy';
     return 'flat';
   }
-
   const dot = (x, y) => lg.fillRect(x, y, 1, 1);
   function bitmap(rows, x, y) {
     rows.forEach((row, r) => {
       for (let c = 0; c < row.length; c++) if (row[c] === '#') dot(x + c, y + r);
     });
   }
-  function text(str, x, y) {
+  function lcdText(str, x, y) {
     for (const ch of str) {
       if (FONT[ch]) bitmap(FONT[ch], x, y);
       x += 4;
@@ -1490,9 +1710,7 @@
         if (d <= 1 && d > 0.5) dot(15 + x + wobble, 8 + y);
       }
     }
-    if (t > 1800) {
-      [[17, 13], [18, 12], [19, 13], [20, 12], [21, 13], [22, 12]].forEach(([x, y]) => dot(x + wobble, y));
-    }
+    if (t > 1800) [[17, 13], [18, 12], [19, 13], [20, 12], [21, 13], [22, 12]].forEach(([x, y]) => dot(x + wobble, y));
   }
   function drawFarm() {
     lg.fillRect(0, 17, LW, 1);
@@ -1503,32 +1721,29 @@
     }
     lg.fillRect(19, 11, 2, 2); // it's happier there. it's very far away.
   }
-
   let petX = 12;
   let petFrame = 0;
-  let action = null;
+  let petAction = null;
   let actionUntil = 0;
   function drawLCD() {
     lg.fillStyle = PAPER;
     lg.fillRect(0, 0, LW, LH);
     lg.fillStyle = INK;
-    if (y2kRunning) {
-      text('1/1/1900', 4, 10);
-      return;
+    if (y2kRunning) lcdText('1/1/1900', 4, 10);
+    else if (pet.farm) drawFarm();
+    else if (hatching) drawEgg(performance.now() - hatchStart);
+    else {
+      const n = needs();
+      const acting = petAction && performance.now() < actionUntil;
+      const y = acting && petAction === 'play' && petFrame ? 9 : 12;
+      drawPet(petX, y, petFrame, acting && petAction === 'feed' ? 'eat' : moodOf(n));
+      if (acting && petAction === 'feed') bitmap(BOWL, petX + 13, 20);
+      if (acting && petAction === 'play') bitmap(HEART, petX + 13, 6);
+      for (let i = 0; i < n.poops; i++) bitmap(POOP, 30 + (i % 2) * 5, 21 - Math.floor(i / 2) * 4);
+      if (n.hungry && !acting) bitmap(BOWL, 1, 1);
     }
-    if (pet.farm) { drawFarm(); return; }
-    if (hatching) { drawEgg(performance.now() - hatchStart); return; }
-    const n = needs();
-    const now = performance.now();
-    const acting = action && now < actionUntil;
-    const y = acting && action === 'play' && petFrame ? 9 : 12;
-    drawPet(petX, y, petFrame, acting && action === 'feed' ? 'eat' : moodOf(n));
-    if (acting && action === 'feed') bitmap(BOWL, petX + 13, 20);
-    if (acting && action === 'play') bitmap(HEART, petX + 13, 6);
-    for (let i = 0; i < n.poops; i++) bitmap(POOP, 30 + (i % 2) * 5, 21 - Math.floor(i / 2) * 4);
-    if (n.hungry && !acting) bitmap(BOWL, 1, 1);
+    miniLcd.drawImage(lcd, 0, 0);
   }
-
   const petStatus = $('#pet-status');
   function renderPetStatus() {
     $('#pet-hatch').hidden = !pet.farm;
@@ -1543,8 +1758,15 @@
     if (n.poops) bits.push(n.poops === 1 ? 'there is poop' : 'there is a lot of poop');
     petStatus.textContent = `gen ${pet.gen} · age ${days}d · ${bits.length ? bits.join(', ') : 'content'}`;
   }
-
-  $('#pet').addEventListener('click', e => {
+  const petEgg = $('#petegg');
+  petEgg.addEventListener('click', () => {
+    openOv('pet-wrap', petEgg);
+    renderPetStatus();
+    if (pet.farm) say('the pet is not here. it is on a farm. the screen shows the farm.');
+    else if (needs().hungry) say('you pick up the pocket pet. it is hungry. it is always hungry.');
+    else say('you pick up the pocket pet. it looks at you like you owe it something.');
+  });
+  $('#pet-panel').addEventListener('click', e => {
     const b = e.target.closest('[data-pet]');
     if (!b) return;
     const act = b.dataset.pet;
@@ -1573,22 +1795,21 @@
       pet.cleaned = now;
       say(n.poops ? 'cleaned. you are a good pet owner. the bar was low.' : 'there was nothing to clean. you cleaned anyway. it is watching you.');
     }
-    action = act;
+    petAction = act;
     actionUntil = performance.now() + 1500;
     savePet();
     renderPetStatus();
     drawLCD();
   });
-
   setInterval(() => {
     petFrame ^= 1;
     if (hatching && performance.now() - hatchStart > 3200) {
       hatching = false;
       renderPetStatus();
-      say('it hatched. it looks at you like you owe it something.');
+      say('the pet hatched. it looks at you like you owe it something.');
     }
-    if (!action || performance.now() > actionUntil) {
-      action = null;
+    if (!petAction || performance.now() > actionUntil) {
+      petAction = null;
       petX = clamp(petX + pick([-2, -1, 0, 1, 2]), 2, 18);
     }
     checkFarm();
@@ -1598,35 +1819,1042 @@
   renderPetStatus();
   drawLCD();
 
-  // ---------- the cd spindle ----------
-  const CDS = [
-    ['mix 7', "a cd labeled 'mix 7'. there is no mix 1 through 6. nobody asks."],
-    ['mix 7 (good)', "'mix 7 (good)'. it skips on track 4. everyone knows exactly where."],
-    ["do not play at grandma's", "'do not play at grandma's'. it was played at grandma's."],
-    ['drivers??', "'drivers??'. it might be drivers. it has been in the spindle since 1998. nobody checks."],
-    ['backup of backup', "'backup of backup'. the original backup is gone. this one is load-bearing."],
-    ['homework (music)', "'homework (music)'. it is not homework."],
-    ['mix 8 (worse)', "'mix 8 (worse)'. an honest label."],
-    ['coaster', "a coaster. the burn failed at 97%. it's a very good coaster."],
-    ['untitled', 'untitled. nobody is brave enough to find out.'],
+  // ---------- burned cds ----------
+  const DISCS = [
+    { label: 'mix 7', style: 'pop', bpm: 118, tracks: 5, line: "a cd labeled 'mix 7'. there is no mix 1 through 6. nobody asks." },
+    { label: 'mix 7 (good)', style: 'dance', bpm: 128, tracks: 5, skipTrack: 4, line: "'mix 7 (good)'. it skips on track 4. everyone knows exactly where." },
+    { label: "do not play at grandma's", style: 'rock', bpm: 140, tracks: 5, line: "'do not play at grandma's'. it was played at grandma's." },
+    { label: 'drivers??', style: 'data', bpm: 150, tracks: 1, line: "'drivers??'. it might be drivers. it has been in the spindle since 1998. nobody checks." },
+    { label: 'backup of backup', style: 'err', bpm: 120, tracks: 0, line: "'backup of backup'. the original backup is gone. this one is load-bearing." },
+    { label: 'homework (music)', style: 'triphop', bpm: 86, tracks: 5, line: "'homework (music)'. it is not homework." },
+    { label: 'mix 8 (worse)', style: 'pop', bpm: 112, tracks: 5, detune: -38, line: "'mix 8 (worse)'. an honest label." },
+    { label: 'coaster', style: 'none', bpm: 120, tracks: 0, line: "a coaster. the burn failed at 97%. it's a very good coaster." },
+    { label: 'untitled', style: 'untitled', bpm: 60, tracks: 1, line: 'untitled. nobody is brave enough to find out.' },
   ];
-  const cdFace = $('#cd-face');
-  const cdLabel = $('#cd-label');
-  let cdIndex = 0;
-  let cdTimer;
-  $('#spindle').addEventListener('click', () => {
-    const [label, line] = CDS[cdIndex++ % CDS.length];
-    cdLabel.textContent = label;
-    cdFace.hidden = false;
-    cdFace.classList.remove('pop');
-    void cdFace.offsetWidth;
-    cdFace.classList.add('pop');
-    clearTimeout(cdTimer);
-    cdTimer = setTimeout(() => { cdFace.hidden = true; }, 3500);
-    say(line);
+  const TRACK_SHIFT = [0, 2, -3, 5, -2];
+  const TRACK_TEMPO = [1, 1.04, 0.96, 1.02, 0.98];
+  const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+  const cd = {
+    disc: -1, track: 1, playing: false, step: 0, nextT: 0, sched: null,
+    elapsed: 0, abuf: 3, skips: 0, forcedSkipDone: false, lcdOverride: '', lcdUntil: 0,
+  };
+
+  // voices, all into the cd bus
+  function vNoise(t, type, freq, q, v, dur) {
+    const s = audio.ctx.createBufferSource();
+    s.buffer = audio.noise;
+    const f = audio.ctx.createBiquadFilter();
+    f.type = type;
+    f.frequency.value = freq;
+    f.Q.value = q;
+    const g = audio.ctx.createGain();
+    g.gain.setValueAtTime(v, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    s.connect(f).connect(g).connect(audio.cdBus);
+    s.start(t, Math.random() * 0.5);
+    s.stop(t + dur + 0.02);
+  }
+  function vTone(type, f, t, dur, v, cutoff = 0, det = 0) {
+    const o = audio.ctx.createOscillator();
+    o.type = type;
+    o.frequency.value = f;
+    o.detune.value = det;
+    const g = audio.ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(v, t + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    let node = o;
+    if (cutoff) {
+      const lp = audio.ctx.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = cutoff;
+      o.connect(lp);
+      node = lp;
+    }
+    node.connect(g).connect(audio.cdBus);
+    o.start(t);
+    o.stop(t + dur + 0.03);
+  }
+  function vKick(t, v = 0.5) {
+    const o = audio.ctx.createOscillator();
+    const g = audio.ctx.createGain();
+    o.frequency.setValueAtTime(140, t);
+    o.frequency.exponentialRampToValueAtTime(45, t + 0.12);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(v, t + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+    o.connect(g).connect(audio.cdBus);
+    o.start(t);
+    o.stop(t + 0.32);
+  }
+  const vSnare = (t, v = 0.2) => { vNoise(t, 'bandpass', 1800, 0.8, v, 0.16); vTone('triangle', 190, t, 0.07, v * 0.5); };
+  const vHat = (t, v = 0.045, open = false) => vNoise(t, 'highpass', 8000, 0.7, v, open ? 0.14 : 0.035);
+  function vPad(midis, t, dur, v, det = 0) {
+    const lp = audio.ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = 1200;
+    const g = audio.ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(v, t + Math.min(0.8, dur * 0.3));
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    lp.connect(g).connect(audio.cdBus);
+    for (const m of midis) {
+      for (const d of [-8, 8]) {
+        const o = audio.ctx.createOscillator();
+        o.type = 'sawtooth';
+        o.frequency.value = mtof(m);
+        o.detune.value = d + det;
+        o.connect(lp);
+        o.start(t);
+        o.stop(t + dur + 0.05);
+      }
+    }
+  }
+  function vPower(midis, t, dur, v, det = 0) {
+    const shaper = audio.ctx.createWaveShaper();
+    shaper.curve = audio.curve;
+    const lp = audio.ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = 2800;
+    const g = audio.ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(v, t + 0.006);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    shaper.connect(lp).connect(g).connect(audio.cdBus);
+    for (const m of midis) {
+      const o = audio.ctx.createOscillator();
+      o.type = 'sawtooth';
+      o.frequency.value = mtof(m);
+      o.detune.value = det;
+      o.connect(shaper);
+      o.start(t);
+      o.stop(t + dur + 0.03);
+    }
+  }
+  function vEp(midis, t, dur, vel, det = 0) {
+    for (const m of midis) {
+      const f = mtof(m);
+      const car = audio.ctx.createOscillator();
+      car.frequency.value = f;
+      car.detune.value = det;
+      const mod = audio.ctx.createOscillator();
+      mod.frequency.value = f;
+      const mg = audio.ctx.createGain();
+      mg.gain.setValueAtTime(f * 1.2 * vel, t);
+      mg.gain.exponentialRampToValueAtTime(Math.max(1, f * 0.05), t + 0.5);
+      mod.connect(mg).connect(car.frequency);
+      const g = audio.ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.05 * vel, t + 0.006);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      car.connect(g).connect(audio.cdBus);
+      car.start(t);
+      mod.start(t);
+      car.stop(t + dur + 0.05);
+      mod.stop(t + dur + 0.05);
+    }
+  }
+
+  // four bars of sixteenths per loop; everything original and a little cheap
+  const STYLES = {
+    pop(s, t, sd, tr, det) {
+      const bar = Math.floor(s / 16);
+      const st = s % 16;
+      const CH = [[60, 64, 67], [55, 59, 62], [57, 60, 64], [53, 57, 60]];
+      const RT = [48, 43, 45, 41];
+      if (st === 0 || st === 8 || (bar === 3 && st === 10)) vKick(t, 0.5);
+      if (st === 4 || st === 12) vSnare(t, 0.18);
+      if (st % 2 === 0) vHat(t, 0.04);
+      if ([0, 3, 6, 8, 11, 14].includes(st)) vTone('sawtooth', mtof(RT[bar] + tr + (st === 6 || st === 14 ? 12 : 0)), t, sd * 2, 0.11, 600, det);
+      const ch = CH[bar];
+      vTone('square', mtof([ch[0], ch[1], ch[2], ch[0] + 12][st % 4] + 12 + tr), t, sd * 0.9, 0.026, 2600, det);
+    },
+    dance(s, t, sd, tr, det) {
+      const bar = Math.floor(s / 16);
+      const st = s % 16;
+      const CH = [[57, 60, 64], [53, 57, 60], [55, 60, 64], [55, 59, 62]];
+      const RT = [45, 41, 48, 43];
+      if (st % 4 === 0) vKick(t, 0.55);
+      if (st === 4 || st === 12) vSnare(t, 0.16);
+      if (st % 4 === 2) vHat(t, 0.06, true);
+      else if (st % 2) vHat(t, 0.025);
+      if (st % 4 === 2) vTone('sawtooth', mtof(RT[bar] + tr + 12), t, sd * 1.6, 0.12, 700, det);
+      if (st === 0 || st === 3 || st === 6 || st === 10) CH[bar].forEach(m => vTone('sawtooth', mtof(m + 12 + tr), t, sd * 0.9, 0.02, 2400, det));
+    },
+    rock(s, t, sd, tr, det) {
+      const bar = Math.floor(s / 16);
+      const st = s % 16;
+      const PW = [[40, 47, 52], [40, 47, 52], [43, 50, 55], [45, 52, 57]];
+      if (st === 0 || st === 8 || st === 10) vKick(t, 0.5);
+      if (st === 4 || st === 12) vSnare(t, 0.2);
+      if (st % 2 === 0) {
+        vHat(t, 0.045);
+        vPower(PW[bar].map(m => m + tr), t, sd * 1.6, 0.03, det);
+        vTone('triangle', mtof(PW[bar][0] + tr - 12), t, sd * 1.8, 0.14, 500, det);
+      }
+    },
+    triphop(s, t, sd, tr, det) {
+      const bar = Math.floor(s / 16);
+      const st = s % 16;
+      const CH = [[50, 53, 57, 60], [50, 53, 57, 60], [46, 50, 53, 57], [46, 50, 53, 57]];
+      const RT = [38, 38, 34, 34];
+      const sw = st % 2 ? sd * 0.3 : 0;
+      if (st === 0 || st === 7 || st === 10) vKick(t + sw, 0.5);
+      if (st === 4 || st === 12) vSnare(t + sw, 0.15);
+      if (st % 2 === 0) vHat(t, 0.022);
+      if (st === 0 && bar % 2 === 0) vEp(CH[bar].map(m => m + tr), t, sd * 28, 0.9, det);
+      if (st === 10 && bar % 2 === 1) vEp(CH[bar].map(m => m + tr + 12), t, sd * 4, 0.5, det);
+      if (st === 0 || st === 10) vTone('sine', mtof(RT[bar] + tr), t, sd * 5, 0.2, 0, det);
+      if (Math.random() < 0.08) vNoise(t, 'highpass', 3000, 0.5, 0.02 + Math.random() * 0.04, 0.01);
+    },
+    data(s, t) {
+      if (Math.random() < 0.45) vNoise(t, 'bandpass', 400 + Math.random() * 3600, 1 + Math.random() * 6, 0.05, 0.02 + Math.random() * 0.06);
+      if (Math.random() < 0.3) vTone('square', 300 + Math.floor(Math.random() * 8) * 260, t, 0.03, 0.02);
+    },
+    untitled(s, t, sd, tr) {
+      if (s === 32) vPad([57, 60, 64, 67].map(m => m + tr), t, 6, 0.02);
+    },
+  };
+
+  const cdpEl = $('#cdp');
+  const playerEl = $('#player');
+  const playerDisc = $('#player-disc');
+  const playerLcd = $('#player-lcd');
+  const playerEsp = $('#player-esp');
+  const discList = $('#disc-list');
+  const disc = () => DISCS[cd.disc];
+  const playable = d => d && d.tracks > 0 && STYLES[d.style];
+
+  function stepDur() { return 60 / (disc().bpm * TRACK_TEMPO[(cd.track - 1) % 5]) / 4; }
+  function schedule() {
+    if (!audio.ctx || !cd.playing) return;
+    const now = audio.ctx.currentTime;
+    if (cd.nextT < now - 0.2) cd.nextT = now + 0.02;
+    const sd = stepDur();
+    const d = disc();
+    while (cd.nextT < now + 0.15) {
+      STYLES[d.style](cd.step, cd.nextT, sd, TRACK_SHIFT[(cd.track - 1) % 5], d.detune ?? 0);
+      cd.nextT += sd;
+      cd.step = (cd.step + 1) % 64;
+    }
+  }
+  function startClock() {
+    cd.nextT = audio.ctx.currentTime + 0.08;
+    clearInterval(cd.sched);
+    cd.sched = setInterval(schedule, 25);
+  }
+  function renderPlayer() {
+    const d = disc();
+    cdpEl.classList.toggle('loaded', Boolean(d));
+    cdpEl.classList.toggle('playing', cd.playing);
+    playerDisc.classList.toggle('none', !d);
+    playerDisc.classList.toggle('spin', cd.playing);
+    $('#player-label').textContent = d ? d.label : '';
+    discList.querySelectorAll('button').forEach((b, i) => b.classList.toggle('loaded', i === cd.disc));
+  }
+  function lcdFlash(text, ms = 900) {
+    cd.lcdOverride = text;
+    cd.lcdUntil = performance.now() + ms;
+    updateLcd();
+  }
+  function updateLcd() {
+    const d = disc();
+    let text;
+    if (performance.now() < cd.lcdUntil) text = cd.lcdOverride;
+    else if (!d) text = 'NO DISC';
+    else if (d.style === 'none') text = 'NO DISC';
+    else if (d.style === 'err') text = 'ERR';
+    else {
+      const secs = Math.floor(cd.elapsed);
+      text = `T${String(cd.track).padStart(2, '0')} ${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
+      if (!cd.playing) text += cd.elapsed > 0 ? ' II' : '';
+    }
+    playerLcd.textContent = text;
+    const bars = Math.max(0, Math.ceil(cd.abuf));
+    playerEsp.textContent = `anti-skip protection: 3 sec [${'#'.repeat(bars)}${'.'.repeat(3 - bars)}]`;
+  }
+
+  function loadDisc(i) {
+    const wasPlaying = cd.playing;
+    cdStop(true);
+    cd.disc = i;
+    cd.track = 1;
+    cd.elapsed = 0;
+    cd.step = 0;
+    renderPlayer();
+    updateLcd();
+    if (wasPlaying && playable(disc())) cdPlay(true);
+  }
+  function cdPlay(quiet) {
+    const d = disc();
+    if (!d) { say("there's no disc in it. the spindle is on the desk."); return; }
+    if (d.style === 'none') { lcdFlash('NO DISC', 1500); say("it's a coaster. the player knows. it won't even spin."); return; }
+    if (d.style === 'err') { lcdFlash('ERR', 1500); say("the player reads 'backup of backup', thinks about it, and says err. it is not music. it was never music."); return; }
+    let autoOn = false;
+    if (!audio.on && !userMuted) {
+      setSound(true);
+      autoOn = true;
+    } else if (!audio.on) {
+      initAudio();
+      audio.ctx.resume().catch(() => {});
+    }
+    cd.playing = true;
+    cd.forcedSkipDone = false;
+    cd.step = 0;
+    startClock();
+    renderPlayer();
+    updateLcd();
+    if (quiet) return;
+    if (autoOn) say("sound is on now. they're foam headphones. the whole room can hear them.");
+    else if (!audio.on) say('it is playing. you turned the sound off. that was your choice.');
+    else if (d.style === 'data') say("this is a data cd. it's playing the drivers. they sound like this.");
+    else if (d.style === 'untitled') say('untitled. mostly silence. then one chord. then silence. it is art, probably.');
+    else say(pick([`'${d.label}'. track ${cd.track}. it's a banger. it's a burned cd. it's the best thing you own.`, `'${d.label}'. you know every word. there are no words.`]));
+  }
+  function cdStop(quiet) {
+    cd.playing = false;
+    clearInterval(cd.sched);
+    cd.sched = null;
+    renderPlayer();
+    updateLcd();
+    if (!quiet) say('stopped. the headphones go quiet. the room is suddenly very 1999.');
+  }
+  function cdTrack(dir) {
+    const d = disc();
+    if (!playable(d)) { say('there are no tracks. there is barely a disc.'); return; }
+    cd.track = ((cd.track - 1 + dir + d.tracks) % d.tracks) + 1;
+    cd.elapsed = 0;
+    cd.step = 0;
+    cd.forcedSkipDone = false;
+    if (cd.playing) startClock();
+    updateLcd();
+    say(`track ${cd.track}.${d.skipTrack === cd.track ? " oh no. it's track 4." : ''}`);
+  }
+  function skipNow(reason) {
+    cd.abuf = 1.4;
+    if (audio.ctx) {
+      const t = audio.ctx.currentTime;
+      const g = audio.cdBus.gain;
+      g.cancelScheduledValues(t);
+      g.setValueAtTime(CD_LEVEL, t);
+      for (let i = 0; i < 3; i++) {
+        g.setValueAtTime(0, t + i * 0.14);
+        g.setValueAtTime(CD_LEVEL, t + i * 0.14 + 0.07);
+      }
+    }
+    cd.step = (cd.step + 61) % 64; // replay a sliver, like a laser losing its place
+    lcdFlash('SKIP');
+    for (const el of [cdpEl, playerEl]) {
+      el.classList.remove('jolt');
+      void el.offsetWidth;
+      el.classList.add('jolt');
+    }
+    if (reason === 'track') { say('track 4. it skips right there. everyone knows exactly where.'); return; }
+    if (reason === 'y2k') return;
+    cd.skips++;
+    say(cd.skips === 1 ? 'anti-skip protection: 3 seconds. it was not enough.' : pick([
+      'it skipped. you moved like that on purpose.',
+      'skip. the cd player saw that.',
+      'anti-skip protection: still 3 seconds. still not enough.',
+      'it skipped. somewhere, someone in a commercial is jogging with one of these. it is a lie.',
+    ]));
+  }
+  // anything that shakes the room drains the anti-skip buffer
+  function jolt(amount) {
+    if (!cd.playing) return;
+    cd.abuf -= amount;
+    if (cd.abuf <= 0) skipNow('jolt');
+  }
+  let lastMove = null;
+  stage.addEventListener('pointermove', e => {
+    if (lastMove) {
+      const dt = e.timeStamp - lastMove.t;
+      if (dt > 0 && dt < 100) {
+        const v = Math.hypot(e.clientX - lastMove.x, e.clientY - lastMove.y) / dt;
+        if (v > 2.4) jolt(((v - 2.4) * dt / 1000) * 1.3);
+      }
+    }
+    lastMove = { x: e.clientX, y: e.clientY, t: e.timeStamp };
   });
 
-  // ---------- everything else on the desk ----------
+  DISCS.forEach((d, i) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = d.label;
+    b.addEventListener('click', () => {
+      loadDisc(i);
+      say(`${d.line} it's in the player now.`);
+    });
+    discList.appendChild(b);
+  });
+  document.querySelector('.player-btns').addEventListener('click', e => {
+    const b = e.target.closest('[data-cd]');
+    if (!b) return;
+    const act = b.dataset.cd;
+    if (act === 'play') { if (cd.playing) cdStop(); else cdPlay(); }
+    else if (act === 'stop') cdStop();
+    else cdTrack(act === 'next' ? 1 : -1);
+  });
+  function openPlayer(from) {
+    openOv('cd-wrap', from);
+    renderPlayer();
+    updateLcd();
+    if (cd.disc < 0) say('a portable cd player. it is empty. the spindle is on the desk, or pick one here.');
+    else if (!cd.playing) say(`'${disc().label}' is in it. press play.`);
+  }
+  cdpEl.addEventListener('click', () => openPlayer(cdpEl));
+  const phonesEl = $('#phones');
+  phonesEl.addEventListener('click', () => {
+    openPlayer(phonesEl);
+    say('foam headphones. the foam is orange. the foam is falling apart. they are perfect.');
+  });
+
+  // the spindle hands you the next disc and puts it in the player
+  const cdPop = $('#cd-pop');
+  let spindleIndex = 0;
+  let popTimer;
+  $('#spindle').addEventListener('click', () => {
+    const i = spindleIndex++ % DISCS.length;
+    $('#cd-pop-label').textContent = DISCS[i].label;
+    cdPop.hidden = false;
+    cdPop.classList.remove('pop');
+    void cdPop.offsetWidth;
+    cdPop.classList.add('pop');
+    clearTimeout(popTimer);
+    popTimer = setTimeout(() => { cdPop.hidden = true; }, 3200);
+    loadDisc(i);
+    say(`${DISCS[i].line} it goes in the cd player on the bed.`);
+  });
+
+  // phones can shake the cd player (and the fortune ball)
+  const shakeBtn = $('#shake');
+  let motionOn = false;
+  let lastAcc = null;
+  let lastShake = 0;
+  function onMotion(e) {
+    const a = e.accelerationIncludingGravity;
+    if (!a || a.x === null) return;
+    if (lastAcc) {
+      const d = Math.abs(a.x - lastAcc.x) + Math.abs(a.y - lastAcc.y) + Math.abs(a.z - lastAcc.z);
+      if (d > 18 && e.timeStamp - lastShake > 700) {
+        lastShake = e.timeStamp;
+        jolt(2.2);
+        askBall(true);
+      }
+    }
+    lastAcc = { x: a.x, y: a.y, z: a.z };
+  }
+  function enableMotion() {
+    motionOn = true;
+    addEventListener('devicemotion', onMotion);
+    shakeBtn.textContent = 'shake: on';
+    shakeBtn.classList.add('on');
+    say('shake your phone. the cd player will skip. the fortune ball will answer. both are working as intended.');
+  }
+  if (isTouch && 'DeviceMotionEvent' in window) {
+    shakeBtn.hidden = false;
+    shakeBtn.addEventListener('click', () => {
+      if (motionOn) {
+        motionOn = false;
+        removeEventListener('devicemotion', onMotion);
+        shakeBtn.textContent = 'shake: off';
+        shakeBtn.classList.remove('on');
+        say('the room no longer feels your phone move. it misses it a little.');
+        return;
+      }
+      if (typeof DeviceMotionEvent.requestPermission === 'function') {
+        DeviceMotionEvent.requestPermission()
+          .then(r => (r === 'granted' ? enableMotion() : say("the phone said no. it's allowed to.")))
+          .catch(() => say("the phone said no. it's allowed to."));
+      } else {
+        enableMotion();
+      }
+    });
+  }
+
+  // ---------- pogs ----------
+  const POGS = [
+    { id: 'yin', name: 'yin yang (off brand)', bg: 'conic-gradient(#111 0 50%, #f4f4f4 0)', c: '#e22', t: '' },
+    { id: 'rad', name: 'rad', bg: 'radial-gradient(circle, #b6ff3b 0 40%, #6a1bb3 41%)', c: '#111', t: 'RAD' },
+    { id: 'seven', name: 'lucky 7', bg: 'repeating-conic-gradient(#ffd400 0 15deg, #e22 15deg 30deg)', c: '#111', t: '7' },
+    { id: 'eight', name: 'an 8 ball. not that one.', bg: 'radial-gradient(circle, #fff 0 28%, #111 29%)', c: '#111', t: '8' },
+    { id: 'smile', name: 'smiley that has seen things', bg: '#ffe23b', c: '#111', t: ':|' },
+    { id: 'flame', name: 'flames', bg: 'linear-gradient(#ff3b00, #ffb300)', c: '#fff', t: 'HOT' },
+    { id: 'slime', name: 'slime', bg: 'radial-gradient(circle at 40% 35%, #b8ff6a, #0a7a2a)', c: '#073', t: 'EW' },
+    { id: 'checker', name: 'checkerboard', bg: 'repeating-conic-gradient(#111 0 25%, #f4f4f4 0 50%) 0 0 / 40% 40%', c: '#e22', t: '' },
+    { id: 'alien', name: 'alien (friendly)', bg: 'radial-gradient(circle, #3a1466, #12061f)', c: '#7dff6a', t: 'O_O' },
+    { id: 'zap', name: 'lightning', bg: 'linear-gradient(135deg, #111 45%, #ffe23b 46% 54%, #111 55%)', c: '#ffe23b', t: 'ZAP' },
+    { id: 'cow', name: 'a cow', bg: 'radial-gradient(circle at 30% 30%, #111 0 12%, transparent 13%), radial-gradient(circle at 70% 62%, #111 0 16%, transparent 17%), #f4f4f4', c: '#e05a8a', t: 'MOO' },
+    { id: 'extreme', name: 'extreme (it is not)', bg: 'linear-gradient(#ff5fa2, #ffb347 55%, #2b2d6e 56%)', c: '#fff23b', t: 'XTRM' },
+    { id: 'fish', name: 'a very small fish', bg: 'radial-gradient(circle, #7fd3ff, #1c6fb8)', c: '#fff', t: '><>' },
+    { id: 'modem', name: '56k (a lie)', bg: '#008080', c: '#fff', t: '56K' },
+    { id: 'floppy', name: 'floppy disk', bg: 'linear-gradient(#2f5fa7 70%, #c0c0c0 71%)', c: '#fff', t: 'A:' },
+    { id: 'spiral', name: 'hypno spiral', bg: 'repeating-radial-gradient(circle, #111 0 6%, #f4f4f4 6% 12%)', c: '#e22', t: '' },
+    { id: 'dye', name: 'tie dye', bg: 'conic-gradient(#ff3b3b, #ffa53b, #fff23b, #3bff5a, #3bdcff, #6b5bff, #ff3bd9, #ff3b3b)', c: '#111', t: 'LUV' },
+    { id: 'dave', name: "dave (it's dave)", bg: 'radial-gradient(circle, #e0e0e0, #9a9a9a)', c: '#111', t: 'DAVE' },
+    { id: 'blank', name: 'blank (misprint)', bg: '#f4f4f4', c: '#bbb', t: '' },
+    { id: 'pizza', name: 'pizza', bg: 'radial-gradient(circle at 35% 40%, #c0271d 0 9%, transparent 10%), radial-gradient(circle at 65% 62%, #c0271d 0 9%, transparent 10%), radial-gradient(circle at 60% 30%, #c0271d 0 7%, transparent 8%), #ffcc66', c: '#7a3b12', t: '' },
+    { id: 'y2k', name: 'y2k (the rare one)', rare: true, bg: 'radial-gradient(circle, #0b0b3b 0 55%, transparent 56%), conic-gradient(#ff3b3b, #ffa53b, #fff23b, #3bff5a, #3bdcff, #6b5bff, #ff3bd9, #ff3b3b)', c: '#fff23b', t: 'Y2K' },
+  ];
+  const COMMON = POGS.filter(p => !p.rare).map(p => p.id);
+  const POG_BY_ID = Object.fromEntries(POGS.map(p => [p.id, p]));
+  const POG_KEY = 'cizole.90s.pogs';
+  const STACK = { x: 49, y: 92 };
+  const TUBE = { x: 41.9, y: 55.5 };
+  let collection = store.get(POG_KEY, {});
+  if (!collection || typeof collection !== 'object' || Array.isArray(collection)) collection = {};
+  const randomPog = () => (Math.random() < 0.04 ? 'y2k' : pick(COMMON));
+  let stack = Array.from({ length: 8 }, randomPog);
+  let slamming = false;
+  const stackEl = $('#pog-stack');
+  const slammerEl = $('#slammer');
+
+  function faceEl(id, cls) {
+    const p = POG_BY_ID[id];
+    const el = document.createElement('i');
+    el.className = cls + ' pogface';
+    el.style.background = p.bg;
+    el.style.setProperty('--c', p.c);
+    const b = document.createElement('b');
+    b.textContent = p.t;
+    el.appendChild(b);
+    return el;
+  }
+  function renderStack() {
+    stackEl.textContent = '';
+    stack.forEach((id, i) => {
+      const d = document.createElement('i');
+      d.className = 'sdisc';
+      d.style.bottom = (i * 0.3) + 'cqw';
+      stackEl.appendChild(d);
+    });
+    stackEl.setAttribute('aria-label', `a stack of ${stack.length} pogs, face down`);
+  }
+  function totalPogs() { return Object.values(collection).reduce((a, n) => a + (Number(n) || 0), 0); }
+  function renderTube() {
+    const n = totalPogs();
+    $('#tube-fill').style.height = Math.min(94, n * 3.2) + '%';
+    $('#tube').setAttribute('aria-label', `pog collection tube. ${n} pogs.`);
+  }
+  renderStack();
+  renderTube();
+
+  const pogFly = (el, frames, ms, delay = 0) => el.animate(frames, { duration: ms, delay, easing: 'cubic-bezier(0.25, 0.6, 0.3, 1)', fill: 'forwards' });
+  const pogTf = (rot, scale = 1) => `scaleY(0.55) perspective(40cqw) rotateX(${rot}deg) scale(${scale})`;
+
+  function slam(power) {
+    if (slamming || !stack.length) return;
+    slamming = true;
+    const flying = stack.splice(0);
+    renderStack();
+    thud();
+    jolt(1.2);
+    const pUp = clamp(0.28 + power * 0.14, 0.2, 0.7);
+    const fliers = flying.map((id, i) => {
+      const up = Math.random() < pUp;
+      const tx = clamp(STACK.x + (Math.random() * 2 - 1) * (6 + power * 5), 37, 66);
+      const ty = clamp(STACK.y + (Math.random() * 2 - 1) * (3 + power * 2), 86, 98);
+      const half = 2 * (1 + Math.floor(Math.random() * 2 + power)) + (up ? 1 : 0);
+      const end = 180 + half * 180;
+      const el = document.createElement('span');
+      el.className = 'pog';
+      el.appendChild(faceEl(id, 'p-front'));
+      const back = document.createElement('i');
+      back.className = 'p-back';
+      el.appendChild(back);
+      stage.appendChild(el);
+      const sy = STACK.y - 1.5 - i * 0.4;
+      if (reduceMotion) {
+        pogFly(el, [
+          { left: tx + '%', top: ty + '%', transform: pogTf(end), opacity: 0 },
+          { left: tx + '%', top: ty + '%', transform: pogTf(end), opacity: 1 },
+        ], 300, i * 30);
+      } else {
+        pogFly(el, [
+          { left: STACK.x + '%', top: sy + '%', transform: pogTf(180) },
+          { left: (STACK.x + tx) / 2 + '%', top: Math.min(sy, ty) - 8 - power * 3 + '%', transform: pogTf(180 + half * 90, 1.2), offset: 0.45 },
+          { left: tx + '%', top: ty + '%', transform: pogTf(end) },
+        ], 650 + Math.random() * 400, i * 30);
+      }
+      return { el, id, up, tx, ty, end };
+    });
+
+    setTimeout(() => {
+      const won = fliers.filter(f => f.up);
+      won.forEach(f => {
+        f.el.classList.add('won');
+        collection[f.id] = (Number(collection[f.id]) || 0) + 1;
+      });
+      store.set(POG_KEY, collection);
+      renderTube();
+      if (won.some(f => f.id === 'y2k')) say('a y2k pog. the rare one. it is worth nothing. it is worth everything.');
+      else if (!won.length) say("none of them flipped. that's pogs.");
+      else if (won.length === fliers.length) say('every single one flipped. nobody will believe you. there were no witnesses.');
+      else say(`${won.length} flipped. you keep those. that's the rules. probably.`);
+    }, 1350);
+
+    setTimeout(() => {
+      fliers.forEach(f => {
+        const to = f.up ? TUBE : { x: STACK.x, y: STACK.y - 1.5 };
+        pogFly(f.el, [
+          { left: f.tx + '%', top: f.ty + '%', transform: pogTf(f.end), opacity: 1 },
+          { left: to.x + '%', top: to.y + '%', transform: pogTf(f.end, f.up ? 0.3 : 1), opacity: f.up ? 0 : 1 },
+        ], reduceMotion ? 200 : 520);
+      });
+    }, 2400);
+
+    setTimeout(() => {
+      fliers.forEach(f => f.el.remove());
+      stack = fliers.filter(f => !f.up).map(f => f.id);
+      while (stack.length < 8) stack.push(randomPog());
+      renderStack();
+      slamming = false;
+    }, 3000);
+  }
+
+  // drag the slammer onto the stack
+  const stagePct = e => {
+    const r = stage.getBoundingClientRect();
+    return { x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100, r };
+  };
+  let sDrag = null;
+  slammerEl.addEventListener('pointerdown', e => {
+    if (slamming) return;
+    e.preventDefault();
+    try { slammerEl.setPointerCapture(e.pointerId); } catch (err) { /* synthetic pointer */ }
+    sDrag = { hist: [{ x: e.clientX, y: e.clientY, t: e.timeStamp }], moved: false, sx: e.clientX, sy: e.clientY };
+    slammerEl.classList.add('held');
+  });
+  slammerEl.addEventListener('pointermove', e => {
+    if (!sDrag) return;
+    if (!sDrag.moved && Math.hypot(e.clientX - sDrag.sx, e.clientY - sDrag.sy) < 4) return;
+    sDrag.moved = true;
+    const p = stagePct(e);
+    slammerEl.style.left = clamp(p.x, 2, 98) + '%';
+    slammerEl.style.top = clamp(p.y, 30, 98) + '%';
+    sDrag.hist.push({ x: e.clientX, y: e.clientY, t: e.timeStamp });
+    if (sDrag.hist.length > 6) sDrag.hist.shift();
+  });
+  function dropSlammer(e) {
+    if (!sDrag) return;
+    const drag = sDrag;
+    sDrag = null;
+    slammerEl.classList.remove('held');
+    if (!drag.moved) {
+      say('drag the slammer onto the stack. that is the entire game. it was the entire decade.');
+      return;
+    }
+    const a = drag.hist[0];
+    const b = drag.hist[drag.hist.length - 1];
+    const speed = Math.hypot(b.x - a.x, b.y - a.y) / Math.max(16, b.t - a.t);
+    const p = stagePct(e);
+    const dist = Math.hypot(((p.x - STACK.x) / 100) * p.r.width, ((p.y - (STACK.y - 2)) / 100) * p.r.height);
+    if (dist < p.r.width * 0.05) {
+      slam(clamp(speed / 1.2, 0.3, 3));
+      slammerEl.style.left = STACK.x + 6 + Math.random() * 3 + '%';
+      slammerEl.style.top = STACK.y + (Math.random() * 2 - 1) + '%';
+    } else {
+      slammerEl.style.left = clamp(p.x, 36, 66) + '%';
+      slammerEl.style.top = clamp(p.y, 84, 97) + '%';
+      say(pick(['you threw the slammer at the carpet. the carpet is fine.', 'missed. the stack did not flinch.', 'the slammer lands near the pogs. near does not count.']));
+    }
+  }
+  slammerEl.addEventListener('pointerup', dropSlammer);
+  slammerEl.addEventListener('pointercancel', () => { sDrag = null; slammerEl.classList.remove('held'); });
+  slammerEl.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      slam(1.3);
+    }
+  });
+  slammerEl.addEventListener('click', e => { if (e.detail === 0) e.preventDefault(); });
+  stackEl.addEventListener('click', () => {
+    say(slamming ? 'the pogs are busy.' : "a stack of pogs, face down. you need the slammer. it's the heavy one with the flame on it.");
+  });
+
+  // the binder
+  function openBinder(from) {
+    const grid = $('#pog-grid');
+    grid.textContent = '';
+    const known = POGS.filter(p => Number(collection[p.id]) > 0).length;
+    $('#pog-head').textContent = `pog collection: ${known} of ${POGS.length} designs, ${totalPogs()} pogs.`;
+    for (const p of POGS) {
+      const n = Number(collection[p.id]) || 0;
+      const card = document.createElement('div');
+      card.className = 'pog-card';
+      let d;
+      if (n) {
+        d = faceEl(p.id, 'disc');
+      } else {
+        d = document.createElement('i');
+        d.className = 'disc unknown';
+      }
+      const name = document.createElement('span');
+      name.textContent = n ? p.name : '???';
+      const count = document.createElement('span');
+      count.className = 'count';
+      count.textContent = n ? `x${n}` : 'not yet';
+      card.append(d, name, count);
+      grid.appendChild(card);
+    }
+    openOv('pog-wrap', from);
+    if (!totalPogs()) say('an empty binder. the pogs are on the floor. the slammer is next to them.');
+    else if (!collection.y2k) say('the rare one is still out there. it is on the floor somewhere. it is always on the floor.');
+    else say('a pog collection. it will be worth a lot of money someday. that day has not come.');
+  }
+  const tubeEl = $('#tube');
+  tubeEl.addEventListener('click', () => openBinder(tubeEl));
+
+  // ---------- the disposable camera ----------
+  const CAM_KEY = 'cizole.90s.camera';
+  const PHOTO_KEY = 'cizole.90s.photos';
+  const SEEN_KEY = 'cizole.90s.photos-seen';
+  const HOUR = 3600000;
+  let cam = store.get(CAM_KEY, null);
+  if (!cam || typeof cam.left !== 'number') cam = { left: 27, empty: false };
+  let photos = store.get(PHOTO_KEY, []);
+  if (!Array.isArray(photos)) photos = [];
+  photos = photos.filter(p => p && typeof p.t === 'number' && typeof p.d === 'string' && p.d.startsWith('data:image/'));
+  const stamp = () => (y2kRunning || y2kDone ? "'00  1  1" : "'99 12 31");
+
+  // a flash photo of the room, drawn from memory by a camera that cost six dollars
+  function drawRoom(g, W, H) {
+    const X = p => (p / 100) * W;
+    const Y = p => (p / 100) * H;
+    const rect = (x, y, w, h, c) => { g.fillStyle = c; g.fillRect(X(x), Y(y), X(w), Y(h)); };
+    let gr = g.createLinearGradient(0, 0, 0, Y(66));
+    gr.addColorStop(0, '#3a4c72');
+    gr.addColorStop(1, '#2c3b5c');
+    g.fillStyle = gr;
+    g.fillRect(0, 0, W, Y(66));
+    rect(0, 66, 100, 34, '#41476e');
+    const bulbs = ['#ff4a3a', '#3bff5a', '#ffe23b', '#3bdcff', '#ff3bd9'];
+    for (let i = 0; i < 16; i++) {
+      g.fillStyle = y2kRunning ? '#333' : bulbs[i % 5];
+      g.beginPath();
+      g.arc(X(1.5 + i * 3.6), Y(2 + 4 * Math.abs(Math.sin(i * 0.8))), 1.8, 0, TAU);
+      g.fill();
+    }
+    rect(3, 11, 18, 38, '#d8d2c2');
+    rect(3.9, 12.4, 16.2, 35.2, '#16244a');
+    rect(3.9, 43, 16.2, 4.6, '#e8eef8');
+    g.fillStyle = '#0b1120';
+    g.fillRect(X(4), Y(36), X(6), Y(7));
+    g.fillRect(X(12), Y(38), X(7.5), Y(5));
+    g.fillStyle = y2kRunning ? '#1c2030' : '#ffd76a';
+    g.fillRect(X(6), Y(38.5), 3, 3);
+    g.fillRect(X(15), Y(39.5), 3, 3);
+    g.fillStyle = 'rgba(255, 255, 255, 0.85)';
+    for (let i = 0; i < 40; i++) g.fillRect(X(4 + Math.random() * 16), Y(13 + Math.random() * 30), 1.4, 1.4);
+    rect(11.8, 11, 0.8, 38, '#d8d2c2');
+    rect(3, 29.5, 18, 0.9, '#d8d2c2');
+    gr = g.createLinearGradient(0, Y(10), 0, Y(40));
+    gr.addColorStop(0, '#ff5fa2');
+    gr.addColorStop(0.55, '#ffb347');
+    gr.addColorStop(0.56, '#2b2d6e');
+    g.fillStyle = gr;
+    g.fillRect(X(23.5), Y(10), X(8.5), Y(30));
+    g.fillStyle = '#fff23b';
+    g.font = `italic bold ${Math.round(W * 0.018)}px sans-serif`;
+    g.fillText('EXTREME', X(24), Y(15));
+    rect(34, 11, 15, 25, '#7a5230');
+    rect(35, 13, 13, 21, '#b98a55');
+    rect(36, 14, 5, 4, '#f4efe0');
+    rect(43, 13.5, 4, 4, '#fff27a');
+    rect(51, 12, 6.8, 20, '#f3efe4');
+    rect(51, 12, 6.8, 4, '#6fb7dc');
+    if (y2kDone) rect(50.5, 37, 7.5, 8, '#fff27a');
+    rect(71, 5.5, 12, 9, '#111013');
+    g.fillStyle = '#ff3b2f';
+    g.font = `${Math.round(W * 0.03)}px monospace`;
+    g.fillText(y2kRunning ? '00:00' : y2kDone ? '00:0' + Math.min(9, Math.floor((Date.now() - y2kAt) / 60000)) : '23:59', X(72.5), Y(13));
+    rect(2.5, 59, 30.5, 18, '#a3262c');
+    g.fillStyle = 'rgba(20, 30, 70, 0.45)';
+    for (let x = 3; x < 33; x += 2.6) g.fillRect(X(x), Y(59), X(1.2), Y(18));
+    for (let y = 60; y < 77; y += 4) g.fillRect(X(2.5), Y(y), X(30.5), Y(1.6));
+    g.fillStyle = '#e8e4d6';
+    g.beginPath();
+    g.ellipse(X(6.5), Y(58), X(3.6), Y(3.5), 0, 0, TAU);
+    g.fill();
+    rect(1.5, 76, 31.5, 5, '#4a3526');
+    rect(33.6, 59.5, 9, 20, '#6a4d33');
+    g.fillStyle = '#111';
+    g.beginPath();
+    g.arc(X(35.8), Y(57.5), X(1.6), 0, TAU);
+    g.fill();
+    rect(37.9, 56.6, 3.1, 3.8, '#e8a21a');
+    g.fillStyle = 'rgba(160, 90, 240, 0.75)';
+    g.beginPath();
+    g.ellipse(X(50.5), Y(64), X(5), Y(9), 0, 0, TAU);
+    g.fill();
+    g.beginPath();
+    g.ellipse(X(50.5), Y(78), X(6.5), Y(6), 0, 0, TAU);
+    g.fill();
+    g.fillStyle = '#c9ccd4';
+    for (let i = 0; i < 5; i++) {
+      g.beginPath();
+      g.ellipse(X(49), Y(92 - i * 0.8), X(1.9), Y(1.5), 0, 0, TAU);
+      g.fill();
+    }
+    rect(60, 51, 39, 3.4, '#7a5a3e');
+    rect(61.4, 54, 1.1, 18, '#4a3422');
+    rect(97, 54, 1.1, 18, '#4a3422');
+    rect(66.5, 23, 17.5, 26, '#d6ceb5');
+    rect(68.4, 25.3, 13.6, 17.5, y2kRunning ? '#0a2a0a' : netState === 'online' ? '#0b0b3b' : '#008080');
+    if (netState === 'online' && !y2kRunning) rect(70, 27, 10, 1.2, '#ff3bd9');
+    rect(85.3, 47.4, 10.8, 4.1, '#2a2a30');
+    rect(88.2, 56, 6.8, 16.6, '#d6ceb5');
+    rect(67, 51.3, 15.5, 2.5, '#cdc4a9');
+  }
+  function renderPhoto() {
+    const W = 320;
+    const H = 200;
+    const c = document.createElement('canvas');
+    c.width = W;
+    c.height = H;
+    const g = c.getContext('2d');
+    g.save();
+    g.translate(W / 2, H / 2);
+    g.rotate((Math.random() - 0.5) * 0.08);
+    const z = 1.05 + Math.random() * 0.14;
+    g.scale(z, z);
+    g.translate(-W / 2 + (Math.random() - 0.5) * 24, -H / 2 + (Math.random() - 0.5) * 14);
+    drawRoom(g, W, H);
+    g.restore();
+    const fx = W * (0.4 + Math.random() * 0.2);
+    const grad = g.createRadialGradient(fx, H * 0.5, 10, fx, H * 0.5, W * 0.72);
+    grad.addColorStop(0, 'rgba(255, 255, 240, 0.35)');
+    grad.addColorStop(0.5, 'rgba(255, 255, 240, 0.05)');
+    grad.addColorStop(1, 'rgba(0, 0, 0, 0.5)');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, W, H);
+    g.fillStyle = 'rgba(255, 170, 80, 0.08)';
+    g.fillRect(0, 0, W, H);
+    for (let i = 0; i < 1500; i++) {
+      g.fillStyle = Math.random() < 0.5 ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.07)';
+      g.fillRect(Math.random() * W, Math.random() * H, 1, 1);
+    }
+    const thumb = Math.random() < 0.17;
+    if (thumb) {
+      const tg = g.createRadialGradient(18, H - 8, 4, 18, H - 8, 70);
+      tg.addColorStop(0, 'rgba(210, 120, 110, 0.95)');
+      tg.addColorStop(0.6, 'rgba(150, 70, 60, 0.7)');
+      tg.addColorStop(1, 'rgba(150, 70, 60, 0)');
+      g.fillStyle = tg;
+      g.fillRect(0, 0, W, H);
+    }
+    g.font = 'bold 13px monospace';
+    g.fillStyle = '#ff8a1f';
+    g.shadowColor = '#ff5a00';
+    g.shadowBlur = 4;
+    g.fillText(stamp(), W - 86, H - 10);
+    return { d: c.toDataURL('image/jpeg', 0.62), thumb };
+  }
+
+  const photosEl = $('#photos');
+  const photoHint = $('#photo-hint');
+  const SPOTS = [[2, 4, -5], [27, 0, 4], [52, 6, -3], [74, 1, 6]];
+  const readyPhotos = () => photos.filter(p => Date.now() - p.t >= HOUR);
+  function renderCork() {
+    photosEl.querySelectorAll('.print').forEach(el => el.remove());
+    const ready = readyPhotos().slice(-4);
+    const pending = photos.length - readyPhotos().length;
+    ready.forEach((p, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'print';
+      b.dataset.t = p.t;
+      const [x, y, r] = SPOTS[i];
+      b.style.left = x + '%';
+      b.style.top = y + '%';
+      b.style.transform = `rotate(${r}deg)`;
+      b.setAttribute('aria-label', 'a developed photo');
+      const img = document.createElement('img');
+      img.src = p.d;
+      img.alt = '';
+      b.appendChild(img);
+      photosEl.appendChild(b);
+    });
+    photoHint.textContent = ready.length ? '' : pending ? `(${pending} at the drugstore)` : 'photos go here';
+  }
+  const ago = t => {
+    const m = Math.round((Date.now() - t) / 60000);
+    if (m < 120) return `${m} minutes ago`;
+    const h = Math.round(m / 60);
+    return h < 48 ? `${h} hours ago` : `${Math.round(h / 24)} days ago`;
+  };
+  photosEl.addEventListener('click', e => {
+    const b = e.target.closest('.print');
+    if (!b) return;
+    const p = photos.find(x => String(x.t) === b.dataset.t);
+    if (!p) return;
+    $('#photo-img').src = p.d;
+    $('#photo-cap').textContent = p.thumb
+      ? "there's a thumb in this one. there's always a thumb in one."
+      : pick([`taken ${ago(p.t)}. it's a little blurry. they're all a little blurry.`, `taken ${ago(p.t)}. the flash got most of it.`, `taken ${ago(p.t)}. it already looks old. that's the point.`]);
+    openOv('photo-wrap', b);
+  });
+  function checkDeveloped(onLoad) {
+    const ready = readyPhotos().length;
+    const seen = Number(store.get(SEEN_KEY, 0)) || 0;
+    renderCork();
+    if (ready > seen) {
+      store.set(SEEN_KEY, ready);
+      if (onLoad) setTimeout(() => say('your photos are back from the drugstore. they are on the corkboard.'), 5200);
+      else say('your photos are back from the drugstore. they are on the corkboard.');
+    } else if (ready < seen) {
+      store.set(SEEN_KEY, ready);
+    }
+  }
+  checkDeveloped(true);
+  setInterval(() => checkDeveloped(false), 60000);
+
+  const flashEl = $('#flash');
+  let firstShot = true;
+  $('#camera').addEventListener('click', () => {
+    if (cam.left <= 0) {
+      if (!cam.empty) {
+        cam.empty = true;
+        say("out of film. it's a disposable camera. this is the part where you dispose of it.");
+      } else {
+        cam = { left: 27, empty: false };
+        say('you bought another one at the drugstore. 27 exposures. the drugstore remembers you.');
+      }
+      store.set(CAM_KEY, cam);
+      return;
+    }
+    flashEl.classList.remove('go');
+    void flashEl.offsetWidth;
+    flashEl.classList.add('go');
+    shutter();
+    let shot;
+    try { shot = renderPhoto(); } catch (err) { shot = null; }
+    cam.left--;
+    store.set(CAM_KEY, cam);
+    if (shot) {
+      photos.push({ t: Date.now(), d: shot.d, thumb: shot.thumb });
+      while (photos.length > 8) photos.shift();
+      if (!store.set(PHOTO_KEY, photos)) {
+        photos.shift();
+        store.set(PHOTO_KEY, photos);
+      }
+    }
+    renderCork();
+    if (firstShot && photos.length === 1) {
+      say(`click. ${cam.left} exposures left. it will be ready in about an hour. that's how film works.`);
+    } else {
+      say(`click. ${cam.left} exposures left. ${pick([
+        "it will be ready in about an hour. that's how film works.",
+        'you will not know if it came out until later. that is the thrill.',
+        'you wind the film with your thumb. the wheel is very loud.',
+        y2kDone ? "the date stamp says '00. it doesn't say which '00. that was the whole problem." : 'the flash is still charging. it whines. it is fine.',
+      ])}`);
+    }
+    firstShot = false;
+  });
+
+  // ---------- the fortune ball ----------
+  const ballEl = $('#ball');
+  const ANSWERS = [
+    'ask again after y2k.',
+    'outlook: beige.',
+    'signs point to dial-up.',
+    'yes. but mom will pick up the phone.',
+    'reply hazy. degauss and try again.',
+    'it is certain. nothing else is.',
+    "don't count on it. count on the modem.",
+    'the answer is on a floppy. the floppy is stuck.',
+    "maybe. it's 1999. everything is maybe.",
+    'cannot predict now. predicting is for the year 2000.',
+    'no. sorry. no.',
+    "yes, in about an hour. that's how film works.",
+  ];
+  let ballTimer;
+  function askBall(shaken) {
+    ballEl.classList.remove('shake', 'answering');
+    void ballEl.offsetWidth;
+    ballEl.classList.add('shake');
+    clearTimeout(ballTimer);
+    ballTimer = setTimeout(() => {
+      ballEl.classList.add('answering');
+      const ans = y2kRunning ? '1900.' : pick(ANSWERS);
+      say(`${shaken ? 'you shook the phone. ' : ''}the fortune ball says: "${ans}"${y2kRunning ? " that's not an answer. that's a year." : ''}`);
+      ballTimer = setTimeout(() => ballEl.classList.remove('answering'), 4500);
+    }, reduceMotion ? 50 : 550);
+  }
+  ballEl.addEventListener('click', () => askBall(false));
+
+  // ---------- the inflatable chair ----------
+  const chairEl = $('#chair');
+  let air = 1;
+  function shapeChair() { chairEl.style.transform = `scale(${1 + (1 - air) * 0.18}, ${0.42 + 0.58 * air})`; }
+  chairEl.addEventListener('click', () => {
+    if (air <= 0.32) {
+      air = 1;
+      shapeChair();
+      say("you blow it back up. it takes forty minutes. you're dizzy. the chair is fine.");
+      return;
+    }
+    air = Math.max(0.3, air - 0.14);
+    shapeChair();
+    chairEl.classList.remove('squish');
+    void chairEl.offsetWidth;
+    chairEl.classList.add('squish');
+    squeak();
+    if (air < 0.6) airHiss();
+    jolt(0.4);
+    if (air > 0.8) say("an inflatable chair. it squeaks when you look at it.");
+    else if (air > 0.6) say("it squeaks less now. that's air leaving.");
+    else if (air > 0.4) say("it's losing air. it's been losing air since the mall.");
+    else say('it is a puddle now. a purple puddle. you did this.');
+  });
+
+  // ---------- everything else ----------
+  const OBJ = {
+    window: (() => {
+      const before = cycle([
+        "it's snowing. of course it is. it's the last night of the millennium.",
+        'the neighbors have their lights on. everyone is waiting for midnight.',
+        'somewhere out there, a server is sweating.',
+      ]);
+      return () => (y2kDone ? 'fireworks, earlier. the neighbors made it too. everyone made it.' : before());
+    })(),
+    poster: cycle([
+      "a poster that says 'extreme'. it was bought at the mall. it is not extreme.",
+      'the snowboarder has been mid-air since 1997. he is fine.',
+      'someday you will go to the mountain in the poster. someday is a long time.',
+    ]),
+    cork: () => {
+      const pending = photos.length - readyPhotos().length;
+      if (readyPhotos().length) return 'your photos. slightly blurry. perfectly 1999.';
+      if (pending) return `a corkboard. ${pending === 1 ? 'one photo is' : `${pending} photos are`} still at the drugstore. about an hour. that's how film works.`;
+      return "a corkboard. a lift ticket, a note that says 'call dave', and a lot of pushpins. the camera is on the nightstand.";
+    },
+    lights: cycle([
+      "holiday lights. up since thanksgiving. they'll be up until march.",
+      'one bulb is out. if you find it, the whole string works. nobody has found it.',
+    ]),
+    lamp: cycle(["a desk lamp. it's been on since 1996.", 'the bulb is load-bearing. do not touch the bulb.']),
+    bed: cycle([
+      'the bed is made. technically. the comforter is on top of everything.',
+      'plaid. the whole bed is plaid. it was a plaid decade.',
+      'there is stuff under the bed. mostly cd cases. the cds are somewhere else.',
+    ]),
+    nightstand: cycle([
+      'the nightstand drawer contains: dead batteries, a key chain, and forty gum wrappers.',
+      'a glass of water from tuesday lives here. it is part of the family.',
+    ]),
+    calendar: () => {
+      if (y2kRunning) return 'the calendar says 1900. the calendar is panicking.';
+      if (y2kDone) return 'january 2000. the calendar made it. the calendar was never worried.';
+      return "december 1999. the 31st is circled. someone wrote 'y2k??' next to it.";
+    },
+    clock: () => (y2kDone ? "it's the year 2000. the future. it looks a lot like 1999." : 'the clock says 23:59. it will not say that for long.'),
+  };
+  stage.addEventListener('click', e => {
+    const el = e.target.closest('[data-obj]');
+    if (el && OBJ[el.dataset.obj]) say(OBJ[el.dataset.obj]());
+  });
   towerEl.addEventListener('click', e => {
     const part = e.target.closest('[data-part]');
     const LINES = {
@@ -1634,48 +2862,102 @@
       burner: 'the cd burner. its last burn failed at 97%. it will fail at 97% again. it is consistent.',
       power: "the power button. don't. it has only just recovered from the last crash.",
     };
-    say(LINES[part && part.dataset.part] || 'a beige tower. it is loud. it is proud. it runs hot enough to dry socks.');
+    say(LINES[part && part.dataset.part] || 'a beige tower under the desk. it is loud. it runs hot enough to dry socks.');
   });
   $('#modem').addEventListener('click', () => {
     say(netState === 'online' ? 'the modem is blinking. that means the internet is happening.' : 'a 28.8k modem. it is very fast. everyone says so.');
   });
-  $('#keyboard').addEventListener('click', () => say("the keyboard. the 'e' key sticks. english uses a lot of 'e'."));
+  const keyboardEl = $('#keyboard');
+  keyboardEl.addEventListener('click', () => {
+    useComputer(keyboardEl);
+    if (netState !== 'offline' && netState !== 'lost') say("the keyboard. the 'e' key sticks. english uses a lot of 'e'.");
+  });
   $('#mouse').addEventListener('click', () => say('a ball mouse. the ball is dirty. the cursor now moves in three directions.'));
-  $('#poster').addEventListener('click', () => say("a poster that says 'extreme'. it was bought at the mall. it is not extreme."));
-  $('#calendar').addEventListener('click', () => {
-    if (y2kRunning) say('the calendar says 1900. the calendar is panicking.');
-    else if (y2kDone) say('january 2000. the calendar made it. the calendar was never worried.');
-    else say("december 1999. the 31st is circled. someone wrote 'y2k??' next to it.");
-  });
-  $('#clock').addEventListener('click', () => {
-    if (y2kDone) say("it's the year 2000. the future. it looks a lot like 1999.");
-    else say('the clock says 23:59. it will not say that for long.');
-  });
 
-  let degaussCount = 0;
-  $('#degauss').addEventListener('click', () => {
-    const scr = $('#screen');
-    scr.classList.remove('degaussing');
-    void scr.offsetWidth;
-    scr.classList.add('degaussing');
-    setTimeout(() => scr.classList.remove('degaussing'), 1100);
-    thunk();
-    say(degaussCount++ === 0
-      ? 'degaussed. the colors went wobbly and came back. deeply satisfying.'
-      : 'degaussed again. it did not need it. you just like the sound.');
-  });
+  // ---------- holiday lights ----------
+  (() => {
+    const svg = $('#lights-svg');
+    const NS = 'http://www.w3.org/2000/svg';
+    const sag = x => 8 + 26 * Math.sin(Math.PI * ((x / 145) % 1));
+    let d = 'M0 8';
+    for (let x = 5; x <= 580; x += 5) d += ` L${x} ${sag(x).toFixed(1)}`;
+    const wire = document.createElementNS(NS, 'path');
+    wire.setAttribute('d', d);
+    wire.setAttribute('fill', 'none');
+    wire.setAttribute('stroke', '#1d2a1d');
+    wire.setAttribute('stroke-width', '2');
+    svg.appendChild(wire);
+    const COLORS = ['#ff4a3a', '#3bff5a', '#ffe23b', '#3bdcff', '#ff3bd9'];
+    for (let i = 0; i < 20; i++) {
+      const x = 14 + i * 28.6;
+      const c = document.createElementNS(NS, 'ellipse');
+      c.setAttribute('cx', x.toFixed(1));
+      c.setAttribute('cy', (sag(x) + 7).toFixed(1));
+      c.setAttribute('rx', '4.5');
+      c.setAttribute('ry', '7');
+      c.setAttribute('fill', COLORS[i % COLORS.length]);
+      c.setAttribute('class', i === 13 ? 'bulb dead' : 'bulb');
+      c.style.animationDelay = (-Math.random() * 2.6).toFixed(2) + 's';
+      if (i !== 13) c.style.filter = `drop-shadow(0 0 5px ${COLORS[i % COLORS.length]})`;
+      svg.appendChild(c);
+    }
+  })();
 
-  // ---------- y2k ----------
+  // ---------- fireworks (after midnight, through the window) ----------
+  const fwCanvas = $('#fireworks');
+  const fg = fwCanvas.getContext('2d');
+  const fw = { parts: [], until: 0, next: 0, drawn: false };
+  function burst() {
+    const x = 30 + Math.random() * 120;
+    const y = 30 + Math.random() * 70;
+    const hue = pick(['#ff4a3a', '#ffe23b', '#3bdcff', '#ff3bd9', '#7dff6a', '#ffffff']);
+    const n = reduceMotion ? 18 : 34;
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * TAU;
+      const s = 30 + Math.random() * 40;
+      fw.parts.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 1.2 + Math.random() * 0.6, c: hue });
+    }
+  }
+  function fwStep(dt, now) {
+    if (now > fw.until && !fw.parts.length) {
+      if (fw.drawn) {
+        fg.clearRect(0, 0, fwCanvas.width, fwCanvas.height);
+        fw.drawn = false;
+      }
+      return;
+    }
+    if (now < fw.until && now > fw.next) {
+      burst();
+      fw.next = now + (reduceMotion ? 2600 : 700 + Math.random() * 800);
+    }
+    fg.globalCompositeOperation = 'destination-out';
+    fg.fillStyle = 'rgba(0, 0, 0, 0.22)';
+    fg.fillRect(0, 0, fwCanvas.width, fwCanvas.height);
+    fg.globalCompositeOperation = 'lighter';
+    fw.parts = fw.parts.filter(p => (p.life -= dt) > 0);
+    for (const p of fw.parts) {
+      p.vy += 30 * dt;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      fg.globalAlpha = Math.min(1, p.life);
+      fg.fillStyle = p.c;
+      fg.fillRect(p.x, p.y, 2, 2);
+    }
+    fg.globalAlpha = 1;
+    fg.globalCompositeOperation = 'source-over';
+    fw.drawn = true;
+  }
+
+  // ---------- y2k: midnight hits the whole room ----------
   const LOAD = Date.now();
   const clockDate = $('#clock-date');
   const clockTime = $('#clock-time');
   const garbleEl = $('#garble');
-  const stickyEl = $('#sticky');
   const pad2 = n => String(n).padStart(2, '0');
   let garbleTimer = null;
   let chaosTimer = null;
+  let skipTimer = null;
   let pagerWasUnread = false;
-
   function garbage() {
     const chars = '01#$%&@*+=?!/\\|<>[]{}~^ABCDEFXYZ';
     let s = '';
@@ -1700,7 +2982,6 @@
     // midnight waits for someone to be looking
     if (elapsed >= 60000 && document.visibilityState === 'visible') startY2K();
   }
-
   function startY2K() {
     if (y2kRunning || y2kDone) return;
     y2kRunning = true;
@@ -1715,6 +2996,10 @@
     beeps(6, 2750);
     if (reduceMotion) LED_KEYS.forEach(k => ledEls[k].classList.add('on'));
     else chaosTimer = setInterval(() => LED_KEYS.forEach(k => ledEls[k].classList.toggle('on', Math.random() < 0.5)), 120);
+    if (cd.playing) {
+      skipNow('y2k');
+      skipTimer = setInterval(() => { if (cd.playing) skipNow('y2k'); }, 900);
+    }
     crash();
     drawLCD();
     tickClock();
@@ -1729,29 +3014,78 @@
     document.body.classList.remove('is-y2k');
     clearInterval(garbleTimer);
     clearInterval(chaosTimer);
+    clearInterval(skipTimer);
     garbleEl.textContent = '';
     if (!busyTimer) leds(ledBase);
     renderCalendar(2000, 0, 1, 'phew');
     pagerLcd.textContent = pageCurrent ? pageCurrent.code : '- - - -';
     pagerEl.classList.toggle('unread', Boolean(pageCurrent) && pagerWasUnread);
-    stickyEl.hidden = false;
+    $('#sticky').hidden = false;
     drawLCD();
     tickClock();
+    fw.until = performance.now() + 16000;
+    fw.next = performance.now() + 900;
     say("nothing happened. everyone overreacted. there's a note on the wall.");
+    setTimeout(() => { if (!y2kRunning) say('the neighbors are setting off fireworks. they also survived.'); }, 5200);
   }
   setInterval(tickClock, 250);
   tickClock();
 
-  // ---------- hello ----------
+  // ---------- background tabs throttle timers, which would wreck the music ----------
+  document.addEventListener('visibilitychange', () => {
+    if (!audio.ctx) return;
+    if (document.hidden) {
+      clearInterval(cd.sched);
+      cd.sched = null;
+      audio.ctx.suspend().catch(() => {});
+    } else {
+      audio.ctx.resume().catch(() => {});
+      if (cd.playing) startClock();
+    }
+  });
+  addEventListener('cizole:return', e => {
+    if (e.detail.awayMs < 4000) return;
+    if (netState === 'online') say('you were gone a while. the modem kept the line. mom has noticed.');
+    else if (y2kDone) say("welcome back. it's still the year 2000. it has been the year 2000 for a few minutes now.");
+    else say(pick(["you were gone. the room stayed 1999. it's good at that.", "welcome back. it's still december 31st. it's always december 31st in here."]));
+  });
+
+  // ---------- go ----------
+  let last = performance.now();
+  let lcdTimer = 0;
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    if (cd.playing) {
+      cd.elapsed += dt;
+      const d = disc();
+      if (d && d.skipTrack === cd.track && !cd.forcedSkipDone && cd.elapsed > 7) {
+        cd.forcedSkipDone = true;
+        skipNow('track');
+      }
+    }
+    cd.abuf = Math.min(3, cd.abuf + dt * 0.6);
+    lcdTimer += dt;
+    if (lcdTimer > 0.25) {
+      lcdTimer = 0;
+      if (isOpen('cd-wrap')) updateLcd();
+    }
+    fwStep(dt, now);
+    requestAnimationFrame(frame);
+  }
   showView('connect');
-  say(visits > 1 ? "a desk. it's december 31st, 1999. again." : "a desk. it's december 31st, 1999. the modem is waiting.");
+  renderPlayer();
+  updateLcd();
+  say(visits > 1 ? "a bedroom. it's december 31st, 1999. again." : "a bedroom. it's december 31st, 1999. about a minute to midnight.");
   if (pet.farm && !pet.farmSeen) {
     pet.farmSeen = true;
     savePet();
     setTimeout(() => say('while you were away, the pet went to live on a farm.'), 3500);
   }
+  requestAnimationFrame(frame);
 })();
 </script>
+<script src="../assets/rooms.js"></script>
 <script src="../assets/away.js"></script>
 </body>
 </html>
