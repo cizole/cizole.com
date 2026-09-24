@@ -1510,13 +1510,20 @@
   });
   $('#hp-error-ok').addEventListener('click', () => { hpError.hidden = true; });
 
-  // the webring: every link opens in a new window so this connection survives
-  const RING = ['eyes', 'button', 'trip', 'escape', 'server-room', 'funky-town', 'roomba-room', 'fish-tank', 'blacklight', 'game-room', '70s', '80s', '90s', 'other-window', 'junk-drawer', 'basement', 'weather'];
-  const here = RING.indexOf('90s');
-  $('#ring-prev').href = `../${RING[(here - 1 + RING.length) % RING.length]}/`;
-  $('#ring-next').href = `../${RING[(here + 1) % RING.length]}/`;
+  // the webring: every link opens in a new window so this connection survives.
+  // the ring is every open room in assets/rooms.js, which loads after this script,
+  // so the links get filled in once the page has finished loading.
+  const ring = () => (window.CIZOLE_ROOMS || []).filter(r => !r.defunct).map(r => r.slug);
+  addEventListener('DOMContentLoaded', () => {
+    const RING = ring();
+    const here = RING.indexOf('90s');
+    if (here < 0) return;
+    $('#ring-prev').href = `../${RING[(here - 1 + RING.length) % RING.length]}/`;
+    $('#ring-next').href = `../${RING[(here + 1) % RING.length]}/`;
+  });
   $('#ring-random').addEventListener('click', e => {
-    e.currentTarget.href = `../${pick(RING.filter(r => r !== '90s'))}/`;
+    const others = ring().filter(r => r !== '90s');
+    if (others.length) e.currentTarget.href = `../${pick(others)}/`;
     say('the webring opened another window. you are still connected here. the phone line is still ours.');
   });
   ['#ring-prev', '#ring-next'].forEach(sel => $(sel).addEventListener('click', () => {

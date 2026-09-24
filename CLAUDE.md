@@ -54,7 +54,8 @@ Room ideas not built yet (numbers continue from the lobby):
 - Use relative paths (`../assets/site.css`). The exception is `404.html`, which is served at any missing URL, so it uses root paths and inline styles.
 - Respect `prefers-reduced-motion`.
 - Preview with a local server, since folder links like `eyes/` don't work over `file://`: `python -m http.server 8765 --bind 127.0.0.1`, then open http://127.0.0.1:8765/.
-- The 3D basement (`basement/`) has a door for every room, listed in one array at the top of its script. Add new rooms there too.
+- `assets/rooms.js` is the single source of truth for room numbers, names, and status. The lobby, the rooms menu, the basement's doors, the 90s webring, and each room's tab title (`<name> · cizole`) all read from it, so renaming or retiring a room there updates everything. Don't hardcode room lists anywhere else. The only per-room data kept elsewhere is the basement's `GLOW` map (the color of the light behind each door, optional).
+- `README.md` is the repo's front page on GitHub. It's excluded from the published site in `_config.yml`, like this file.
 
 ## Deploying
 

@@ -1,3 +1,5 @@
 # GitHub Pages build settings. The site itself is plain static HTML.
+# These are for the repo, not the website.
 exclude:
   - CLAUDE.md
+  - README.md

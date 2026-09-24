@@ -205,33 +205,26 @@
 import * as THREE from 'three';
 import { AsciiEffect } from 'three/addons/effects/AsciiEffect.js';
 
-// ---------- the doors, in order down the hall. add new rooms here. ----------
-const DOORS = [
-  { n: '001', name: 'eyes', href: '../eyes/', glow: '#f4efe6' },
-  { n: '002', name: 'the button', href: '../button/', glow: '#c8ff3d' },
-  { n: '003', name: 'trip', href: '../trip/', glow: '#ff2bd6' },
-  { n: '004', name: 'escape room', href: '../escape/', glow: '#e0b94f' },
-  { n: '005', name: 'server room', href: '../server-room/', glow: '#4be36a' },
-  { n: '006', name: 'funky town', href: '../funky-town/', glow: '#20f0ff' },
-  { n: '007', name: 'roomba room', href: '../roomba-room/', glow: '#e89a50' },
-  { n: '008', name: 'fish tank', href: '../fish-tank/', glow: '#3ab7d9' },
-  { n: '009', name: 'blacklight room', href: '../blacklight/', glow: '#9d4dff' },
-  { n: '010', name: 'game room', href: '../game-room/', glow: '#ff4fd8' },
-  { n: '', name: '', locked: true, glow: '#000000' },
-  { n: '011', name: 'the 70s', href: '../70s/', glow: '#e8902c' },
-  { n: '012', name: 'the 80s', href: '../80s/', glow: '#8a6cff' },
-  { n: '013', name: 'the 90s', href: '../90s/', glow: '#2fbfa8' },
-  { n: '014', name: 'the other window', href: '../other-window/', glow: '#dfe8ff' },
-  { n: '015', name: 'mirror', defunct: 'closed. it was weird. even for here.', glow: '#000000' },
-  { n: '016', name: 'junk drawer', href: '../junk-drawer/', glow: '#c9b98f' },
-  { n: '017', name: 'you are here', here: true, glow: '#c8ff3d' },
-  { n: '018', name: 'weather', href: '../weather/', glow: '#9fd3ff' },
-  { n: '019', name: 'escher room', href: '../escher/', glow: '#efe9dc' },
-  { n: '020', name: 'sauna', href: '../sauna/', glow: '#ff9a4a' },
-  { n: '021', name: 'freezer', href: '../freezer/', glow: '#bfe6ff' },
-  // new rooms go above this line. about is always 999 and always the last door.
-  { n: '999', name: 'about', href: '../about/', glow: '#f3ead2' },
-];
+// ---------- the doors, in order down the hall ----------
+// they come from assets/rooms.js (the one list of every room), which loads before this
+// module runs. the only thing kept here is the color of the light behind each door;
+// a room without one gets a plain warm light.
+const GLOW = {
+  eyes: '#f4efe6', button: '#c8ff3d', trip: '#ff2bd6', escape: '#e0b94f', 'server-room': '#4be36a',
+  'funky-town': '#20f0ff', 'roomba-room': '#e89a50', 'fish-tank': '#3ab7d9', blacklight: '#9d4dff',
+  'game-room': '#ff4fd8', '70s': '#e8902c', '80s': '#8a6cff', '90s': '#2fbfa8', 'other-window': '#dfe8ff',
+  'junk-drawer': '#c9b98f', basement: '#c8ff3d', weather: '#9fd3ff', escher: '#efe9dc', sauna: '#ff9a4a',
+  freezer: '#bfe6ff', about: '#f3ead2', retro: '#7fd4ff',
+};
+const DOORS = [];
+for (const r of window.CIZOLE_ROOMS || []) {
+  if (r.slug === 'basement') DOORS.push({ n: r.n, name: 'you are here', here: true, glow: GLOW.basement });
+  else if (r.defunct) DOORS.push({ n: r.n, name: r.name, defunct: r.defunct, glow: '#000000' });
+  else DOORS.push({ n: r.n, name: r.name, href: `../${r.slug}/`, glow: GLOW[r.slug] || '#f3ead2' });
+  // an unnumbered door that never opens, just past 010
+  if (r.n === '010') DOORS.push({ n: '', name: '', locked: true, glow: '#000000' });
+}
+const HERE_N = (DOORS.find(d => d.here) || { n: '017' }).n;
 const LOBBY = { n: '000', name: 'lobby', href: '../', glow: '#c8ff3d' };
 
 // ---------- tuning ----------
@@ -985,7 +978,7 @@ function run(renderer) {
     'not yet. check back later.',
     'the handle turns. the door doesn\'t.',
   ];
-  const HERE_LINES = ['you\'re already here.', 'this is the basement. you\'re in it.', '017 is this. you\'re standing in it.'];
+  const HERE_LINES = ['you\'re already here.', 'this is the basement. you\'re in it.', `${HERE_N} is this. you're standing in it.`];
 
   function openDoor(door) {
     if (leaving || !door) return;
@@ -1041,7 +1034,7 @@ function run(renderer) {
       b.textContent = '(no number)';
       tail.textContent = ` · ${coarse ? 'tap' : 'press e'}`;
     } else if (door.here) {
-      b.textContent = '017';
+      b.textContent = door.n;
       tail.textContent = ' · you are here';
     } else if (door.defunct) {
       b.textContent = door.n;

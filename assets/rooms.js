@@ -38,6 +38,8 @@
   const here = ROOMS.findIndex(r => r.slug === parts[parts.length - 1]);
   if (here >= 0) {
     try { sessionStorage.setItem('cizole.last-room', ROOMS[here].slug); } catch (err) { /* storage off */ }
+    // the tab title comes from this list too, so renaming a room here renames it everywhere
+    document.title = `${ROOMS[here].name}${ROOMS[here].defunct ? ' (closed)' : ''} · cizole`;
   }
 
   // the lobby has no lobby link and draws its own list. a room missing from this list
