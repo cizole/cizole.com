@@ -35,8 +35,10 @@
     try { sessionStorage.setItem('cizole.last-room', ROOMS[here].slug); } catch (err) { /* storage off */ }
   }
 
+  // the lobby has no lobby link and draws its own list. a room missing from this list
+  // (say, a cached copy older than the room) still gets the menu, just without prev/next.
   const lobbyLink = document.querySelector('.lobby-link');
-  if (here < 0 || !lobbyLink) return; // the lobby draws its own list
+  if (!lobbyLink) return;
 
   // ---------- the "rooms" menu ----------
   const btn = document.createElement('button');
@@ -66,8 +68,6 @@
     grid.appendChild(item);
   });
 
-  const prev = ROOMS[(here - 1 + ROOMS.length) % ROOMS.length];
-  const next = ROOMS[(here + 1) % ROOMS.length];
   const foot = document.createElement('div');
   foot.className = 'rooms-foot';
   const link = (href, text) => {
@@ -76,11 +76,17 @@
     a.textContent = text;
     return a;
   };
-  foot.append(
-    link(`../${prev.slug}/`, `← ${prev.n} ${prev.name}`),
-    link('../', 'lobby'),
-    link(`../${next.slug}/`, `${next.n} ${next.name} →`),
-  );
+  if (here >= 0) {
+    const prev = ROOMS[(here - 1 + ROOMS.length) % ROOMS.length];
+    const next = ROOMS[(here + 1) % ROOMS.length];
+    foot.append(
+      link(`../${prev.slug}/`, `← ${prev.n} ${prev.name}`),
+      link('../', 'lobby'),
+      link(`../${next.slug}/`, `${next.n} ${next.name} →`),
+    );
+  } else {
+    foot.append(link('../', 'lobby'));
+  }
   panel.append(grid, foot);
   document.body.append(btn, panel);
 
