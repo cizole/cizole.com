@@ -1,0 +1,854 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>roomba room · cizole</title>
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/site.css">
+<style>
+  .page { max-width: 900px; margin: 0 auto; padding: 56px 16px 32px; }
+  .note {
+    display: inline-block;
+    margin: 0 0 14px 8px;
+    padding: 3px 12px;
+    background: #e8d9a8;
+    color: #1b1b1b;
+    font-family: "Permanent Marker", cursive;
+    font-size: 15px;
+    transform: rotate(-1.5deg);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  }
+  #room {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 10px;
+    background: #1b1a18;
+    touch-action: none;
+  }
+  .hud { margin-top: 14px; font-size: 13px; }
+  .telemetry { display: flex; flex-wrap: wrap; gap: 6px 22px; color: var(--dim); }
+  .telemetry b { color: var(--fg); font-weight: 400; }
+  .telemetry b.low { color: #ffb84a; }
+  .telemetry b.err { color: #ff6a5a; }
+  .says { min-height: 1.5em; margin: 10px 0 0; font-size: 15px; transition: opacity 0.25s; }
+  .says.fade { opacity: 0; }
+  .says .who { color: var(--acid); }
+</style>
+</head>
+<body>
+<a class="lobby-link" href="../">&larr; lobby</a>
+
+<div class="page">
+  <p class="note">please do not feed the vacuum.</p>
+  <canvas id="room" width="900" height="560" aria-label="a living room, seen from above, with a robot vacuum named dustin cleaning it"></canvas>
+  <div class="hud">
+    <div class="telemetry">
+      <span>status: <b id="t-status">cleaning</b></span>
+      <span>battery: <b id="t-battery">--</b></span>
+      <span>floor: <b id="t-floor">0% clean</b></span>
+      <span>passengers: <b id="t-pass">0</b></span>
+    </div>
+    <p class="says" id="says" role="status"></p>
+  </div>
+</div>
+
+<script>
+(() => {
+  const W = 900;
+  const H = 560;
+  const WALL = 14;
+  const R = 22; // vacuum radius
+  const TAU = Math.PI * 2;
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const angleDiff = (a, b) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
+
+  const canvas = document.getElementById('room');
+  const g = canvas.getContext('2d');
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  g.scale(dpr, dpr);
+
+  // ---------- the room ----------
+  const SOLID_RECTS = [
+    { x: 250, y: WALL, w: 400, h: 26, name: 'couch' },
+    { x: 250, y: WALL, w: 26, h: 100, name: 'couch' },
+    { x: 624, y: WALL, w: 26, h: 100, name: 'couch' },
+    { x: W - WALL - 70, y: 150, w: 70, h: 230, name: 'bookshelf' },
+  ];
+  const COUCH_UNDER = { x: 276, y: WALL + 26, w: 348, h: 74 };
+  const TABLE = { x: 370, y: 200, w: 180, h: 100 };
+  const SOLID_CIRCLES = [
+    { x: 72, y: 78, r: 36, name: 'plant' },
+    { x: TABLE.x + 10, y: TABLE.y + 10, r: 6, name: 'table' },
+    { x: TABLE.x + TABLE.w - 10, y: TABLE.y + 10, r: 6, name: 'table' },
+    { x: TABLE.x + 10, y: TABLE.y + TABLE.h - 10, r: 6, name: 'table' },
+    { x: TABLE.x + TABLE.w - 10, y: TABLE.y + TABLE.h - 10, r: 6, name: 'table' },
+  ];
+  const DOCK = { x: 150, y: H - WALL - R - 2 };
+  const DOOR = { y1: 300, y2: 390 };
+
+  const pointer = { x: 0, y: 0, inside: false };
+
+  function circleRect(x, y, r, s) {
+    const cx = clamp(x, s.x, s.x + s.w);
+    const cy = clamp(y, s.y, s.y + s.h);
+    return Math.hypot(x - cx, y - cy) < r;
+  }
+  function hits(x, y, r, ignoreCursor) {
+    if (x < WALL + r || x > W - WALL - r || y < WALL + r || y > H - WALL - r) return 'wall';
+    for (const s of SOLID_RECTS) if (circleRect(x, y, r, s)) return s.name;
+    for (const c of SOLID_CIRCLES) if (Math.hypot(x - c.x, y - c.y) < r + c.r) return c.name;
+    if (!ignoreCursor && pointer.inside && bot.mode !== 'held' && performance.now() > bot.ignoreYouUntil &&
+        Math.hypot(x - pointer.x, y - pointer.y) < r + 10) return 'you';
+    return null;
+  }
+  const inRect = (x, y, s) => x > s.x && x < s.x + s.w && y > s.y && y < s.y + s.h;
+
+  // ---------- floor, drawn once ----------
+  const floorCanvas = document.createElement('canvas');
+  floorCanvas.width = W * dpr;
+  floorCanvas.height = H * dpr;
+  (() => {
+    const f = floorCanvas.getContext('2d');
+    f.scale(dpr, dpr);
+    f.fillStyle = '#24190f';
+    f.fillRect(0, 0, W, H);
+    const PLANK = 28;
+    for (let y = WALL, row = 0; y < H - WALL; y += PLANK, row++) {
+      let x = WALL - ((row * 97) % 180);
+      while (x < W - WALL) {
+        const len = 150 + Math.random() * 150;
+        f.fillStyle = `hsl(${26 + Math.random() * 6}, ${32 + Math.random() * 8}%, ${29 + Math.random() * 6}%)`;
+        f.fillRect(x, y, len, PLANK - 1.5);
+        x += len + 1.5;
+      }
+    }
+    // rug
+    f.save();
+    f.translate(450, 400);
+    const rings = ['#5a2a3a', '#7a3b4d', '#5a2a3a', '#8e4a5c', '#5a2a3a'];
+    rings.forEach((c, i) => {
+      f.fillStyle = c;
+      f.beginPath();
+      f.ellipse(0, 0, 175 - i * 26, 95 - i * 15, 0, 0, TAU);
+      f.fill();
+    });
+    f.restore();
+    // walls, with a doorway on the left
+    f.fillStyle = '#1b1a18';
+    f.fillRect(0, 0, W, WALL);
+    f.fillRect(0, H - WALL, W, WALL);
+    f.fillRect(W - WALL, 0, WALL, H);
+    f.fillRect(0, 0, WALL, DOOR.y1);
+    f.fillRect(0, DOOR.y2, WALL, H - DOOR.y2);
+    f.strokeStyle = 'rgba(235, 229, 214, 0.25)';
+    f.lineWidth = 1.5;
+    f.setLineDash([4, 4]);
+    f.beginPath();
+    f.arc(WALL, DOOR.y1, DOOR.y2 - DOOR.y1, 0, Math.PI / 2);
+    f.stroke();
+    f.setLineDash([]);
+  })();
+
+  // ---------- dust, and a coarse grid to measure how clean things are ----------
+  const dust = document.createElement('canvas');
+  dust.width = W * dpr;
+  dust.height = H * dpr;
+  const d = dust.getContext('2d');
+  d.scale(dpr, dpr);
+  for (let i = 0; i < 7500; i++) {
+    const x = WALL + Math.random() * (W - 2 * WALL);
+    const y = WALL + Math.random() * (H - 2 * WALL);
+    d.fillStyle = `rgba(214, 204, 184, ${(0.12 + Math.random() * 0.3).toFixed(2)})`;
+    d.beginPath();
+    d.arc(x, y, 0.5 + Math.random() * 1.1, 0, TAU);
+    d.fill();
+  }
+  for (let i = 0; i < 70; i++) {
+    const x = WALL + Math.random() * (W - 2 * WALL);
+    const y = WALL + Math.random() * (H - 2 * WALL);
+    const r = 3 + Math.random() * 6;
+    const grad = d.createRadialGradient(x, y, 0, x, y, r);
+    grad.addColorStop(0, 'rgba(200, 192, 176, 0.45)');
+    grad.addColorStop(1, 'rgba(200, 192, 176, 0)');
+    d.fillStyle = grad;
+    d.beginPath();
+    d.arc(x, y, r, 0, TAU);
+    d.fill();
+  }
+  d.globalCompositeOperation = 'destination-out';
+
+  const CELL = 20;
+  const COLS = W / CELL;
+  const ROWS = H / CELL;
+  const cells = new Uint8Array(COLS * ROWS); // 0 = not floor, 1 = dusty, 2 = clean
+  let dustyTotal = 0;
+  let cleanCount = 0;
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const x = c * CELL + CELL / 2;
+      const y = r * CELL + CELL / 2;
+      if (!hits(x, y, 3, true)) { cells[r * COLS + c] = 1; dustyTotal++; }
+    }
+  }
+  function cleanAt(x, y) {
+    d.beginPath();
+    d.arc(x, y, R - 1, 0, TAU);
+    d.fill();
+    const c0 = Math.floor((x - R) / CELL), c1 = Math.floor((x + R) / CELL);
+    const r0 = Math.floor((y - R) / CELL), r1 = Math.floor((y + R) / CELL);
+    for (let r = Math.max(0, r0); r <= Math.min(ROWS - 1, r1); r++) {
+      for (let c = Math.max(0, c0); c <= Math.min(COLS - 1, c1); c++) {
+        const i = r * COLS + c;
+        if (cells[i] === 1 && Math.hypot(c * CELL + CELL / 2 - x, r * CELL + CELL / 2 - y) < R - 3) {
+          cells[i] = 2;
+          cleanCount++;
+        }
+      }
+    }
+  }
+  const cleanPct = () => Math.floor((cleanCount / dustyTotal) * 100);
+
+  // ---------- things on the floor ----------
+  let crumbs = [];
+  function freeSpot(r, tries = 200) {
+    for (let i = 0; i < tries; i++) {
+      const x = WALL + r + Math.random() * (W - 2 * (WALL + r));
+      const y = WALL + r + Math.random() * (H - 2 * (WALL + r));
+      if (!hits(x, y, r, true) && !inRect(x, y, COUCH_UNDER) && Math.hypot(x - DOCK.x, y - DOCK.y) > 90) return { x, y };
+    }
+    return { x: 700, y: 470 };
+  }
+  const sock = { ...freeSpot(24), h: Math.random() * TAU, onFloor: true, cooldown: 0 };
+
+  // ---------- dustin ----------
+  const bot = {
+    x: DOCK.x, y: DOCK.y, h: Math.PI / 2,
+    mode: 'clean', motion: 'backup', motionT: 0.7, turnTo: 0,
+    battery: 62 + Math.random() * 25,
+    sock: false, cat: false, underCouch: false, couchGrace: 0,
+    wobble: Math.random() * 10, bumpsYou: 0, lastBumpSay: 0, eaten: 0, lastEatSay: 0,
+    recentYouBumps: [], ignoreYouUntil: 0,
+    homeSince: 0, stuckSince: 0, sockSince: 0, sockErrorSince: 0, dazedUntil: 0,
+  };
+  const MOVING = ['clean', 'crumb', 'home', 'sock'];
+
+  // ---------- speech ----------
+  const saysEl = document.getElementById('says');
+  let lastSay = 0;
+  let sayTimer;
+  function say(text) {
+    lastSay = performance.now();
+    clearTimeout(sayTimer);
+    saysEl.classList.add('fade');
+    sayTimer = setTimeout(() => {
+      saysEl.textContent = '';
+      const who = document.createElement('span');
+      who.className = 'who';
+      who.textContent = 'dustin: ';
+      saysEl.append(who, text);
+      saysEl.classList.remove('fade');
+    }, 200);
+  }
+
+  function setMode(m) { bot.mode = m; }
+
+  function resume() {
+    setMode(bot.battery < 15 ? 'home' : 'clean');
+    if (bot.mode === 'home') bot.homeSince = performance.now();
+  }
+
+  function dropSock() {
+    bot.sock = false;
+    sock.x = clamp(bot.x - Math.cos(bot.h) * 34, WALL + 14, W - WALL - 14);
+    sock.y = clamp(bot.y - Math.sin(bot.h) * 34, WALL + 14, H - WALL - 14);
+    sock.h = bot.h;
+    sock.onFloor = true;
+    sock.cooldown = performance.now() + 9000;
+  }
+
+  // ---------- the cat ----------
+  const cat = { state: 'away', x: -30, y: 345, h: 0, since: 0 };
+  const DOORWAY = { x: 34, y: 345 };
+  function catWalkTo(tx, ty, speed, dt) {
+    const want = Math.atan2(ty - cat.y, tx - cat.x);
+    cat.h += clamp(angleDiff(want, cat.h), -5 * dt, 5 * dt);
+    const dist = Math.hypot(tx - cat.x, ty - cat.y);
+    const step = Math.min(dist, speed * dt);
+    cat.x += Math.cos(want) * step;
+    cat.y += Math.sin(want) * step;
+    return dist < 6;
+  }
+  function catLeaves(text) {
+    bot.cat = false;
+    cat.state = 'leaving';
+    cat.leg = 0;
+    cat.x = bot.x;
+    cat.y = bot.y;
+    if (text) say(text);
+  }
+  function updateCat(dt, now) {
+    if (cat.state === 'entering') {
+      const target = cat.leg === 0 ? DOORWAY : bot;
+      if (catWalkTo(target.x, target.y, cat.leg === 0 ? 80 : 95, dt)) {
+        if (cat.leg === 0) cat.leg = 1;
+        else if (MOVING.includes(bot.mode) || bot.mode === 'charging' || bot.mode === 'nap') {
+          cat.state = 'riding';
+          cat.since = now;
+          bot.cat = true;
+          say(pick(['passenger: cat. unauthorized.', 'a cat is on me. i did not agree to this.']));
+        }
+      }
+      if (now - cat.since > 25000) { cat.state = 'leaving'; cat.leg = 0; say('the cat lost interest. i am relieved. and a little hurt.'); }
+    } else if (cat.state === 'riding') {
+      if (now - cat.since > 35000) catLeaves('the cat has disembarked. no review was left.');
+    } else if (cat.state === 'leaving') {
+      const target = cat.leg === 0 ? DOORWAY : { x: -40, y: DOORWAY.y };
+      if (catWalkTo(target.x, target.y, 110, dt)) {
+        if (cat.leg === 0) cat.leg = 1;
+        else cat.state = 'away';
+      }
+    }
+  }
+  let lastActivity = performance.now();
+  const start = performance.now();
+  setInterval(() => {
+    const now = performance.now();
+    if (cat.state !== 'away' || now - start < 25000) return;
+    if (!MOVING.includes(bot.mode) || bot.underCouch) return;
+    if (Math.random() < (now - lastActivity > 15000 ? 0.6 : 0.25)) {
+      cat.state = 'entering';
+      cat.leg = 0;
+      cat.x = -30;
+      cat.y = DOORWAY.y;
+      cat.h = 0;
+      cat.since = now;
+      say('something is approaching. it has whiskers.');
+    }
+  }, 10000);
+
+  // ---------- behavior ----------
+  const YOU_LINES = [
+    'bumped into you. sorry.',
+    'sorry.',
+    'you again.',
+    'are you furniture?',
+    'i have added you to the map as a chair.',
+    'please move, chair.',
+  ];
+  const MUSINGS = [
+    'cleaning.',
+    'this floor has seen things.',
+    'found a crumb from 2019.',
+    "the rug is my favorite. don't tell the floor.",
+    'i have mapped this room 400 times. it keeps changing.',
+    'i cleaned under the couch. nobody will ever know.',
+  ];
+
+  function nearestCrumb() {
+    let best = null, bd = Infinity;
+    for (const c of crumbs) {
+      const dd = Math.hypot(c.x - bot.x, c.y - bot.y);
+      if (dd < bd) { bd = dd; best = c; }
+    }
+    return best;
+  }
+  function homeTarget() {
+    const approach = { x: DOCK.x, y: DOCK.y - 60 };
+    return Math.hypot(bot.x - approach.x, bot.y - approach.y) < 30 || (Math.abs(bot.x - DOCK.x) < 20 && bot.y > approach.y) ? DOCK : approach;
+  }
+
+  function bump(what, now) {
+    bot.motion = 'backup';
+    bot.motionT = 0.25 + Math.random() * 0.2;
+    if (what !== 'you') return;
+    // a cursor parked on the crumbs would block them forever, so dustin gives up on you
+    bot.recentYouBumps = bot.recentYouBumps.filter(t => now - t < 8000).concat(now);
+    if (bot.recentYouBumps.length >= 3) {
+      bot.recentYouBumps = [];
+      bot.ignoreYouUntil = now + 6000;
+      bot.lastBumpSay = now;
+      say('fine. i will go through you.');
+    } else if (now - bot.lastBumpSay > 2500) {
+      bot.lastBumpSay = now;
+      say(YOU_LINES[Math.min(bot.bumpsYou++, YOU_LINES.length - 1)]);
+    }
+  }
+
+  function drive(dt, now) {
+    const speed = 70 * (bot.cat ? 0.8 : 1) * (bot.mode === 'sock' ? 0.45 : 1);
+    if (bot.motion === 'backup') {
+      const nx = bot.x - Math.cos(bot.h) * speed * 0.6 * dt;
+      const ny = bot.y - Math.sin(bot.h) * speed * 0.6 * dt;
+      if (!hits(nx, ny, R, true)) { bot.x = nx; bot.y = ny; }
+      bot.motionT -= dt;
+      if (bot.motionT <= 0) {
+        bot.motion = 'turn';
+        bot.turnTo = bot.h + (Math.random() < 0.5 ? -1 : 1) * (Math.PI / 3 + Math.random() * Math.PI * 0.8);
+      }
+      return;
+    }
+    if (bot.motion === 'turn') {
+      const diff = angleDiff(bot.turnTo, bot.h);
+      const step = 3 * dt;
+      if (Math.abs(diff) <= step) { bot.h = bot.turnTo; bot.motion = 'drive'; }
+      else bot.h += Math.sign(diff) * step;
+      return;
+    }
+
+    const target = bot.mode === 'crumb' ? nearestCrumb() : bot.mode === 'home' ? homeTarget() : null;
+    if (target) bot.h += clamp(angleDiff(Math.atan2(target.y - bot.y, target.x - bot.x), bot.h), -2.4 * dt, 2.4 * dt);
+    else bot.h += Math.sin(now / 1700 + bot.wobble) * 0.3 * dt;
+
+    const nx = bot.x + Math.cos(bot.h) * speed * dt;
+    const ny = bot.y + Math.sin(bot.h) * speed * dt;
+    const hit = hits(nx, ny, R);
+    if (hit) { bump(hit, now); return; }
+    bot.x = nx;
+    bot.y = ny;
+    cleanAt(bot.x, bot.y);
+
+    // crumbs
+    const before = crumbs.length;
+    crumbs = crumbs.filter(c => Math.hypot(c.x - bot.x, c.y - bot.y) > R - 4);
+    if (crumbs.length < before) {
+      bot.eaten += before - crumbs.length;
+      if (now - bot.lastEatSay > 1500) {
+        bot.lastEatSay = now;
+        say(bot.eaten > 25 ? pick(['this is a feast.', 'i am so full. keep going.']) : pick(['crumb acquired.', 'nom.', 'delicious. probably.']));
+      }
+    }
+
+    // the sock
+    if (sock.onFloor && now > sock.cooldown && (bot.mode === 'clean' || bot.mode === 'crumb') && Math.hypot(sock.x - bot.x, sock.y - bot.y) < R + 12) {
+      sock.onFloor = false;
+      bot.sock = true;
+      bot.sockSince = now;
+      setMode('sock');
+      say('found a sock. eating it. going well.');
+    }
+
+    // the couch
+    const under = inRect(bot.x, bot.y, COUCH_UNDER);
+    if (under && !bot.underCouch) {
+      if (now > bot.couchGrace && Math.random() < 0.35) {
+        setMode('stuck');
+        bot.stuckSince = now;
+        say('stuck under the couch. this is fine.');
+      } else if (now - lastSay > 4000) {
+        say("under the couch. you can't see me.");
+      }
+    }
+    bot.underCouch = under;
+
+    // home
+    if (bot.mode === 'home' && Math.hypot(bot.x - DOCK.x, bot.y - DOCK.y) < 12) {
+      bot.x = DOCK.x;
+      bot.y = DOCK.y;
+      bot.h = Math.PI / 2;
+      setMode('charging');
+      say('home. charging. do not perceive me.');
+    }
+  }
+
+  const milestones = [25, 50, 75, 90];
+  const MILESTONE_LINES = {
+    25: '25% clean. a start.',
+    50: 'halfway. the floor is starting to trust me.',
+    75: '75%. i have never been this happy.',
+    90: '90%. there is almost nothing left for me. what do i do after.',
+  };
+  let lastMusing = performance.now();
+
+  function update(dt, now) {
+    if (MOVING.includes(bot.mode) || bot.mode === 'stuck') bot.battery = Math.max(0, bot.battery - dt / 2.5);
+    if (bot.mode === 'charging') {
+      bot.battery = Math.min(100, bot.battery + dt * 2.5);
+      if (bot.battery >= 100) {
+        setMode('clean');
+        bot.motion = 'backup';
+        bot.motionT = 0.7;
+        say('fully charged. the floor will pay for this.');
+      }
+    }
+    if (bot.mode === 'nap') {
+      bot.battery = Math.min(100, bot.battery + dt * 0.8);
+      if (bot.battery >= 40) { setMode('clean'); say('rested. resuming. home remains a mystery.'); }
+    }
+    if (bot.battery < 15 && (bot.mode === 'clean' || bot.mode === 'crumb')) {
+      setMode('home');
+      bot.homeSince = now;
+      say('battery low. going home. home is somewhere around here.');
+    }
+    if (bot.mode === 'home' && now - bot.homeSince > 50000) {
+      setMode('nap');
+      say('could not find home. lying down here instead.');
+    }
+    if (bot.mode === 'clean' && crumbs.length) {
+      setMode('crumb');
+      say(pick(['dirt detected.', 'crumbs. crumbs!', 'i sense a snack.']));
+    }
+    if (bot.mode === 'crumb' && !crumbs.length) setMode('clean');
+    if (bot.mode === 'sock' && now - bot.sockSince > 6000) {
+      setMode('sock-error');
+      bot.sockErrorSince = now;
+      say('error: sock. please remove sock.');
+    }
+    if (bot.mode === 'sock-error' && now - bot.sockErrorSince > 25000) {
+      dropSock();
+      setMode('clean');
+      say('removed the sock myself. it took everything i had.');
+    }
+    if (bot.mode === 'stuck' && now - bot.stuckSince > 18000) {
+      setMode('clean');
+      bot.motion = 'backup';
+      bot.motionT = 0.9;
+      bot.couchGrace = now + 8000;
+      say('freed myself. nobody helped.');
+    }
+    if (bot.mode === 'dazed' && now > bot.dazedUntil) resume();
+
+    if (MOVING.includes(bot.mode)) drive(dt, now);
+
+    const pct = cleanPct();
+    while (milestones.length && pct >= milestones[0]) say(MILESTONE_LINES[milestones.shift()]);
+    if (bot.mode === 'clean' && now - lastMusing > 28000 && now - lastSay > 12000) {
+      lastMusing = now;
+      say(pick(MUSINGS));
+    }
+    updateCat(dt, now);
+  }
+
+  // ---------- drawing ----------
+  function ringColor(now) {
+    if (bot.mode === 'charging') return `rgba(80, 160, 255, ${0.45 + 0.45 * Math.sin(now / 400)})`;
+    if (bot.mode === 'sock-error' || bot.mode === 'stuck') return Math.floor(now / 350) % 2 ? '#ff4a3a' : '#3a1210';
+    if (bot.battery < 15 || bot.mode === 'nap') return '#ffb030';
+    return '#c8ff3d';
+  }
+
+  function drawSock(x, y, h) {
+    g.save();
+    g.translate(x, y);
+    g.rotate(h);
+    g.lineCap = 'round';
+    g.lineJoin = 'round';
+    g.strokeStyle = '#e9e2d0';
+    g.lineWidth = 11;
+    g.beginPath();
+    g.moveTo(-14, -4);
+    g.lineTo(8, -4);
+    g.lineTo(15, 7);
+    g.stroke();
+    g.strokeStyle = '#c0392b';
+    g.lineWidth = 2.5;
+    g.beginPath();
+    g.moveTo(-8, -9);
+    g.lineTo(-8, 1);
+    g.moveTo(-3, -9);
+    g.lineTo(-3, 1);
+    g.stroke();
+    g.restore();
+  }
+
+  function drawCat(x, y, h, now, walking) {
+    g.save();
+    g.translate(x, y);
+    g.rotate(h);
+    const swish = Math.sin(now / 300) * 0.6;
+    g.lineCap = 'round';
+    g.strokeStyle = '#c47a35';
+    g.lineWidth = 5;
+    g.beginPath();
+    g.moveTo(-14, 0);
+    g.quadraticCurveTo(-26, swish * 14, -30, swish * 20 + 5);
+    g.stroke();
+    if (walking) {
+      const s = Math.sin(now / 90) * 3;
+      g.fillStyle = '#b86f2f';
+      for (const [px, py, k] of [[8, -9, 1], [8, 9, -1], [-8, -9, -1], [-8, 9, 1]]) {
+        g.beginPath();
+        g.arc(px + s * k, py, 2.6, 0, TAU);
+        g.fill();
+      }
+    }
+    g.fillStyle = '#d98a3d';
+    g.beginPath();
+    g.ellipse(0, 0, 16, 10, 0, 0, TAU);
+    g.fill();
+    g.strokeStyle = 'rgba(120, 60, 20, 0.5)';
+    g.lineWidth = 2;
+    for (const sx of [-9, -4, 1]) {
+      g.beginPath();
+      g.moveTo(sx, -9);
+      g.lineTo(sx + 2, 9);
+      g.stroke();
+    }
+    g.fillStyle = '#d98a3d';
+    g.beginPath();
+    g.arc(16, 0, 7.5, 0, TAU);
+    g.fill();
+    g.beginPath();
+    g.moveTo(17, -5); g.lineTo(24, -9); g.lineTo(21, -1);
+    g.moveTo(17, 5); g.lineTo(24, 9); g.lineTo(21, 1);
+    g.fill();
+    g.restore();
+  }
+
+  function drawBot(now) {
+    const held = bot.mode === 'held';
+    const jitter = bot.mode === 'stuck' ? (Math.random() - 0.5) * 2 : 0;
+    if (bot.sock) {
+      drawSock(bot.x - Math.cos(bot.h) * (R + 6), bot.y - Math.sin(bot.h) * (R + 6), bot.h + Math.sin(now / 200) * 0.3);
+    }
+    g.save();
+    g.translate(bot.x + jitter, bot.y + jitter);
+    g.fillStyle = 'rgba(0, 0, 0, 0.35)';
+    g.beginPath();
+    g.arc(held ? 7 : 2, held ? 10 : 3, R, 0, TAU);
+    g.fill();
+    if (held) g.scale(1.12, 1.12);
+    g.rotate(bot.h);
+    const body = g.createRadialGradient(-6, -6, 3, 0, 0, R);
+    body.addColorStop(0, '#50545a');
+    body.addColorStop(1, '#1f2023');
+    g.fillStyle = body;
+    g.beginPath();
+    g.arc(0, 0, R, 0, TAU);
+    g.fill();
+    g.strokeStyle = '#62656b';
+    g.lineWidth = 4;
+    g.beginPath();
+    g.arc(0, 0, R - 2, -1.2, 1.2);
+    g.stroke();
+    // spinning side brush
+    if (MOVING.includes(bot.mode) || bot.mode === 'stuck') {
+      g.save();
+      g.translate(R * 0.62, R * 0.62);
+      g.rotate(now / 50);
+      g.strokeStyle = 'rgba(210, 210, 200, 0.6)';
+      g.lineWidth = 1;
+      for (let i = 0; i < 3; i++) {
+        g.rotate(TAU / 3);
+        g.beginPath();
+        g.moveTo(0, 0);
+        g.lineTo(9, 0);
+        g.stroke();
+      }
+      g.restore();
+    }
+    const ring = ringColor(now);
+    g.strokeStyle = ring;
+    g.shadowColor = ring;
+    g.shadowBlur = 8;
+    g.lineWidth = 2;
+    g.beginPath();
+    g.arc(0, 0, 7, 0, TAU);
+    g.stroke();
+    g.shadowBlur = 0;
+    g.fillStyle = '#2b2d31';
+    g.beginPath();
+    g.arc(0, 0, 5.5, 0, TAU);
+    g.fill();
+    g.restore();
+    if (bot.cat) drawCat(bot.x + jitter, bot.y + jitter, bot.h + 0.3, now, false);
+  }
+
+  function drawFurniture() {
+    // dock
+    g.fillStyle = '#26282c';
+    g.fillRect(DOCK.x - 26, H - WALL - 12, 52, 12);
+    g.fillStyle = bot.mode === 'charging' ? '#50a0ff' : '#3a3d42';
+    g.beginPath();
+    g.arc(DOCK.x, H - WALL - 6, 2.5, 0, TAU);
+    g.fill();
+
+    // glass coffee table
+    g.fillStyle = 'rgba(180, 225, 235, 0.16)';
+    g.strokeStyle = 'rgba(200, 235, 245, 0.5)';
+    g.lineWidth = 2;
+    g.fillRect(TABLE.x, TABLE.y, TABLE.w, TABLE.h);
+    g.strokeRect(TABLE.x, TABLE.y, TABLE.w, TABLE.h);
+    g.fillStyle = '#1d1c1a';
+    for (const c of SOLID_CIRCLES.filter(c => c.name === 'table')) {
+      g.beginPath();
+      g.arc(c.x, c.y, c.r, 0, TAU);
+      g.fill();
+    }
+    g.fillStyle = 'rgba(232, 217, 168, 0.85)';
+    g.save();
+    g.translate(470, 236);
+    g.rotate(0.2);
+    g.fillRect(-18, -12, 36, 26); // a magazine
+    g.restore();
+
+    // couch (opaque: whatever goes under it is gone)
+    g.fillStyle = '#34425a';
+    g.fillRect(250, WALL, 400, 26);
+    g.fillRect(250, WALL, 26, 100);
+    g.fillRect(624, WALL, 26, 100);
+    g.fillStyle = '#44557a';
+    for (let i = 0; i < 3; i++) g.fillRect(278 + i * 116, WALL + 28, 112, 70);
+    g.fillStyle = 'rgba(0, 0, 0, 0.18)';
+    g.fillRect(250, WALL + 96, 400, 4);
+
+    // bookshelf
+    g.fillStyle = '#3e2819';
+    g.fillRect(W - WALL - 70, 150, 70, 230);
+    const BOOKS = ['#b8322a', '#2f5fa7', '#3d8a4c', '#d9b129', '#6b5a4a', '#5c6770'];
+    for (let y = 156, i = 0; y < 372; y += 12, i++) {
+      g.fillStyle = BOOKS[(i * 5) % BOOKS.length];
+      g.fillRect(W - WALL - 64, y, 40 + ((i * 13) % 20), 9);
+    }
+
+    // plant
+    g.fillStyle = '#8a4b2e';
+    g.beginPath();
+    g.arc(72, 78, 36, 0, TAU);
+    g.fill();
+    g.fillStyle = '#3a2a1c';
+    g.beginPath();
+    g.arc(72, 78, 29, 0, TAU);
+    g.fill();
+    g.fillStyle = '#3f8a4a';
+    for (let i = 0; i < 8; i++) {
+      g.save();
+      g.translate(72, 78);
+      g.rotate((i / 8) * TAU + 0.3);
+      g.beginPath();
+      g.ellipse(22, 0, 22, 8, 0, 0, TAU);
+      g.fill();
+      g.restore();
+    }
+  }
+
+  function draw(now) {
+    g.drawImage(floorCanvas, 0, 0, W, H);
+    g.drawImage(dust, 0, 0, W, H);
+    g.fillStyle = '#b8864e';
+    for (const c of crumbs) {
+      g.beginPath();
+      g.arc(c.x, c.y, c.r, 0, TAU);
+      g.fill();
+    }
+    if (sock.onFloor) drawSock(sock.x, sock.y, sock.h);
+    const catWalking = cat.state === 'entering' || cat.state === 'leaving';
+    const held = bot.mode === 'held';
+    if (!held) drawBot(now);
+    drawFurniture();
+    if (catWalking) drawCat(cat.x, cat.y, cat.h, now, true);
+    if (held) drawBot(now); // lifted above everything
+  }
+
+  // ---------- telemetry ----------
+  const STATUS = {
+    clean: 'cleaning', crumb: 'pursuing crumbs', home: 'looking for home', charging: 'charging',
+    nap: 'resting its eyes', sock: 'eating a sock', 'sock-error': 'error: sock', stuck: 'stuck',
+    held: 'airborne', dazed: 'recalculating',
+  };
+  const tStatus = document.getElementById('t-status');
+  const tBattery = document.getElementById('t-battery');
+  setInterval(() => {
+    tStatus.textContent = STATUS[bot.mode];
+    tStatus.className = bot.mode === 'sock-error' || bot.mode === 'stuck' ? 'err' : '';
+    tBattery.textContent = Math.round(bot.battery) + '%' + (bot.mode === 'charging' ? ' (charging)' : '');
+    tBattery.className = bot.battery < 15 ? 'low' : '';
+    document.getElementById('t-floor').textContent = cleanPct() + '% clean';
+    document.getElementById('t-pass').textContent = bot.cat ? '1 (cat)' : '0';
+  }, 250);
+
+  // ---------- your hands ----------
+  function toRoom(e) {
+    const r = canvas.getBoundingClientRect();
+    return { x: ((e.clientX - r.left) / r.width) * W, y: ((e.clientY - r.top) / r.height) * H };
+  }
+  const onBot = p => Math.hypot(p.x - bot.x, p.y - bot.y) < R + 6;
+
+  canvas.addEventListener('pointerdown', e => {
+    const p = toRoom(e);
+    lastActivity = performance.now();
+    if (onBot(p)) {
+      try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* synthetic pointer */ }
+      const was = bot.mode;
+      setMode('held');
+      bot.underCouch = false;
+      bot.x = p.x;
+      bot.y = p.y;
+      if (bot.sock) { dropSock(); say('sock removed. thank you. i would do it again.'); }
+      else if (bot.cat) catLeaves('the cat has disembarked. it blames you.');
+      else if (was === 'stuck') say('rescued. i will not forget this.');
+      else if (was === 'charging') say('unplugged mid-charge. rude.');
+      else say(pick(['wheel drop detected. i am airborne.', 'put me down. please.', 'i can see my house from here.']));
+      canvas.style.cursor = 'grabbing';
+      return;
+    }
+    if (crumbs.length > 80) return;
+    for (let i = 0; i < 3 + Math.floor(Math.random() * 3); i++) {
+      const x = p.x + (Math.random() - 0.5) * 26;
+      const y = p.y + (Math.random() - 0.5) * 26;
+      if (!hits(x, y, 2, true)) crumbs.push({ x, y, r: 1.6 + Math.random() * 1.6 });
+    }
+  });
+
+  canvas.addEventListener('pointermove', e => {
+    const p = toRoom(e);
+    pointer.x = p.x;
+    pointer.y = p.y;
+    pointer.inside = true;
+    lastActivity = performance.now();
+    if (bot.mode === 'held') {
+      bot.x = clamp(p.x, WALL + R, W - WALL - R);
+      bot.y = clamp(p.y, WALL + R, H - WALL - R);
+    } else {
+      canvas.style.cursor = onBot(p) ? 'grab' : 'default';
+    }
+  });
+  canvas.addEventListener('pointerleave', () => { pointer.inside = false; });
+
+  function putDown() {
+    if (bot.mode !== 'held') return;
+    // don't land inside the furniture, or out of sight under the couch
+    const blocked = (x, y) => hits(x, y, R, true) || inRect(x, y, COUCH_UNDER);
+    if (blocked(bot.x, bot.y)) {
+      for (let rad = 6; rad < 300; rad += 6) {
+        let found = false;
+        for (let a = 0; a < TAU; a += 0.3) {
+          const x = bot.x + Math.cos(a) * rad;
+          const y = bot.y + Math.sin(a) * rad;
+          if (!blocked(x, y)) { bot.x = x; bot.y = y; found = true; break; }
+        }
+        if (found) break;
+      }
+    }
+    bot.motion = 'drive';
+    setMode('dazed');
+    bot.dazedUntil = performance.now() + 1400;
+    bot.couchGrace = performance.now() + 4000;
+    say('where am i.');
+    canvas.style.cursor = 'grab';
+  }
+  canvas.addEventListener('pointerup', putDown);
+  canvas.addEventListener('pointercancel', putDown);
+
+  // ---------- go ----------
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    update(dt, now);
+    draw(now);
+    requestAnimationFrame(frame);
+  }
+  say('hello. i am dustin. i clean.');
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
