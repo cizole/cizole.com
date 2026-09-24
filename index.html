@@ -84,6 +84,12 @@
     transform: rotate(-4deg);
   }
   footer { margin-top: 56px; color: #4a463d; font-size: 12px; }
+  /* the secret room, the moment it's found */
+  .found a { animation: found 2.4s ease-out; }
+  @keyframes found {
+    0% { background: rgba(200, 255, 61, 0.25); }
+    100% { background: none; }
+  }
   @media (max-width: 520px) {
     .exhibits a, .exhibits .closed { flex-wrap: wrap; row-gap: 4px; }
     .blurb { flex-basis: 100%; margin-left: 0; text-align: left; }
@@ -110,37 +116,76 @@
     s.textContent = text;
     return s;
   };
+  const visited = window.CIZOLE_VISITED || [];
   const list = document.getElementById('rooms');
+  const footer = document.querySelector('footer');
   let lastRow = null;
-  for (const r of rooms) {
+  function row(r) {
     const li = document.createElement('li');
     if (r.defunct) {
-      const row = document.createElement('div');
-      row.className = 'closed';
-      row.title = 'this room is closed';
-      row.append(span('num', r.n), span('name', r.name), span('stamp', 'closed'), span('blurb', r.defunct));
-      li.appendChild(row);
-      list.appendChild(li);
-      continue;
+      const closed = document.createElement('div');
+      closed.className = 'closed';
+      closed.title = 'this room is closed';
+      closed.append(span('num', r.n), span('name', r.name), span('stamp', 'closed'), span('blurb', r.defunct));
+      li.appendChild(closed);
+      return li;
     }
     const a = document.createElement('a');
     a.href = r.slug + '/';
     const blurb = span('blurb', r.blurb);
     if (r.featured) blurb.appendChild(span('note', 'recommended by the management.'));
     a.append(span('num', r.n), span('name', r.name), blurb);
+    if (visited.includes(r.slug)) a.classList.add('seen');
     if (r.slug === last) {
       a.classList.add('last');
       lastRow = li;
     }
     li.appendChild(a);
-    list.appendChild(li);
+    return li;
   }
+  for (const r of rooms) list.appendChild(row(r));
+
+  // the stamp card
+  const open = rooms.filter(r => !r.defunct);
+  const seen = open.filter(r => visited.includes(r.slug)).length;
+  if (seen === 0) footer.textContent = 'more rooms are being dug.';
+  else if (seen >= open.length) footer.textContent = "you've been in all of them. there is no prize. the prize was the rooms.";
+  else footer.textContent = `more rooms are being dug. you've been in ${seen} of ${open.length}.`;
+
   // back from a room: pick up where you left off instead of at the top
   if (lastRow) {
     addEventListener('load', () => {
       if (lastRow.getBoundingClientRect().bottom > innerHeight) lastRow.scrollIntoView({ block: 'center' });
     });
   }
+
+  // up up down down left right left right b a: the other list
+  const KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+  let at = 0;
+  addEventListener('keydown', e => {
+    const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    at = key === KONAMI[at] ? at + 1 : key === KONAMI[0] ? 1 : 0;
+    if (at < KONAMI.length) return;
+    at = 0;
+    try { localStorage.setItem('cizole.nothing', '1'); } catch (err) { /* storage off */ }
+    const all = window.CIZOLE_ALL_ROOMS || [];
+    for (const r of all) {
+      if (!r.hidden || rooms.includes(r)) continue;
+      rooms.push(r);
+      // slot it in by number, so the list stays in order
+      const after = [...list.children].find(li => li.querySelector('.num') && li.querySelector('.num').textContent > r.n);
+      const li = row(r);
+      li.classList.add('found');
+      list.insertBefore(li, after || null);
+      li.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+    window.dispatchEvent(new CustomEvent('cizole:konami'));
+  });
+
+  // for whoever opens the console
+  console.log('%c c ', 'font: bold 40px monospace; background: #c8ff3d; color: #0e0d0b; padding: 6px 14px; border-radius: 10px;');
+  console.log('%cyou opened the console. there is nothing in here. the rooms are out there.', 'color: #8a8475; font: 13px monospace;');
+  console.log('%c(fine. one thing: up up down down left right left right b a. in the lobby.)', 'color: #4a463d; font: 12px monospace;');
 })();
 </script>
 <script>
@@ -220,6 +265,14 @@
     'no cookies. we ate them.',
     'hand-assembled from loose pixels.',
   ];
+  // once in a while, one of these instead
+  const RARE = [
+    'the button says hi. it does not mean it.',
+    'gary the fish has seen things. this is one of them.',
+    'dustin cleaned this page. you can tell.',
+    'the basement is longer than it was.',
+    "you've been here before. the eyes remember.",
+  ];
   const tag = document.getElementById('tagline');
   let idx = Math.floor(Math.random() * LINES.length);
   let typing;
@@ -237,12 +290,25 @@
   addEventListener('cizole:return', e => {
     if (e.detail.awayMs > 4000) type("welcome back. we didn't touch anything.");
   });
+  addEventListener('cizole:konami', () => type('you found the other list.'));
+
+  // the lobby notices if you just stand there
+  let idle;
+  function watch() {
+    clearTimeout(idle);
+    idle = setTimeout(() => type(pick(['still here?', 'the rooms are that way. any of them.', 'take your time. the pages will wait. they have to.'])), 90000);
+  }
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  for (const ev of ['pointermove', 'keydown', 'scroll', 'pointerdown']) addEventListener(ev, watch, { passive: true });
+  watch();
 
   tag.addEventListener('click', () => {
+    if (Math.random() < 0.08) { type(pick(RARE)); return; }
     idx = (idx + 1 + Math.floor(Math.random() * (LINES.length - 1))) % LINES.length;
     type(LINES[idx]);
   });
-  type(LINES[idx]);
+  const hour = new Date().getHours();
+  type(hour >= 2 && hour < 5 ? "it's late. the rooms are still open. they don't sleep either." : Math.random() < 0.03 ? pick(RARE) : LINES[idx]);
 })();
 </script>
 <script src="assets/away.js"></script>

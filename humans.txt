@@ -1,0 +1,15 @@
+/* TEAM */
+    person: cole. regrettably.
+    site: https://cizole.com
+    location: a basement, probably
+    contact: github.com/cizole
+
+/* THANKS */
+    the fish. dustin. the button, for its patience.
+    player 2, who still doesn't know.
+
+/* SITE */
+    built with: html, css, javascript, and an unreasonable amount of time
+    standards: some
+    components: rooms
+    last updated: when it was last updated

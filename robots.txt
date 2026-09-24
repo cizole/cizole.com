@@ -1,0 +1,8 @@
+# robots.txt for cizole.com
+# a website. allegedly.
+
+User-agent: *
+Allow: /
+
+# the button asked to be excluded. it was not consulted.
+# the fish don't mind either way.

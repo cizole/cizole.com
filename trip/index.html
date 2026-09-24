@@ -189,18 +189,46 @@ setTimeout(hideHint, 6000);
     'blink if you can hear this',
     'hello from the other side of the screen',
   ];
+  // the longer you stare, the more it's about you
+  const LATER = [
+    "you've been staring for a while",
+    'the walls have not stopped breathing',
+    'it noticed you',
+    'blink. you forgot to',
+    'this is fine. probably',
+    'you can leave. it will keep going',
+    "it's still going when the tab is closed. don't check",
+    'the colors know your name now',
+  ];
   const el = document.getElementById('words');
+  const started = performance.now();
+  let stared = 0; // seconds with the tab visible
+  setInterval(() => { if (!document.hidden) stared++; }, 1000);
   let i = Math.floor(Math.random() * PHRASES.length);
+  let j = 0;
   el.textContent = PHRASES[i];
   if (reduceMotion) document.getElementById('melt-anim').remove();
   setInterval(() => {
     el.classList.add('fade');
     setTimeout(() => {
-      i = (i + 1) % PHRASES.length;
-      el.textContent = PHRASES[i];
+      let text;
+      if (stared > 90 && Math.random() < Math.min(0.8, (stared - 90) / 240)) {
+        text = LATER[j++ % LATER.length];
+        if (stared > 240 && j % 4 === 0) text = `${Math.floor(stared / 60)} minutes. the mountain is still out there`;
+      } else {
+        i = (i + 1) % PHRASES.length;
+        text = PHRASES[i];
+      }
+      el.textContent = text;
       el.classList.remove('fade');
     }, 1000);
   }, 5500);
+  addEventListener('cizole:return', e => {
+    if (e.detail.awayMs > 4000) {
+      el.classList.add('fade');
+      setTimeout(() => { el.textContent = 'it kept going. told you'; el.classList.remove('fade'); }, 400);
+    }
+  });
 })();
 
 // Optional drone. Browsers only allow audio after a click, hence the button.

@@ -10,7 +10,7 @@ A weird little personal internet museum, made by a programmer who can't leave th
 
 The homepage is a lobby of numbered rooms, and each room commits fully to one idea. There are eyes that watch you, a button that doesn't want to be pressed, a server room full of servers with feelings, and a robot vacuum named dustin. There's also a fish tank that turns the tables, a sauna whose back door opens into a freezer, and a basement you can walk through in 3D. Some rooms have real information in them (999 is the about page). Most exist because the joke was worth a few hundred lines of JavaScript.
 
-The lobby is the up-to-date list of rooms. This README doesn't try to keep up.
+The lobby is the up-to-date list of rooms. This README doesn't try to keep up. There is one room the lobby doesn't list. The numbers will tell you which.
 
 ## how it's built
 

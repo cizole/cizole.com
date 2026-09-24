@@ -4,8 +4,10 @@
 //
 // Room numbers are permanent. A retired room stays here with `defunct: '<reason>'`:
 // it shows as closed (struck through, not clickable) everywhere rooms are listed.
+// A room with `hidden: true` is a secret: it's left out of every list until the
+// visitor has unlocked it (the lobby's Konami code sets `cizole.nothing`).
 (() => {
-  const ROOMS = [
+  const ALL = [
     { n: '001', slug: 'eyes', name: 'eyes', blurb: "they're watching" },
     { n: '002', slug: 'button', name: 'the button', blurb: "it doesn't want this" },
     { n: '003', slug: 'trip', name: 'trip', blurb: "don't stare too long" },
@@ -28,19 +30,40 @@
     { n: '020', slug: 'sauna', name: 'sauna', blurb: "it's never enough" },
     { n: '021', slug: 'freezer', name: 'freezer', blurb: 'the door closes. they do that.' },
     { n: '022', slug: 'retro', name: 'retro gaming', blurb: 'blow on it first' },
+    { n: '023', slug: 'nothing', name: 'nothing', blurb: "you weren't supposed to find this", hidden: true },
     // new rooms go above this line. about is always 999 and always last.
     { n: '999', slug: 'about', name: 'about', blurb: 'regrettably, a person' },
   ];
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch (err) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (err) { /* storage off */ } },
+  };
+  const unlocked = store.get('cizole.nothing') === '1';
+  const ROOMS = ALL.filter(r => !r.hidden || unlocked);
   window.CIZOLE_ROOMS = ROOMS;
+  window.CIZOLE_ALL_ROOMS = ALL;
 
   // which room is this? /eyes/ or /eyes/index.html -> "eyes"
   const parts = location.pathname.split('/').filter(Boolean);
   if (parts.length && /\.html?$/.test(parts[parts.length - 1])) parts.pop();
-  const here = ROOMS.findIndex(r => r.slug === parts[parts.length - 1]);
-  if (here >= 0) {
-    try { sessionStorage.setItem('cizole.last-room', ROOMS[here].slug); } catch (err) { /* storage off */ }
+  const slug = parts[parts.length - 1];
+  const room = ALL.find(r => r.slug === slug) || null;
+  const here = ROOMS.findIndex(r => r.slug === slug);
+
+  // the stamp card: every room you've set foot in, kept per visitor
+  let visited = [];
+  try { visited = JSON.parse(store.get('cizole.visited') || '[]'); } catch (err) { visited = []; }
+  if (!Array.isArray(visited)) visited = [];
+  if (room && !room.defunct && !visited.includes(room.slug)) {
+    visited.push(room.slug);
+    store.set('cizole.visited', JSON.stringify(visited));
+  }
+  window.CIZOLE_VISITED = visited;
+
+  if (room) {
+    try { sessionStorage.setItem('cizole.last-room', room.slug); } catch (err) { /* storage off */ }
     // the tab title comes from this list too, so renaming a room here renames it everywhere
-    document.title = `${ROOMS[here].name}${ROOMS[here].defunct ? ' (closed)' : ''} · cizole`;
+    document.title = `${room.name}${room.defunct ? ' (closed)' : ''} · cizole`;
   }
 
   // the lobby has no lobby link and draws its own list. a room missing from this list
@@ -67,7 +90,7 @@
   ROOMS.forEach((r, i) => {
     const linked = i !== here && !r.defunct;
     const item = document.createElement(linked ? 'a' : 'span');
-    item.className = 'rooms-item' + (i === here ? ' here' : '') + (r.defunct ? ' defunct' : '');
+    item.className = 'rooms-item' + (i === here ? ' here' : '') + (r.defunct ? ' defunct' : '') + (visited.includes(r.slug) ? ' seen' : '');
     if (i === here) item.setAttribute('aria-current', 'page');
     if (linked) item.href = `../${r.slug}/`;
     if (r.defunct) item.title = r.defunct;
@@ -107,6 +130,18 @@
       link('../', 'lobby'),
       link(`../${next.slug}/`, `${next.n} ${next.name} →`),
     );
+    const keys = document.createElement('div');
+    keys.className = 'rooms-keys';
+    keys.textContent = 'keys: < previous room · next room >';
+    foot.appendChild(keys);
+    // < and > hop rooms from anywhere, as long as you're not typing
+    document.addEventListener('keydown', e => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const t = e.target;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      if (e.key === '<') location.href = `../${prev.slug}/`;
+      else if (e.key === '>') location.href = `../${next.slug}/`;
+    });
   } else {
     foot.append(link('../', 'lobby'));
   }

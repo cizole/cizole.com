@@ -217,12 +217,19 @@ const GLOW = {
   freezer: '#bfe6ff', about: '#f3ead2', retro: '#7fd4ff',
 };
 const DOORS = [];
-for (const r of window.CIZOLE_ROOMS || []) {
+const ROOMS = window.CIZOLE_ROOMS || [];
+// the secret room only exists once it's been unlocked (rooms.js leaves it out until then)
+const secret = ROOMS.find(r => r.slug === 'nothing');
+for (const r of ROOMS) {
   if (r.slug === 'basement') DOORS.push({ n: r.n, name: 'you are here', here: true, glow: GLOW.basement });
   else if (r.defunct) DOORS.push({ n: r.n, name: r.name, defunct: r.defunct, glow: '#000000' });
-  else DOORS.push({ n: r.n, name: r.name, href: `../${r.slug}/`, glow: GLOW[r.slug] || '#f3ead2' });
-  // an unnumbered door that never opens, just past 010
-  if (r.n === '010') DOORS.push({ n: '', name: '', locked: true, glow: '#000000' });
+  else if (r.slug !== 'nothing') DOORS.push({ n: r.n, name: r.name, href: `../${r.slug}/`, glow: GLOW[r.slug] || '#f3ead2' });
+  // just past 010: an unnumbered door that never opens. unless you've found out what's behind it.
+  if (r.n === '010') {
+    DOORS.push(secret
+      ? { n: secret.n, name: secret.name, href: `../${secret.slug}/`, glow: '#0e0d0b' }
+      : { n: '', name: '', locked: true, glow: '#000000' });
+  }
 }
 const HERE_N = (DOORS.find(d => d.here) || { n: '017' }).n;
 const LOBBY = { n: '000', name: 'lobby', href: '../', glow: '#c8ff3d' };
