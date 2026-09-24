@@ -1,0 +1,3 @@
+# GitHub Pages build settings. The site itself is plain static HTML.
+exclude:
+  - CLAUDE.md
