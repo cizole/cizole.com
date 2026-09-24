@@ -31,6 +31,21 @@
     pointer-events: none;
   }
   .label b { color: var(--fg); font-weight: 400; }
+  .more {
+    position: fixed;
+    top: 40px;
+    right: 16px;
+    z-index: 10;
+    padding: 5px 12px;
+    border: 1px solid #34312b;
+    border-radius: 999px;
+    background: rgba(14, 13, 11, 0.85);
+    color: var(--dim);
+    font: 13px var(--font);
+    cursor: pointer;
+  }
+  .more:hover { border-color: var(--acid); color: var(--acid); }
+  .more[hidden] { display: none; }
   .caption {
     position: fixed;
     left: 0;
@@ -82,6 +97,7 @@
 <a class="lobby-link" href="../">&larr; lobby</a>
 <canvas id="world" aria-label="a room that continues into your other browser windows. a ball, a paper airplane and a moth live here."></canvas>
 <p class="label" id="label">window <b>1</b> of <b>1</b></p>
+<button class="more" id="more" type="button" hidden>+ add a window</button>
 <p class="caption" id="caption" role="status"></p>
 <div class="alone" id="alone" hidden>
   <h1>this room is bigger than one window.</h1>
@@ -106,6 +122,7 @@
   const aloneEl = document.getElementById('alone');
   const aloneText = document.getElementById('alone-text');
   const openBtn = document.getElementById('open-window');
+  const moreBtn = document.getElementById('more');
 
   const me = { id: Math.random().toString(36).slice(2, 10), born: Date.now() + Math.random() };
 
@@ -145,7 +162,7 @@
     return (visible.length ? visible : list)[0];
   }
 
-  let world = null; // { objs: [...], ropes: [...] }
+  let world = null; // { objs: [...] }
   let isLeader = true;
   let leaderId = me.id;
   let stateRecvAt = 0;
@@ -189,7 +206,6 @@
         { k: 'plane', x: cx + 120, y: cy + 80, vx: -210, vy: -30, a: 0, win: null, prev: null, held: null },
         { k: 'moth', x: cx, y: rect.y + 90, vx: 0, vy: 0, a: 0, win: null, prev: null, held: null },
       ],
-      ropes: [],
     };
   }
 
@@ -324,62 +340,6 @@
     }
   }
 
-  // ---------- string between the windows (verlet rope) ----------
-  const SEGS = 18;
-  function anchor(from, to) {
-    // a point just inside `from`'s edge, facing `to`
-    const cx = from.rect.x + from.rect.w / 2, cy = from.rect.y + from.rect.h / 2;
-    const dx = to.rect.x + to.rect.w / 2 - cx, dy = to.rect.y + to.rect.h / 2 - cy;
-    const hw = Math.max(1, from.rect.w / 2 - 18), hh = Math.max(1, from.rect.h / 2 - 18);
-    const s = Math.min(dx ? hw / Math.abs(dx) : Infinity, dy ? hh / Math.abs(dy) : Infinity, 1);
-    return { x: cx + dx * s, y: cy + dy * s };
-  }
-  function updateRopes(list, dt) {
-    const keep = [];
-    for (let i = 0; i + 1 < list.length; i++) {
-      const A = list[i], B = list[i + 1];
-      const p0 = anchor(A, B), p1 = anchor(B, A);
-      const dist = Math.hypot(p1.x - p0.x, p1.y - p0.y);
-      let rope = world.ropes.find(r => r.a === A.id && r.b === B.id);
-      if (!rope) {
-        rope = { a: A.id, b: B.id, pts: [], old: null, rest: dist * 1.12 + 40 };
-        for (let j = 0; j <= SEGS; j++) {
-          const t = j / SEGS;
-          rope.pts.push(p0.x + (p1.x - p0.x) * t, p0.y + (p1.y - p0.y) * t);
-        }
-      }
-      if (!rope.old || rope.old.length !== rope.pts.length) rope.old = rope.pts.slice();
-      // the slack catches up slowly, so yanking a window pulls the string tight for a moment
-      rope.rest += (dist * 1.12 + 40 - rope.rest) * Math.min(1, dt * 1.5);
-      const n = rope.pts.length;
-      const gravity = 1500 * dt * dt;
-      for (let j = 2; j < n - 2; j += 2) {
-        const x = rope.pts[j], y = rope.pts[j + 1];
-        const vx = (x - rope.old[j]) * 0.985, vy = (y - rope.old[j + 1]) * 0.985;
-        rope.old[j] = x;
-        rope.old[j + 1] = y;
-        rope.pts[j] = x + vx;
-        rope.pts[j + 1] = y + vy + gravity;
-      }
-      rope.pts[0] = p0.x; rope.pts[1] = p0.y;
-      rope.pts[n - 2] = p1.x; rope.pts[n - 1] = p1.y;
-      const L = rope.rest / SEGS;
-      for (let it = 0; it < 14; it++) {
-        for (let j = 0; j < n - 2; j += 2) {
-          const dx = rope.pts[j + 2] - rope.pts[j], dy = rope.pts[j + 3] - rope.pts[j + 1];
-          const d = Math.hypot(dx, dy) || 0.001;
-          const diff = ((d - L) / d) * 0.5;
-          const fixedA = j === 0, fixedB = j + 2 === n - 2;
-          const ox = dx * diff, oy = dy * diff;
-          if (!fixedA) { rope.pts[j] += fixedB ? ox * 2 : ox; rope.pts[j + 1] += fixedB ? oy * 2 : oy; }
-          if (!fixedB) { rope.pts[j + 2] -= fixedA ? ox * 2 : ox; rope.pts[j + 3] -= fixedA ? oy * 2 : oy; }
-        }
-      }
-      keep.push(rope);
-    }
-    world.ropes = keep;
-  }
-
   // ---------- sharing the world ----------
   let lastStateSent = 0;
   function broadcastState() {
@@ -391,13 +351,11 @@
         k: o.k, x: Math.round(o.x), y: Math.round(o.y), vx: Math.round(o.vx), vy: Math.round(o.vy),
         a: Math.round(o.a * 100) / 100, win: o.win, prev: o.prev, held: o.held || null,
       })),
-      ropes: world.ropes.map(r => ({ a: r.a, b: r.b, rest: Math.round(r.rest), pts: r.pts.map(v => Math.round(v)) })),
     });
   }
   function applyState(m) {
     world = {
       objs: m.objs.map(o => ({ ...o })),
-      ropes: m.ropes.map(r => ({ ...r, old: null })),
     };
     stateRecvAt = performance.now();
     detectEvents();
@@ -481,21 +439,43 @@
   } else if (touchOnly) {
     aloneText.textContent = "this room needs windows. your phone has tabs. it's not the same. the ball doesn't mind.";
     openBtn.hidden = true;
+  } else {
+    moreBtn.hidden = false;
   }
 
-  openBtn.addEventListener('click', () => {
-    const w = Math.min(outerWidth, 720);
-    const h = outerHeight;
-    const availLeft = screen.availLeft ?? 0;
-    let left = screenX + outerWidth + 12;
-    if (left + w > availLeft + screen.availWidth) left = Math.max(availLeft, screenX - w - 12);
+  // open another window beside this one: right, left, below, above, or staggered if the screen is full
+  const MAX_WINDOWS = 8;
+  function openWindow() {
+    const count = livePeers().length;
+    if (count >= MAX_WINDOWS) {
+      say(`${count} windows is the limit. the room has to end somewhere.`, true);
+      return;
+    }
+    const w = Math.min(outerWidth, 640);
+    const h = Math.min(outerHeight, 560);
+    const ax = screen.availLeft ?? 0, ay = screen.availTop ?? 0;
+    const aw = screen.availWidth, ah = screen.availHeight;
+    const gap = 12;
+    const fits = ([x, y]) => x >= ax && y >= ay && x + w <= ax + aw && y + h <= ay + ah;
+    let spot = [
+      [screenX + outerWidth + gap, screenY],
+      [screenX - w - gap, screenY],
+      [screenX, screenY + outerHeight + gap],
+      [screenX, screenY - h - gap],
+    ].find(fits);
+    if (!spot) {
+      const k = count % 6;
+      spot = [clamp(ax + 40 + k * 60, ax, ax + aw - w), clamp(ay + 40 + k * 50, ay, ay + ah - h)];
+    }
     const opened = window.open(
       location.href,
       '_blank',
-      `popup,left=${Math.round(left)},top=${Math.round(screenY)},width=${Math.round(w)},height=${Math.round(h)}`,
+      `popup,left=${Math.round(spot[0])},top=${Math.round(spot[1])},width=${Math.round(w)},height=${Math.round(h)}`,
     );
     if (!opened) say('the browser blocked the other window. it does that.', true);
-  });
+  }
+  openBtn.addEventListener('click', openWindow);
+  moreBtn.addEventListener('click', openWindow);
 
   // moving a window around
   let moveBudget = 0;
@@ -506,7 +486,7 @@
     if (moveBudget > 400 && now - lastMoveSay > 8000) {
       lastMoveSay = now;
       moveBudget = 0;
-      say(pick(['the room felt that.', 'you moved the window. everything in it moved too. relatively.', 'careful. the string.']));
+      say(pick(['the room felt that.', 'you moved the window. everything in it moved too. relatively.', 'the windows noticed.']));
     }
   }
 
@@ -683,33 +663,6 @@
 
     if (!world) return;
 
-    // string
-    for (const r of world.ropes) {
-      const p = r.pts;
-      if (!p || p.length < 4) continue;
-      g.lineCap = 'round';
-      g.lineJoin = 'round';
-      for (const [color, width, off] of [['rgba(0, 0, 0, 0.45)', 4, 2], ['#b9975b', 2.2, 0]]) {
-        g.strokeStyle = color;
-        g.lineWidth = width;
-        g.beginPath();
-        g.moveTo(p[0] + ox, p[1] + oy + off);
-        for (let j = 2; j < p.length - 2; j += 2) {
-          const mx = (p[j] + p[j + 2]) / 2 + ox, my = (p[j + 1] + p[j + 3]) / 2 + oy + off;
-          g.quadraticCurveTo(p[j] + ox, p[j + 1] + oy + off, mx, my);
-        }
-        g.lineTo(p[p.length - 2] + ox, p[p.length - 1] + oy + off);
-        g.stroke();
-      }
-      // knots where it's tied on
-      g.fillStyle = '#8a6d3b';
-      for (const j of [0, p.length - 2]) {
-        g.beginPath();
-        g.arc(p[j] + ox, p[j + 1] + oy, 4, 0, TAU);
-        g.fill();
-      }
-    }
-
     // things
     world.objs.forEach((o, i) => {
       const pos = renderPos(o, i);
@@ -747,7 +700,6 @@
     if (isLeader && (world || Date.now() > leadAfter)) {
       if (!world) world = spawnWorld();
       simulate(dt, visible);
-      updateRopes(visible, dt);
       if (Date.now() - lastStateSent > 33) broadcastState();
       detectEvents();
     }
