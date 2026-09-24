@@ -8,42 +8,614 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-<!-- styles are inline because this page is served from any missing path -->
+<link rel="stylesheet" href="/assets/site.css">
+<!-- this page is served at any missing url, so everything else is inline and every path starts at the root -->
 <style>
-  html, body { margin: 0; height: 100%; }
+  html, body { margin: 0; min-height: 100%; }
   body {
-    display: grid;
-    place-items: center;
-    padding: 24px;
-    box-sizing: border-box;
+    position: relative;
+    min-height: 100vh;
+    overflow-x: hidden;
     background: #0e0d0b;
     color: #ebe5d6;
     font-family: "Space Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
-    text-align: center;
   }
-  h1 { margin: 0; font-size: clamp(72px, 22vw, 180px); line-height: 1; letter-spacing: -0.04em; }
-  p { color: #8a8475; }
-  #late { min-height: 1.5em; }
-  a { color: #c8ff3d; }
+  #dark { position: fixed; inset: 0; z-index: 0; width: 100%; height: 100%; pointer-events: none; }
+  main { position: relative; z-index: 2; padding: 17vh 20px 40vh; text-align: center; pointer-events: none; }
+  main a, main code { pointer-events: auto; }
+  h1 {
+    margin: 0;
+    font-size: clamp(72px, 22vw, 180px);
+    line-height: 1;
+    letter-spacing: -0.04em;
+    text-shadow: 0 0 30px rgba(14, 13, 11, 0.95), 0 0 60px rgba(14, 13, 11, 0.9);
+  }
+  .looking { margin: 10px auto 0; max-width: 640px; color: #8a8475; font-size: 14px; line-height: 1.5; text-shadow: 0 0 12px #0e0d0b; }
+  .looking code { color: #ebe5d6; font-family: inherit; word-break: break-all; }
+  .give-up { margin: 18px 0 0; font-size: 14px; }
+  .give-up[hidden] { display: none; }
+  .give-up a { color: #c8ff3d; }
+  .sep { margin: 0 8px; color: #4a463d; }
+
+  /* the search log, newest at the bottom, oldest fading off the top */
+  .log-wrap {
+    position: fixed;
+    left: 16px;
+    right: 16px;
+    bottom: 14px;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    max-height: 38vh;
+    overflow: hidden;
+    pointer-events: none;
+    -webkit-mask-image: linear-gradient(transparent, #000 32px);
+    mask-image: linear-gradient(transparent, #000 32px);
+  }
+  .log { list-style: none; margin: 0; padding: 0; color: #8a8475; font-size: 13px; line-height: 1.6; text-shadow: 0 0 10px #0e0d0b; }
+  .log li { animation: line-in 0.35s ease-out; }
+  .log li a { color: #c8ff3d; pointer-events: auto; }
+  .log .t { color: #4a463d; }
+  @keyframes line-in { from { opacity: 0; transform: translateY(4px); } }
+  @media (prefers-reduced-motion: reduce) {
+    .log li { animation: none; }
+  }
 </style>
 </head>
 <body>
+<a class="lobby-link" href="/">&larr; lobby</a>
+<canvas id="dark" aria-hidden="true"></canvas>
 <main>
   <h1>404</h1>
-  <p>there's nothing here.</p>
-  <p id="late"></p>
-  <p><a href="/">back to the lobby</a></p>
+  <p class="looking">the 404 department <span id="verb">is</span> looking for <code id="path"></code></p>
+  <p class="give-up" id="give-up" hidden><a href="/">lobby</a><span class="sep">&middot;</span><a id="random" href="/eyes/">try a random room</a></p>
 </main>
+<section class="log-wrap" aria-label="search log">
+  <ol class="log" id="log" aria-live="polite"></ol>
+</section>
 <script>
 (() => {
-  const late = document.getElementById('late');
-  const LINES = [
-    [6000, "...you're still here?"],
-    [14000, "there's really nothing. i checked."],
-    [26000, 'ok this is kind of nice actually.'],
-    [45000, "i'll leave the light on for you."],
-  ];
-  for (const [ms, text] of LINES) setTimeout(() => { late.textContent = text; }, ms);
+  const TAU = Math.PI * 2;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const $ = id => document.getElementById(id);
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  const angleDiff = (a, b) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
+  const start = performance.now();
+
+  // ---------- what they're looking for ----------
+  let path = location.pathname || '/';
+  try { path = decodeURIComponent(path); } catch (err) { /* leave it encoded */ }
+  if (path.length > 64) path = path.slice(0, 61) + '...';
+  $('path').textContent = path === '/' ? 'this page' : path;
+
+  const ROOMS = ['eyes', 'button', 'trip', 'escape', 'server-room', 'funky-town', 'roomba-room', 'fish-tank', 'blacklight',
+    'game-room', '70s', '80s', '90s', 'other-window', 'junk-drawer', 'basement', 'weather', 'escher', 'sauna', 'freezer', 'about', 'retro'];
+  const RANDOM = ['/eyes/', '/button/', '/fish-tank/', '/roomba-room/', '/server-room/', '/basement/'];
+
+  function lev(a, b) {
+    if (Math.abs(a.length - b.length) > 2) return 9;
+    let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+    for (let i = 1; i <= a.length; i++) {
+      const cur = [i];
+      for (let j = 1; j <= b.length; j++) {
+        cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      }
+      prev = cur;
+    }
+    return prev[b.length];
+  }
+  // a room name with a typo in it, or a real room with junk after it
+  function guess() {
+    const seg = (location.pathname.split('/').filter(Boolean)[0] || '').toLowerCase().replace(/\.html?$/, '');
+    const n = seg.replace(/[^a-z0-9]/g, '');
+    if (!n) return null;
+    let best = null, bestD = 3;
+    for (const r of ROOMS) {
+      const d = lev(n, r.replace(/[^a-z0-9]/g, ''));
+      if (d < bestD) { bestD = d; best = r; }
+    }
+    return best;
+  }
+
+  // ---------- the log ----------
+  const logEl = $('log');
+  const MAX_LINES = 9;
+  function stamp() {
+    const s = Math.round((performance.now() - start) / 1000);
+    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')} `;
+  }
+  // parts: strings, or { href, text } for a link
+  function log(...parts) {
+    const li = document.createElement('li');
+    const t = document.createElement('span');
+    t.className = 't';
+    t.textContent = stamp();
+    li.appendChild(t);
+    for (const p of parts) {
+      if (typeof p === 'string') { li.append(p); continue; }
+      const a = document.createElement('a');
+      a.href = p.href;
+      a.textContent = p.text;
+      li.appendChild(a);
+    }
+    logEl.appendChild(li);
+    while (logEl.children.length > MAX_LINES) logEl.firstElementChild.remove();
+  }
+
+  // ---------- the room, as much of it as a flashlight finds ----------
+  const canvas = $('dark');
+  const g = canvas.getContext('2d');
+  const scene = document.createElement('canvas');
+  const light = document.createElement('canvas');
+  let W = 1, H = 1, dpr = 1;
+  const furniture = {};
+  let quarter = false;
+  let buttonMoved = false;
+  const lamp = { on: false, x: 0, y: 0 };
+
+  function resize() {
+    W = innerWidth;
+    H = innerHeight;
+    dpr = Math.min(devicePixelRatio || 1, 1.5);
+    for (const c of [canvas, scene, light]) {
+      c.width = Math.round(W * dpr);
+      c.height = Math.round(H * dpr);
+      c.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    furniture.couch = { x: W * 0.22, y: H * 0.72 };
+    furniture.tank = { x: W * 0.80, y: H * 0.26 };
+    furniture.rack = { x: W * 0.88, y: H * 0.72 };
+    furniture.bean = { x: W * 0.12, y: H * 0.30 };
+    furniture.plant = { x: W * 0.06, y: H * 0.80 };
+    furniture.button = { x: W * (buttonMoved ? 0.36 : 0.52), y: H * (buttonMoved ? 0.86 : 0.62) };
+    lamp.x = W * 0.66;
+    lamp.y = H * 0.74;
+    drawScene();
+    for (const s of searchers) {
+      s.x = Math.min(Math.max(s.x, -40), W + 40);
+      s.y = Math.min(Math.max(s.y, 20), H - 10);
+    }
+  }
+
+  function drawScene() {
+    const c = scene.getContext('2d');
+    c.clearRect(0, 0, W, H);
+    c.lineWidth = 1.2;
+    c.lineJoin = 'round';
+    const ink = (fill, stroke) => { c.fillStyle = fill; c.strokeStyle = stroke; };
+    const box = (x, y, w, h, r) => {
+      c.beginPath();
+      c.moveTo(x + r, y);
+      c.arcTo(x + w, y, x + w, y + h, r);
+      c.arcTo(x + w, y + h, x, y + h, r);
+      c.arcTo(x, y + h, x, y, r);
+      c.arcTo(x, y, x + w, y, r);
+      c.closePath();
+      c.fill();
+      c.stroke();
+    };
+    ink('#262320', '#5d574b');
+
+    // the couch from the 70s room
+    let { x, y } = furniture.couch;
+    box(x - 75, y - 36, 150, 24, 4);
+    box(x - 75, y - 14, 150, 40, 6);
+    box(x - 84, y - 20, 16, 46, 5);
+    box(x + 68, y - 20, 16, 46, 5);
+    c.beginPath();
+    c.moveTo(x - 25, y - 12); c.lineTo(x - 25, y + 24);
+    c.moveTo(x + 25, y - 12); c.lineTo(x + 25, y + 24);
+    c.stroke();
+    if (quarter) {
+      c.fillStyle = '#8a7a4a';
+      c.beginPath();
+      c.arc(x - 58, y + 36, 4, 0, TAU);
+      c.fill();
+      ink('#262320', '#5d574b');
+    }
+
+    // the fish tank
+    ({ x, y } = furniture.tank);
+    box(x - 60, y - 38, 120, 76, 2);
+    c.fillStyle = '#1b2428';
+    c.fillRect(x - 58, y - 24, 116, 60);
+    c.fillStyle = '#5d574b';
+    c.beginPath();
+    c.ellipse(x + 12, y + 2, 9, 5, 0, 0, TAU);
+    c.fill();
+    c.beginPath();
+    c.moveTo(x + 20, y + 2); c.lineTo(x + 28, y - 3); c.lineTo(x + 28, y + 7); c.closePath();
+    c.fill();
+    c.beginPath();
+    c.arc(x + 4, y + 1, 1.2, 0, TAU);
+    c.fillStyle = '#1b2428';
+    c.fill();
+    c.fillStyle = '#3a3630';
+    for (let i = -52; i < 54; i += 7) c.fillRect(x + i, y + 32, 4, 3);
+    ink('#262320', '#5d574b');
+
+    // a server rack
+    ({ x, y } = furniture.rack);
+    box(x - 29, y - 75, 58, 150, 3);
+    for (let i = 0; i < 6; i++) {
+      const yy = y - 66 + i * 23;
+      c.strokeRect(x - 22, yy, 44, 16);
+      c.fillStyle = i === 3 ? '#7a3a31' : '#4f5a2a';
+      c.fillRect(x - 18, yy + 6, 3, 3);
+      c.fillRect(x - 12, yy + 6, 3, 3);
+      c.fillStyle = '#262320';
+    }
+
+    // a beanbag
+    ({ x, y } = furniture.bean);
+    c.beginPath();
+    c.ellipse(x, y + 12, 56, 34, 0, 0, TAU);
+    c.fill();
+    c.stroke();
+    c.beginPath();
+    c.ellipse(x - 6, y - 12, 40, 26, -0.2, 0, TAU);
+    c.fill();
+    c.stroke();
+
+    // the plant from the escape room
+    ({ x, y } = furniture.plant);
+    c.beginPath();
+    c.moveTo(x - 14, y); c.lineTo(x + 14, y); c.lineTo(x + 10, y + 26); c.lineTo(x - 10, y + 26); c.closePath();
+    c.fill();
+    c.stroke();
+    for (const [dx, dy, a] of [[-14, -18, -0.9], [-6, -26, -0.35], [0, -30, 0], [6, -26, 0.35], [14, -18, 0.9]]) {
+      c.beginPath();
+      c.ellipse(x + dx, y + dy, 6, 15, a, 0, TAU);
+      c.fill();
+      c.stroke();
+    }
+
+    // the button. it was behind something.
+    ({ x, y } = furniture.button);
+    ink('#2f3a10', '#55661d');
+    box(x - 30, y - 11, 60, 22, 11);
+
+    // a floor lamp, off until someone leaves it on
+    ink('#262320', '#5d574b');
+    c.beginPath();
+    c.ellipse(lamp.x, lamp.y + 56, 18, 5, 0, 0, TAU);
+    c.fill();
+    c.stroke();
+    c.beginPath();
+    c.moveTo(lamp.x, lamp.y + 54); c.lineTo(lamp.x, lamp.y - 40);
+    c.stroke();
+    c.beginPath();
+    c.moveTo(lamp.x - 22, lamp.y - 40); c.lineTo(lamp.x + 22, lamp.y - 40); c.lineTo(lamp.x + 14, lamp.y - 66); c.lineTo(lamp.x - 14, lamp.y - 66); c.closePath();
+    c.fillStyle = lamp.on ? '#f0dfae' : '#3a3630';
+    c.fill();
+    c.stroke();
+  }
+
+  // ---------- the search party ----------
+  const searchers = [];
+  const cursor = { x: 0, y: 0, at: -1e9 };
+  let gaveUp = false;
+  let mode = 'walk';
+  let saidYou = false;
+
+  function pickTarget(s) {
+    const recent = performance.now() - cursor.at < 6000;
+    if (recent && Math.random() < 0.45) {
+      s.tx = cursor.x + (Math.random() - 0.5) * 120;
+      s.ty = cursor.y + (Math.random() - 0.5) * 120;
+    } else {
+      s.tx = 40 + Math.random() * (W - 80);
+      s.ty = H * 0.12 + Math.random() * H * 0.78;
+    }
+  }
+  function arrive() {
+    if (searchers.length >= 7) return;
+    const fromLeft = Math.random() < 0.5;
+    const s = {
+      x: fromLeft ? -30 : W + 30,
+      y: H * (0.25 + Math.random() * 0.6),
+      a: fromLeft ? 0 : Math.PI,
+      tx: 0, ty: 0,
+      speed: (26 + Math.random() * 16) * (reduce ? 0.5 : 1),
+      phase: Math.random() * 10,
+      seed: Math.random(),
+      state: 'walk',
+      until: 0,
+      sweep: 0,
+    };
+    pickTarget(s);
+    searchers.push(s);
+  }
+  function leave() {
+    const s = pick(searchers.filter(x => x.state !== 'leave'));
+    if (!s) return;
+    s.state = 'leave';
+    s.tx = s.x < W / 2 ? -60 : W + 60;
+    s.ty = s.y;
+  }
+  function one(state, ms) {
+    const s = pick(searchers.filter(x => x.state === 'walk' || x.state === 'look'));
+    if (!s) return;
+    s.state = state;
+    s.until = performance.now() + ms;
+    s.sweep = 0;
+  }
+  function mood(m) {
+    mode = m;
+    const now = performance.now();
+    if (m === 'lunch') {
+      for (const s of searchers) if (s.state !== 'leave') { s.state = 'lunch'; s.sweep = 0; }
+    } else if (m === 'walk') {
+      for (const s of searchers) if (s.state === 'lunch' || s.state === 'read' || s.state === 'keys') { s.state = 'walk'; pickTarget(s); }
+    } else if (m === 'read') {
+      one('read', 12000);
+    } else if (m === 'keys') {
+      one('keys', 9000);
+    } else if (m === 'confused') {
+      let flips = 0;
+      const flip = setInterval(() => {
+        for (const s of searchers) if (s.state === 'walk' || s.state === 'look') {
+          s.state = 'walk';
+          s.tx = s.x - (s.tx - s.x);
+          s.ty = s.y - (s.ty - s.y);
+        }
+        if (++flips >= 6) { clearInterval(flip); mode = 'walk'; }
+      }, 700);
+    }
+    void now;
+  }
+
+  function step(dt, now) {
+    for (let i = searchers.length - 1; i >= 0; i--) {
+      const s = searchers[i];
+      if (s.state === 'lunch' || s.state === 'read') continue;
+      if (s.state === 'look') {
+        s.sweep = reduce ? 0 : Math.sin(now / 350 + s.seed * 9) * 0.7;
+        if (now > s.until) { s.state = 'walk'; s.sweep = 0; pickTarget(s); }
+        continue;
+      }
+      if (s.state === 'keys') {
+        s.a += dt * (reduce ? 0.8 : 2.2);
+        if (now > s.until) { s.state = 'walk'; pickTarget(s); }
+        continue;
+      }
+      const dx = s.tx - s.x, dy = s.ty - s.y;
+      const d = Math.hypot(dx, dy);
+      if (s.state === 'leave') {
+        if (d < 8) { searchers.splice(i, 1); continue; }
+      } else if (d < 6) {
+        s.state = 'look';
+        s.until = now + 1200 + Math.random() * 2200;
+        continue;
+      }
+      const want = Math.atan2(dy, dx);
+      s.a += angleDiff(want, s.a) * Math.min(1, dt * 4);
+      const sp = s.speed * (mode === 'confused' ? 1.7 : 1) * (gaveUp ? 0.7 : 1);
+      s.x += Math.cos(s.a) * sp * dt;
+      s.y += Math.sin(s.a) * sp * dt;
+      s.phase += reduce ? 0 : dt * sp * 0.22;
+    }
+
+    // three of them crowding the cursor
+    if (!saidYou && now - cursor.at < 8000) {
+      let near = 0;
+      for (const s of searchers) if (Math.hypot(s.x - cursor.x, s.y - cursor.y) < 110) near++;
+      if (near >= 3) {
+        saidYou = true;
+        log('they think you know where it is.');
+      }
+    }
+  }
+
+  // where each flashlight points, and how far
+  function beam(s) {
+    if (s.state === 'lunch' || s.state === 'leave') return null;
+    if (s.state === 'read') return { a: Math.PI / 2, len: 48, half: 0.55 };
+    if (s.state === 'keys') return { a: s.a, len: 60, half: 0.5 };
+    return { a: s.a + s.sweep, len: 175, half: 0.36 };
+  }
+
+  function wedge(ctx, ox, oy, a, len, half, stops) {
+    const grad = ctx.createRadialGradient(ox, oy, 3, ox, oy, len);
+    for (const [t, c] of stops) grad.addColorStop(t, c);
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.moveTo(ox, oy);
+    ctx.arc(ox, oy, len, a - half, a + half);
+    ctx.closePath();
+    ctx.fill();
+  }
+  function disc(ctx, x, y, r, stops) {
+    const grad = ctx.createRadialGradient(x, y, 0, x, y, r);
+    for (const [t, c] of stops) grad.addColorStop(t, c);
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, TAU);
+    ctx.fill();
+  }
+  const MASK = [[0, 'rgba(255,255,255,0.95)'], [0.6, 'rgba(255,255,255,0.4)'], [1, 'rgba(255,255,255,0)']];
+  const GLOW = [[0, 'rgba(255,236,190,0.28)'], [0.6, 'rgba(255,236,190,0.07)'], [1, 'rgba(255,236,190,0)']];
+  const CURSOR_MASK = [[0, 'rgba(255,255,255,0.85)'], [1, 'rgba(255,255,255,0)']];
+  const CURSOR_GLOW = [[0, 'rgba(255,236,190,0.1)'], [1, 'rgba(255,236,190,0)']];
+  const LAMP_MASK = [[0, 'rgba(255,255,255,1)'], [1, 'rgba(255,255,255,0)']];
+  const LAMP_GLOW = [[0, 'rgba(255,220,150,0.35)'], [1, 'rgba(255,220,150,0)']];
+
+  function origin(s, b) {
+    return { x: s.x + Math.cos(b.a) * 10, y: s.y - 13 + Math.sin(b.a) * 10 };
+  }
+
+  function drawSearcher(s, now) {
+    const dir = Math.cos(s.a) >= 0 ? 1 : -1;
+    g.save();
+    g.translate(s.x, s.y);
+    g.scale(dir, 1);
+    g.strokeStyle = '#ebe5d6';
+    g.fillStyle = '#ebe5d6';
+    g.lineWidth = 1.6;
+    g.lineCap = 'round';
+    if (s.state === 'lunch') {
+      g.beginPath();
+      g.arc(1, -14, 3, 0, TAU);
+      g.stroke();
+      g.beginPath();
+      g.moveTo(1, -11); g.lineTo(0, -3);
+      g.moveTo(0, -3); g.lineTo(9, -2); g.lineTo(10, 0);
+      g.moveTo(0, -3); g.lineTo(7, -1); g.lineTo(9, 0);
+      g.moveTo(1, -9); g.lineTo(6, -7);
+      g.stroke();
+      g.fillStyle = '#c9b98f';
+      g.fillRect(5, -9, 5, 3);
+      g.restore();
+      return;
+    }
+    const walking = s.state === 'walk' || s.state === 'leave';
+    const swing = walking ? Math.sin(s.phase) * 4 : 1.5;
+    g.beginPath();
+    g.arc(0, -20, 3, 0, TAU);
+    g.stroke();
+    g.beginPath();
+    g.moveTo(0, -17); g.lineTo(0, -8);
+    g.moveTo(0, -8); g.lineTo(swing, 0);
+    g.moveTo(0, -8); g.lineTo(-swing, 0);
+    g.moveTo(0, -14); g.lineTo(-3, -9);
+    g.stroke();
+    const b = beam(s);
+    if (b) {
+      // the arm follows the flashlight
+      const la = Math.atan2(Math.sin(b.a), dir * Math.cos(b.a));
+      const hx = Math.cos(la) * 8, hy = -14 + Math.sin(la) * 8;
+      g.beginPath();
+      g.moveTo(0, -14); g.lineTo(hx, hy);
+      g.stroke();
+      g.save();
+      g.translate(hx, hy);
+      g.rotate(la);
+      g.fillRect(-1, -1.5, 5, 3);
+      g.restore();
+    }
+    if (s.state === 'read') {
+      g.fillStyle = '#8a8475';
+      g.fillRect(3, -4, 8, 6);
+    }
+    g.restore();
+    void now;
+  }
+
+  function draw(now) {
+    g.clearRect(0, 0, W, H);
+
+    // where the light reaches
+    const l = light.getContext('2d');
+    l.clearRect(0, 0, W, H);
+    for (const s of searchers) {
+      const b = beam(s);
+      if (!b) continue;
+      const o = origin(s, b);
+      wedge(l, o.x, o.y, b.a, b.len, b.half, MASK);
+    }
+    if (now - cursor.at < 20000) disc(l, cursor.x, cursor.y, 140, CURSOR_MASK);
+    if (lamp.on) disc(l, lamp.x, lamp.y - 52, 190, LAMP_MASK);
+
+    // the furniture, only where it's lit
+    g.drawImage(scene, 0, 0, W, H);
+    g.globalCompositeOperation = 'destination-in';
+    g.drawImage(light, 0, 0, W, H);
+    g.globalCompositeOperation = 'source-over';
+
+    // the beams themselves
+    for (const s of searchers) {
+      const b = beam(s);
+      if (!b) continue;
+      const o = origin(s, b);
+      wedge(g, o.x, o.y, b.a, b.len, b.half, GLOW);
+    }
+    if (now - cursor.at < 20000) disc(g, cursor.x, cursor.y, 140, CURSOR_GLOW);
+    if (lamp.on) disc(g, lamp.x, lamp.y - 52, 190, LAMP_GLOW);
+
+    for (const s of searchers) drawSearcher(s, now);
+  }
+
+  // ---------- main loop, paused while the tab is hidden ----------
+  let raf = 0;
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    step(dt, now);
+    draw(now);
+    raf = requestAnimationFrame(frame);
+  }
+  function run() {
+    cancelAnimationFrame(raf);
+    last = performance.now();
+    raf = requestAnimationFrame(frame);
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) cancelAnimationFrame(raf);
+    else run();
+  });
+
+  addEventListener('pointermove', e => { cursor.x = e.clientX; cursor.y = e.clientY; cursor.at = performance.now(); });
+  addEventListener('pointerdown', e => { cursor.x = e.clientX; cursor.y = e.clientY; cursor.at = performance.now(); });
+  addEventListener('resize', resize);
+
+  // ---------- the search, as it goes ----------
+  function giveUp() {
+    gaveUp = true;
+    $('verb').textContent = 'was';
+    $('random').href = pick(RANDOM);
+    $('give-up').hidden = false;
+  }
+  const at = (ms, fn) => setTimeout(fn, ms);
+  const say = (ms, ...parts) => at(ms, () => log(...parts));
+
+  say(1500, 'searching the lobby... not there.');
+  at(4000, arrive);
+  say(5000, 'checked behind the button. it moved.');
+  at(5200, () => { buttonMoved = true; resize(); });
+  const maybe = guess();
+  if (maybe) say(7000, 'did you mean ', { href: `/${maybe}/`, text: `/${maybe}/` }, "? they're not sure. they're just guessing.");
+  say(9000, 'checked under the couch in the 70s room. found a quarter.');
+  at(9200, () => { quarter = true; drawScene(); });
+  at(10000, arrive);
+  say(10600, "another one has arrived. it has a flashlight. that's the whole qualification.");
+  say(13500, "asked the fish. they don't know either.");
+  say(17500, "...you're still here?");
+  at(18000, arrive);
+  say(22000, 'checked the server room. db-01 would like it noted that nothing was touched.');
+  say(26500, 'one of them has stopped to read the strategy guide.');
+  at(26600, () => mood('read'));
+  at(28000, arrive);
+  say(31000, "the search party would like to know if you're sure you typed it right.");
+  say(36000, "there's really nothing. i checked.");
+  at(40000, arrive);
+  say(41000, 'they found a different page. it was also not this one.');
+  say(47000, 'the search party has stopped for lunch.');
+  at(47100, () => mood('lunch'));
+  at(55000, arrive);
+  say(58000, 'lunch is over. morale is not.');
+  at(58100, () => mood('walk'));
+  say(63000, 'one of them is now looking for their keys.');
+  at(63100, () => mood('keys'));
+  say(71000, 'the search has been called off. then back on. then off.');
+  at(71100, () => mood('confused'));
+  say(79000, 'ok this is kind of nice actually.');
+  say(87000, 'the search party has given up. they suggest the lobby.');
+  at(87100, giveUp);
+  say(101000, "i'll leave the light on for you.");
+  at(101100, () => { lamp.on = true; drawScene(); });
+  say(140000, 'still nothing.');
+  say(185000, 'one of them went home.');
+  at(185100, () => { if (searchers.length > 1) leave(); });
+  say(240000, "they're mostly here for the company now.");
+  say(300000, 'the quarter has been spent.');
+  at(300100, () => { quarter = false; drawScene(); });
+  say(420000, 'the search party would like to remind you that the lobby is right there.');
+
+  resize();
+  arrive();
+  run();
 })();
 </script>
 <script src="/assets/away.js"></script>
