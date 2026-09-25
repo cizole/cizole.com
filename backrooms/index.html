@@ -1,0 +1,1206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>backrooms · cizole</title>
+<link rel="icon" href="../favicon.svg?v=2" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/site.css">
+<style>
+  html, body { overflow: hidden; background: #000; }
+
+  .stage {
+    position: fixed;
+    inset: 0;
+    touch-action: none;
+    cursor: crosshair;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .stage canvas { display: block; }
+
+  .hud {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    color: var(--dim);
+    font-size: 13px;
+    text-align: right;
+    text-shadow: 0 1px 4px #000;
+  }
+  .hud b { color: var(--fg); font-weight: 400; }
+  .hud button {
+    padding: 6px 12px;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(14, 13, 11, 0.85);
+    color: var(--dim);
+    font: 14px var(--font);
+    cursor: pointer;
+  }
+  .hud button:hover, .hud button.on { color: var(--acid); }
+
+  .hint {
+    position: fixed;
+    left: 50%;
+    bottom: 32px;
+    z-index: 50;
+    transform: translateX(-50%);
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: rgba(14, 13, 11, 0.8);
+    color: var(--dim);
+    font-size: 13px;
+    white-space: nowrap;
+    pointer-events: none;
+    transition: opacity 0.8s;
+  }
+  .hint.gone { opacity: 0; }
+
+  .caption {
+    position: fixed;
+    left: 16px;
+    right: 16px;
+    top: 58px;
+    z-index: 50;
+    margin: 0;
+    color: var(--fg);
+    font-size: 15px;
+    text-align: center;
+    text-shadow: 0 1px 6px #000, 0 0 2px #000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s;
+  }
+  .caption.show { opacity: 1; }
+
+  .dot {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    z-index: 40;
+    width: 4px;
+    height: 4px;
+    margin: -2px 0 0 -2px;
+    border-radius: 50%;
+    background: rgba(235, 229, 214, 0.55);
+    pointer-events: none;
+  }
+  .dot[hidden] { display: none; }
+
+  .joy {
+    position: fixed;
+    z-index: 70;
+    width: 110px;
+    height: 110px;
+    margin: -55px 0 0 -55px;
+    border: 1px solid rgba(235, 229, 214, 0.3);
+    border-radius: 50%;
+    background: rgba(14, 13, 11, 0.35);
+    pointer-events: none;
+  }
+  .joy[hidden] { display: none; }
+  .joy i {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 44px;
+    height: 44px;
+    margin: -22px 0 0 -22px;
+    border-radius: 50%;
+    background: rgba(200, 255, 61, 0.35);
+  }
+
+  .fallback {
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    display: grid;
+    place-items: center;
+    padding: 72px 24px 32px;
+    background: var(--bg);
+    color: var(--dim);
+    text-align: center;
+  }
+  .fallback[hidden] { display: none; }
+  .fallback a { color: var(--acid); }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  @media (max-width: 600px) {
+    .hint { width: calc(100% - 32px); border-radius: 12px; white-space: normal; text-align: center; }
+    .hud { font-size: 12px; }
+  }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+<a class="lobby-link" href="../">&larr; lobby</a>
+<h1 class="sr-only">the backrooms</h1>
+
+<div class="stage" id="stage" aria-hidden="true"></div>
+<div class="dot" id="dot" hidden></div>
+<div class="hud">
+  <div>rooms: <b id="rooms">0</b> &middot; exits: <b id="exits">0</b></div>
+  <div>time in here: <b id="time">0:00</b></div>
+  <button type="button" id="hum">hum: off</button>
+</div>
+<p class="caption" id="caption" role="status"></p>
+<div class="hint" id="hint">loading...</div>
+<div class="joy" id="joy" hidden><i></i></div>
+<div class="fallback" id="fallback" hidden>
+  <p>the backrooms need webgl, and this browser said no.<br>that's one way out. <a href="../">the lobby is the other.</a></p>
+</div>
+<noscript><p style="padding:72px 24px">the backrooms need javascript. <a href="../">back to the lobby</a>.</p></noscript>
+
+<script type="module">
+import * as THREE from 'three';
+
+// ---------- tuning ----------
+const CELL = 8;            // one room is 8m square
+const H = 2.6;             // drop ceiling
+const T = 0.2;             // wall thickness
+const GAP = 1.5;           // doorway width
+const HEAD = 2.1;          // doorway height
+const RANGE = 2;           // cells kept around you: (2*RANGE+1)^2
+const EYE = 1.6;
+const RADIUS = 0.32;
+const FOG = 0.13;
+const LAMP_INTENSITY = 9;
+const STILL_MS = 30000;    // stand still this long and a door appears
+const STILL_ROOMS = 20;    // ...but only after this many rooms
+const KEY_ROOMS = 'cizole.backrooms.rooms';
+
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const coarse = matchMedia('(pointer: coarse)').matches;
+const $ = s => document.querySelector(s);
+const rnd = (a, b) => a + Math.random() * (b - a);
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch { /* private mode */ } },
+};
+
+// ---------- seeded randomness: the same cell is always the same room ----------
+function hash(a, b, c) {
+  let h = (Math.imul(a | 0, 374761393) + Math.imul(b | 0, 668265263) + Math.imul(c | 0, 2246822519)) | 0;
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  h ^= h >>> 16;
+  return h >>> 0;
+}
+const r01 = (a, b, c) => hash(a, b, c) / 4294967296;
+
+// edge 0 is the wall on a cell's -x side, edge 1 the wall on its -z side.
+// walls are shared between neighbours, so their state depends only on the edge.
+const baseOpen = (x, z, e) => r01(x, z, 11 + e) < 0.78;
+const allClosedBase = (x, z) => !baseOpen(x, z, 0) && !baseOpen(x + 1, z, 0) && !baseOpen(x, z, 1) && !baseOpen(x, z + 1, 1);
+function edgeOpen(x, z, e) {
+  if (x === 0 && z === 0) return true; // the room you arrive in has four ways out
+  if (e === 0 && x === 1 && z === 0) return true;
+  if (e === 1 && x === 0 && z === 1) return true;
+  return baseOpen(x, z, e) || (e === 0 && allClosedBase(x, z)); // a sealed room gets one way out, on its -x side
+}
+const edgeOffset = (x, z, e) => (r01(x, z, 21 + e) - 0.5) * 4; // where along the wall the doorway is
+function layoutOf(x, z) {
+  if (x === 0 && z === 0) return 0;
+  const r = r01(x, z, 31);
+  return r < 0.36 ? 0 : r < 0.56 ? 1 : r < 0.7 ? 2 : r < 0.85 ? 3 : 4;
+}
+const STRAYS = ['sofa', 'beanbag', 'tank', 'sock', 'chair', 'sign', 'door015'];
+function strayOf(x, z) {
+  if (x === 0 && z === 0) return null;
+  if (layoutOf(x, z) === 4) return null; // nothing in the hallways
+  if (r01(x, z, 41) > 1 / 15) return null;
+  return STRAYS[Math.floor(r01(x, z, 42) * STRAYS.length)];
+}
+const fixtureState = (x, z, i) => { const r = r01(x, z, 51 + i); return r < 0.7 ? 'on' : r < 0.86 ? 'flicker' : 'dark'; };
+
+// ---------- captions ----------
+const captionEl = $('#caption');
+let captionTimer;
+function say(text, ms = 4200) {
+  captionEl.textContent = text;
+  captionEl.classList.add('show');
+  clearTimeout(captionTimer);
+  captionTimer = setTimeout(() => captionEl.classList.remove('show'), ms);
+}
+
+let renderer = null;
+try {
+  renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+} catch (err) {
+  renderer = null;
+}
+
+if (!renderer) {
+  $('#fallback').hidden = false;
+  $('#hint').hidden = true;
+} else {
+  try {
+    await Promise.race([document.fonts.load('700 48px "Space Mono"'), new Promise(r => setTimeout(r, 1500))]);
+  } catch { /* the signs will use a fallback font */ }
+  run(renderer);
+}
+
+function run(renderer) {
+  const stage = $('#stage');
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5));
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
+  stage.appendChild(renderer.domElement);
+  const maxAniso = renderer.capabilities.getMaxAnisotropy();
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color('#1a170c');
+  scene.fog = new THREE.FogExp2('#1a170c', FOG);
+
+  const camera = new THREE.PerspectiveCamera(72, innerWidth / innerHeight, 0.05, 60);
+  camera.rotation.order = 'YXZ';
+
+  // ---------- canvas textures ----------
+  function makeCanvas(w, h) {
+    const c = document.createElement('canvas');
+    c.width = w;
+    c.height = h;
+    return [c, c.getContext('2d')];
+  }
+  function toTexture(c, rx = 1, ry = 1) {
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(rx, ry);
+    t.anisotropy = maxAniso;
+    return t;
+  }
+  function grime(g, w, h, n, rgb, aMax, rMin, rMax) {
+    for (let i = 0; i < n; i++) {
+      const x = Math.random() * w;
+      const y = Math.random() * h;
+      const r = rnd(rMin, rMax);
+      const grad = g.createRadialGradient(x, y, 0, x, y, r);
+      grad.addColorStop(0, `rgba(${rgb},${rnd(0.02, aMax).toFixed(3)})`);
+      grad.addColorStop(1, `rgba(${rgb},0)`);
+      g.fillStyle = grad;
+      g.fillRect(x - r, y - r, r * 2, r * 2);
+    }
+  }
+  function specks(g, w, h, n, rgb, aMax, size) {
+    for (let i = 0; i < n; i++) {
+      g.fillStyle = `rgba(${rgb},${rnd(0.04, aMax).toFixed(3)})`;
+      g.fillRect(Math.random() * w, Math.random() * h, rnd(0.6, size), rnd(0.6, size));
+    }
+  }
+  const lambert = opts => new THREE.MeshLambertMaterial(opts);
+
+  // yellowed wallpaper, 2.5m of wall per texture, baseboard along the bottom
+  function wallpaperCanvas() {
+    const [c, g] = makeCanvas(512, 512);
+    g.fillStyle = '#c9b46a';
+    g.fillRect(0, 0, 512, 512);
+    // a faint diamond pattern, the kind that was a mistake
+    g.strokeStyle = 'rgba(120,95,40,0.13)';
+    g.lineWidth = 1.2;
+    for (let i = -512; i < 1024; i += 40) {
+      g.beginPath();
+      g.moveTo(i, 0);
+      g.lineTo(i + 512, 512);
+      g.moveTo(i + 512, 0);
+      g.lineTo(i, 512);
+      g.stroke();
+    }
+    specks(g, 512, 512, 2600, '90,70,30', 0.18, 1.6);
+    grime(g, 512, 512, 12, '110,80,30', 0.28, 40, 160);
+    grime(g, 512, 512, 6, '60,45,20', 0.22, 60, 200); // damp
+    // baseboard
+    g.fillStyle = '#8a7648';
+    g.fillRect(0, 486, 512, 26);
+    g.fillStyle = 'rgba(0,0,0,0.25)';
+    g.fillRect(0, 484, 512, 3);
+    return c;
+  }
+  function carpetCanvas() {
+    const [c, g] = makeCanvas(512, 512);
+    g.fillStyle = '#8f8260';
+    g.fillRect(0, 0, 512, 512);
+    specks(g, 512, 512, 9000, '50,42,25', 0.32, 1.5);
+    specks(g, 512, 512, 3000, '170,160,120', 0.18, 1.3);
+    grime(g, 512, 512, 10, '55,48,30', 0.35, 50, 180); // it's damp
+    grime(g, 512, 512, 5, '120,110,80', 0.15, 40, 120);
+    return c;
+  }
+  function ceilingCanvas() {
+    // 2x2 drop tiles with different stains
+    const [c, g] = makeCanvas(512, 512);
+    g.fillStyle = '#d6d2c4';
+    g.fillRect(0, 0, 512, 512);
+    specks(g, 512, 512, 6000, '40,38,32', 0.14, 1.4);
+    for (const [tx, ty] of [[0, 0], [256, 0], [0, 256], [256, 256]]) {
+      grime(g, 256, 256, Math.random() < 0.6 ? 2 : 0, '120,95,55', 0.4, 30, 110);
+      g.save();
+      g.translate(tx, ty);
+      grime(g, 256, 256, Math.random() < 0.5 ? 1 : 0, '120,95,55', 0.45, 30, 110);
+      g.restore();
+    }
+    g.fillStyle = '#6f6b60';
+    g.fillRect(0, 0, 512, 4);
+    g.fillRect(0, 254, 512, 4);
+    g.fillRect(0, 0, 4, 512);
+    g.fillRect(254, 0, 4, 512);
+    return c;
+  }
+  function textCanvas(w, h, bg, lines) {
+    const [c, g] = makeCanvas(w, h);
+    g.fillStyle = bg;
+    g.fillRect(0, 0, w, h);
+    for (const [text, size, y, color, weight] of lines) {
+      g.fillStyle = color || '#1d1b17';
+      g.font = `${weight || 400} ${size}px "Space Mono", monospace`;
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.fillText(text, w / 2, y);
+    }
+    return c;
+  }
+  function floralCanvas() {
+    const [c, g] = makeCanvas(256, 256);
+    g.fillStyle = '#5f7f44';
+    g.fillRect(0, 0, 256, 256);
+    for (let i = 0; i < 26; i++) {
+      const x = Math.random() * 256, y = Math.random() * 256, r = rnd(9, 16);
+      g.fillStyle = pick(['#d9a13d', '#c9573f', '#e9d38a']);
+      for (let k = 0; k < 5; k++) {
+        const a = (k / 5) * Math.PI * 2;
+        g.beginPath();
+        g.arc(x + Math.cos(a) * r * 0.6, y + Math.sin(a) * r * 0.6, r * 0.45, 0, Math.PI * 2);
+        g.fill();
+      }
+      g.fillStyle = '#3d2a1a';
+      g.beginPath();
+      g.arc(x, y, r * 0.25, 0, Math.PI * 2);
+      g.fill();
+    }
+    return c;
+  }
+
+  // ---------- shared materials and geometries ----------
+  const wallTex = toTexture(wallpaperCanvas());
+  const wallMat = lambert({ map: wallTex });
+  const floorMat = lambert({ map: toTexture(carpetCanvas(), CELL / 2.2, CELL / 2.2) });
+  const ceilMat = lambert({ map: toTexture(ceilingCanvas(), CELL / 1.2, CELL / 1.2) });
+  const pillarMat = lambert({ map: toTexture(wallpaperCanvas(), 0.3, 1) });
+  const PANEL_ON = new THREE.Color('#f6f1d6');
+  const PANEL_OFF = new THREE.Color('#2b2a22');
+  const panelGeo = new THREE.PlaneGeometry(1.2, 0.6);
+  const frameGeo = new THREE.BoxGeometry(1.3, 0.04, 0.7);
+  const frameMat = lambert({ color: '#9f9c90' });
+  const floorGeo = new THREE.PlaneGeometry(CELL, CELL);
+  const pillarGeo = new THREE.BoxGeometry(0.55, H, 0.55);
+
+  // a wall segment of any length, with the paper at a constant scale
+  function wallGeo(len, height, thick = T) {
+    const geo = new THREE.BoxGeometry(len, height, thick);
+    const uv = geo.attributes.uv;
+    for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * (len / 2.5), uv.getY(i) * (height / H));
+    return geo;
+  }
+
+  // ---------- strays: things that don't belong ----------
+  const floralMat = lambert({ map: toTexture(floralCanvas(), 2, 1) });
+  const strayMats = {
+    beanbag: lambert({ color: '#1f8f8a' }),
+    stripe: lambert({ color: '#ff3d9a' }),
+    glass: new THREE.MeshLambertMaterial({ color: '#7fb8d9', transparent: true, opacity: 0.35 }),
+    water: new THREE.MeshLambertMaterial({ color: '#2f7fa8', transparent: true, opacity: 0.55 }),
+    gravel: lambert({ color: '#6b5a42' }),
+    sock: lambert({ color: '#e9e2d0' }),
+    chair: lambert({ color: '#5a5c60' }),
+    sign: lambert({ map: toTexture(textCanvas(128, 256, '#e8c81f', [['CAUTION', 20, 60, '#1d1b17', 700], ['WET', 34, 120, '#1d1b17', 700], ['FLOOR', 34, 160, '#1d1b17', 700], ['(always)', 14, 220]])) }),
+    door: lambert({ map: toTexture(textCanvas(128, 256, '#77766f', [['015', 30, 74, '#e8e2d2', 700], ['closed', 14, 108, '#e8e2d2']])) }),
+  };
+  const STRAY_LINES = {
+    sofa: "the sofa from the 70s room. it's a long way from 1976. so are you.",
+    beanbag: 'a beanbag. someone sat here once. the dent says so.',
+    tank: 'a fish tank on the carpet. no fish. the water is still.',
+    sock: 'a single sock. the other one is somewhere in here. probably.',
+    chair: 'a folding chair, facing the wall. it was put there on purpose.',
+    sign: 'wet floor. the carpet has been wet since before the sign.',
+    door015: '015. closed. it was weird. even for here.',
+  };
+  function buildStray(kind, x, z, angle) {
+    const g = new THREE.Group();
+    if (kind === 'sofa') {
+      const seat = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.45, 0.85), floralMat);
+      seat.position.y = 0.225;
+      const back = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.5, 0.25), floralMat);
+      back.position.set(0, 0.7, -0.3);
+      for (const s of [-1, 1]) {
+        const arm = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.65, 0.85), floralMat);
+        arm.position.set(s * 0.95, 0.325, 0);
+        g.add(arm);
+      }
+      g.add(seat, back);
+    } else if (kind === 'beanbag') {
+      const bag = new THREE.Mesh(new THREE.SphereGeometry(0.55, 18, 12), strayMats.beanbag);
+      bag.scale.set(1, 0.62, 1);
+      bag.position.y = 0.34;
+      const stripe = new THREE.Mesh(new THREE.TorusGeometry(0.56, 0.035, 8, 40, Math.PI), strayMats.stripe);
+      stripe.rotation.set(Math.PI / 2, 0, 0.6);
+      stripe.position.y = 0.34;
+      stripe.scale.set(1, 1, 0.62);
+      g.add(bag, stripe);
+    } else if (kind === 'tank') {
+      const water = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.34, 0.36), strayMats.water);
+      water.position.y = 0.2;
+      const glass = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.5, 0.4), strayMats.glass);
+      glass.position.y = 0.25;
+      const gravel = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.04, 0.36), strayMats.gravel);
+      gravel.position.y = 0.03;
+      g.add(gravel, water, glass);
+    } else if (kind === 'sock') {
+      const sock = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.05, 0.1), strayMats.sock);
+      sock.position.y = 0.025;
+      sock.rotation.y = 0.4;
+      const toe = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.05, 0.16), strayMats.sock);
+      toe.position.set(0.12, 0.025, 0.03);
+      toe.rotation.y = 0.4;
+      g.add(sock, toe);
+    } else if (kind === 'chair') {
+      const seat = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.04, 0.45), strayMats.chair);
+      seat.position.y = 0.45;
+      const back = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.4, 0.04), strayMats.chair);
+      back.position.set(0, 0.7, -0.22);
+      g.add(seat, back);
+      for (const [lx, lz] of [[-0.2, -0.2], [0.2, -0.2], [-0.2, 0.2], [0.2, 0.2]]) {
+        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.45, 0.03), strayMats.chair);
+        leg.position.set(lx, 0.225, lz);
+        g.add(leg);
+      }
+    } else if (kind === 'sign') {
+      for (const s of [-1, 1]) {
+        const face = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.62, 0.02), strayMats.sign);
+        face.position.set(0, 0.31, s * 0.12);
+        face.rotation.x = s * 0.35;
+        g.add(face);
+      }
+    } else if (kind === 'door015') {
+      const leaf = new THREE.Mesh(new THREE.BoxGeometry(0.9, 2.05, 0.05), strayMats.door);
+      leaf.position.y = 1.025;
+      const knob = new THREE.Mesh(new THREE.SphereGeometry(0.035, 10, 8), lambert({ color: '#b08d3a' }));
+      knob.position.set(0.36, 1.0, 0.05);
+      g.add(leaf, knob);
+    }
+    g.position.set(x, 0, z);
+    g.rotation.y = angle;
+    return g;
+  }
+
+  // ---------- cells ----------
+  const cells = new Map(); // "x,z" -> { group, rects, fixtures, strays, geos }
+  const key = (x, z) => `${x},${z}`;
+
+  function doorwayWall(group, geos, rects, along, cx, cz, x0, z0, offset) {
+    // a wall along one edge of a cell, with a doorway in it. `along` is 'x' or 'z'.
+    const half = CELL / 2;
+    const parts = [
+      [-half, offset - GAP / 2, 0, H],           // left piece, full height
+      [offset + GAP / 2, half, 0, H],            // right piece
+      [offset - GAP / 2, offset + GAP / 2, HEAD, H], // the header over the doorway
+    ];
+    for (const [a, b, y0, y1] of parts) {
+      const len = b - a;
+      if (len <= 0.01) continue;
+      const geo = wallGeo(len, y1 - y0);
+      geos.push(geo);
+      const m = new THREE.Mesh(geo, wallMat);
+      const mid = (a + b) / 2;
+      const y = (y0 + y1) / 2;
+      if (along === 'x') {
+        m.position.set(x0 + mid, y, z0);
+        if (y0 === 0) rects.push([x0 + a, z0 - T / 2, x0 + b, z0 + T / 2]);
+      } else {
+        m.position.set(x0, y, z0 + mid);
+        m.rotation.y = Math.PI / 2;
+        if (y0 === 0) rects.push([x0 - T / 2, z0 + a, x0 + T / 2, z0 + b]);
+      }
+      group.add(m);
+    }
+  }
+
+  function buildCell(cx, cz) {
+    const group = new THREE.Group();
+    const rects = [];
+    const geos = [];
+    const fixtures = [];
+    const strays = [];
+    const x0 = cx * CELL, z0 = cz * CELL; // cell centre
+    const half = CELL / 2;
+
+    const floor = new THREE.Mesh(floorGeo, floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.set(x0, 0, z0);
+    const ceil = new THREE.Mesh(floorGeo, ceilMat);
+    ceil.rotation.x = Math.PI / 2;
+    ceil.position.set(x0, H, z0);
+    group.add(floor, ceil);
+
+    // the walls this cell owns: its -x edge and its -z edge
+    if (edgeOpen(cx, cz, 0)) doorwayWall(group, geos, rects, 'z', cx, cz, x0 - half, z0, edgeOffset(cx, cz, 0));
+    else {
+      const geo = wallGeo(CELL, H);
+      geos.push(geo);
+      const m = new THREE.Mesh(geo, wallMat);
+      m.position.set(x0 - half, H / 2, z0);
+      m.rotation.y = Math.PI / 2;
+      group.add(m);
+      rects.push([x0 - half - T / 2, z0 - half, x0 - half + T / 2, z0 + half]);
+    }
+    if (edgeOpen(cx, cz, 1)) doorwayWall(group, geos, rects, 'x', cx, cz, x0, z0 - half, edgeOffset(cx, cz, 1));
+    else {
+      const geo = wallGeo(CELL, H);
+      geos.push(geo);
+      const m = new THREE.Mesh(geo, wallMat);
+      m.position.set(x0, H / 2, z0 - half);
+      group.add(m);
+      rects.push([x0 - half, z0 - half - T / 2, x0 + half, z0 - half + T / 2]);
+    }
+
+    // inside
+    const layout = layoutOf(cx, cz);
+    const pillarAt = (px, pz) => {
+      const p = new THREE.Mesh(pillarGeo, pillarMat);
+      p.position.set(x0 + px, H / 2, z0 + pz);
+      group.add(p);
+      rects.push([x0 + px - 0.275, z0 + pz - 0.275, x0 + px + 0.275, z0 + pz + 0.275]);
+    };
+    if (layout === 1) pillarAt((r01(cx, cz, 61) - 0.5) * 3, (r01(cx, cz, 62) - 0.5) * 3);
+    if (layout === 2) { pillarAt(-1.8, (r01(cx, cz, 63) - 0.5) * 3); pillarAt(1.8, (r01(cx, cz, 64) - 0.5) * 3); }
+    if (layout === 3) {
+      // a partition through the middle, with a gap that lines up with nothing
+      const alongX = r01(cx, cz, 65) < 0.5;
+      const gapAt = (r01(cx, cz, 66) - 0.5) * 4;
+      for (const [a, b] of [[-half + 0.6, gapAt - 0.8], [gapAt + 0.8, half - 0.6]]) {
+        const len = b - a;
+        if (len <= 0.2) continue;
+        const geo = wallGeo(len, H);
+        geos.push(geo);
+        const m = new THREE.Mesh(geo, wallMat);
+        const mid = (a + b) / 2;
+        if (alongX) { m.position.set(x0 + mid, H / 2, z0); rects.push([x0 + a, z0 - T / 2, x0 + b, z0 + T / 2]); }
+        else { m.position.set(x0, H / 2, z0 + mid); m.rotation.y = Math.PI / 2; rects.push([x0 - T / 2, z0 + a, x0 + T / 2, z0 + b]); }
+        group.add(m);
+      }
+    }
+    if (layout === 4) {
+      // a hallway: two walls leave a corridor down the middle, and a way through at each end
+      const alongX = r01(cx, cz, 67) < 0.5;
+      for (const s of [-1, 1]) {
+        const geo = wallGeo(CELL - 2.4, H);
+        geos.push(geo);
+        const m = new THREE.Mesh(geo, wallMat);
+        if (alongX) { m.position.set(x0, H / 2, z0 + s * 1.3); rects.push([x0 - half + 1.2, z0 + s * 1.3 - T / 2, x0 + half - 1.2, z0 + s * 1.3 + T / 2]); }
+        else { m.position.set(x0 + s * 1.3, H / 2, z0); m.rotation.y = Math.PI / 2; rects.push([x0 + s * 1.3 - T / 2, z0 - half + 1.2, x0 + s * 1.3 + T / 2, z0 + half - 1.2]); }
+        group.add(m);
+      }
+    }
+
+    // the lights: one panel, or two in a hallway
+    const spots = layout === 4 ? [[-2, 0], [2, 0]] : [[0, 0]];
+    spots.forEach(([px, pz], i) => {
+      const mat = new THREE.MeshBasicMaterial({ color: PANEL_ON.clone() });
+      const panel = new THREE.Mesh(panelGeo, mat);
+      panel.rotation.x = Math.PI / 2;
+      panel.rotation.z = layout === 4 && r01(cx, cz, 67) >= 0.5 ? Math.PI / 2 : 0;
+      panel.position.set(x0 + px, H - 0.012, z0 + pz);
+      const frame = new THREE.Mesh(frameGeo, frameMat);
+      frame.position.set(x0 + px, H - 0.03, z0 + pz);
+      frame.rotation.y = panel.rotation.z;
+      group.add(panel, frame);
+      const state = fixtureState(cx, cz, i);
+      fixtures.push({
+        x: x0 + px, z: z0 + pz, mat,
+        base: state === 'dark' ? 0 : 1, faulty: state === 'flicker' && !reduceMotion,
+        power: 1, level: state === 'dark' ? 0 : 1, timer: rnd(0.3, 4), flick: false, starting: 0,
+      });
+    });
+
+    // something that doesn't belong
+    const kind = strayOf(cx, cz);
+    if (kind) {
+      const q = Math.floor(r01(cx, cz, 43) * 4);
+      const sx = (q % 2 ? 1 : -1) * 2.4, sz = (q < 2 ? 1 : -1) * 2.4;
+      let angle = r01(cx, cz, 44) * Math.PI * 2;
+      let px = x0 + sx, pz = z0 + sz;
+      if (kind === 'chair') angle = q % 2 ? -Math.PI / 2 : Math.PI / 2; // facing the nearest wall
+      if (kind === 'door015') { px = x0 + (q % 2 ? 1 : -1) * (half - 0.05 - T / 2); pz = z0 + sz * 0.5; angle = q % 2 ? -Math.PI / 2 : Math.PI / 2; }
+      const stray = buildStray(kind, px, pz, angle);
+      group.add(stray);
+      strays.push({ kind, x: px, z: pz, said: false, group: stray });
+      if (kind === 'sofa' || kind === 'tank' || kind === 'chair') rects.push([px - 0.6, pz - 0.45, px + 0.6, pz + 0.45]);
+    }
+
+    scene.add(group);
+    return { group, rects, geos, fixtures, strays };
+  }
+
+  function dropCell(c) {
+    scene.remove(c.group);
+    for (const geo of c.geos) geo.dispose();
+    for (const f of c.fixtures) f.mat.dispose();
+  }
+
+  let curCx = 0, curCz = 0;
+  function ensureCells() {
+    for (let x = curCx - RANGE; x <= curCx + RANGE; x++) {
+      for (let z = curCz - RANGE; z <= curCz + RANGE; z++) {
+        const k = key(x, z);
+        if (!cells.has(k)) cells.set(k, buildCell(x, z));
+      }
+    }
+    for (const [k, c] of cells) {
+      const [x, z] = k.split(',').map(Number);
+      if (Math.abs(x - curCx) > RANGE || Math.abs(z - curCz) > RANGE) {
+        dropCell(c);
+        cells.delete(k);
+      }
+    }
+  }
+
+  // ---------- lights ----------
+  scene.add(new THREE.HemisphereLight('#d8c98a', '#3a3222', 0.42));
+  const lamps = [];
+  for (let i = 0; i < 3; i++) {
+    const l = new THREE.PointLight('#fff2c8', 0, 11, 2);
+    scene.add(l);
+    lamps.push(l);
+  }
+
+  // ---------- the player ----------
+  const player = { x: 0, z: 0, yaw: 0, pitch: 0, vx: 0, vz: 0, bob: 0 };
+  const visited = new Set([key(0, 0)]);
+  const roomsEl = $('#rooms');
+  const exitsEl = $('#exits');
+  const timeEl = $('#time');
+  let lifetime = parseInt(store.get(KEY_ROOMS), 10) || 0;
+
+  function collide(nx, nz) {
+    // the player is a circle; the walls are boxes. push out along the shallow axis.
+    for (let pass = 0; pass < 2; pass++) {
+      for (const c of cells.values()) {
+        for (const [ax, az, bx, bz] of c.rects) {
+          if (nx < ax - RADIUS || nx > bx + RADIUS || nz < az - RADIUS || nz > bz + RADIUS) continue;
+          const dl = nx - (ax - RADIUS), dr = (bx + RADIUS) - nx;
+          const dn = nz - (az - RADIUS), df = (bz + RADIUS) - nz;
+          const m = Math.min(dl, dr, dn, df);
+          if (m === dl) nx = ax - RADIUS;
+          else if (m === dr) nx = bx + RADIUS;
+          else if (m === dn) nz = az - RADIUS;
+          else nz = bz + RADIUS;
+        }
+      }
+    }
+    return [nx, nz];
+  }
+
+  // ---------- power ----------
+  let powerTimers = [];
+  function setPower(on, stagger = true) {
+    powerTimers.forEach(clearTimeout);
+    powerTimers = [];
+    const all = [];
+    for (const c of cells.values()) for (const f of c.fixtures) all.push(f);
+    all.sort((a, b) => Math.hypot(a.x - player.x, a.z - player.z) - Math.hypot(b.x - player.x, b.z - player.z));
+    all.forEach((f, i) => {
+      const apply = () => {
+        f.power = on ? 1 : 0;
+        if (on && !reduceMotion) f.starting = rnd(0.2, 0.7);
+      };
+      if (stagger) powerTimers.push(setTimeout(apply, i * (on ? 90 : 35)));
+      else apply();
+    });
+  }
+
+  // ---------- audio: the hum (off until asked) ----------
+  const humBtn = $('#hum');
+  let actx = null;
+  let master = null;
+  let humGain = null;
+  let audioOn = false;
+  function initAudio() {
+    actx = new AudioContext();
+    master = actx.createGain();
+    master.gain.value = 0;
+    master.connect(actx.destination);
+    humGain = actx.createGain();
+    humGain.gain.value = 1;
+    humGain.connect(master);
+    for (const [f, g] of [[120, 0.02], [240, 0.007], [360, 0.0025], [480, 0.001]]) {
+      const o = actx.createOscillator();
+      o.frequency.value = f;
+      const gain = actx.createGain();
+      gain.gain.value = g;
+      o.connect(gain).connect(humGain);
+      o.start();
+    }
+    const buf = actx.createBuffer(1, actx.sampleRate * 2, actx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+    const hiss = actx.createBufferSource();
+    hiss.buffer = buf;
+    hiss.loop = true;
+    const bp = actx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = 3800;
+    bp.Q.value = 0.6;
+    const hg = actx.createGain();
+    hg.gain.value = 0.005;
+    hiss.connect(bp).connect(hg).connect(humGain);
+    hiss.start();
+  }
+  humBtn.addEventListener('click', () => {
+    audioOn = !audioOn;
+    if (!actx) initAudio();
+    actx.resume();
+    master.gain.setTargetAtTime(audioOn ? 1 : 0, actx.currentTime, 0.3);
+    humBtn.textContent = audioOn ? 'hum: on' : 'hum: off';
+    humBtn.classList.toggle('on', audioOn);
+  });
+
+  // ---------- the way out ----------
+  const exit = { group: null, mats: [], state: 'none', t: 0, x: 0, z: 0, minDist: Infinity, yaw: 0, since: 0 };
+  function buildExit(x, z, facing) {
+    const g = new THREE.Group();
+    const mats = [];
+    const doorMat = new THREE.MeshLambertMaterial({ color: '#4f6b5a', transparent: true, opacity: 0 });
+    const frameM = new THREE.MeshLambertMaterial({ color: '#3a3833', transparent: true, opacity: 0 });
+    const plateM = new THREE.MeshLambertMaterial({ map: toTexture(textCanvas(256, 128, '#cfccc2', [['lobby', 34, 64, '#1d1b17', 700]])), transparent: true, opacity: 0 });
+    mats.push(doorMat, frameM, plateM);
+    const leaf = new THREE.Mesh(new THREE.BoxGeometry(0.9, 2.06, 0.05), doorMat);
+    leaf.position.y = 1.03;
+    const plate = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.15), plateM);
+    plate.position.set(0, 1.6, 0.03);
+    for (const s of [-1, 1]) {
+      const jamb = new THREE.Mesh(new THREE.BoxGeometry(0.08, 2.15, 0.1), frameM);
+      jamb.position.set(s * 0.49, 1.075, 0);
+      g.add(jamb);
+    }
+    const head = new THREE.Mesh(new THREE.BoxGeometry(1.06, 0.08, 0.1), frameM);
+    head.position.y = 2.15;
+    g.add(leaf, plate, head);
+    g.position.set(x, 0, z);
+    g.rotation.y = facing;
+    scene.add(g);
+    return { group: g, mats };
+  }
+  function removeExit() {
+    if (!exit.group) return;
+    scene.remove(exit.group);
+    for (const m of exit.mats) m.dispose();
+    exit.group = null;
+    exit.mats = [];
+    exit.state = 'none';
+  }
+  function offerExit() {
+    // an ordinary door, two and a half metres ahead, facing you
+    const dx = -Math.sin(player.yaw), dz = -Math.cos(player.yaw);
+    const x = player.x + dx * 2.5, z = player.z + dz * 2.5;
+    const built = buildExit(x, z, player.yaw + Math.PI);
+    Object.assign(exit, { group: built.group, mats: built.mats, state: 'fading-in', t: 0, x, z, minDist: 2.5, yaw: player.yaw, since: performance.now() });
+    exitsEl.textContent = '1';
+    say("there's a door now. it was not there. don't move. or do. it's a door.", 6000);
+  }
+  function loseExit(text) {
+    exit.state = 'fading-out';
+    exitsEl.textContent = '0';
+    if (text) say(text);
+  }
+
+  // ---------- captions along the way ----------
+  const MILESTONES = new Map([
+    [10, 'this one looks familiar. they all do.'],
+    [15, "there's a link in the corner. that's cheating. it's allowed."],
+    [25, 'you passed this pillar. or its cousin.'],
+    [50, 'rooms: 50. exits: 0. the ratio is holding.'],
+    [100, 'a hundred rooms. the carpet is the same carpet. it was always the same carpet.'],
+  ]);
+  const AMBIENT = [
+    "the carpet is damp. don't ask.",
+    'the lights are on a schedule nobody wrote.',
+    'the hum changes pitch in this one. it doesn\'t. you\'re tired.',
+    'somewhere in here there is a room with a window. this is not it.',
+    'the wallpaper was a choice. someone made it. once.',
+    'the doorways have no doors. the doors are somewhere else, in a pile.',
+  ];
+  let nextAmbient = performance.now() + rnd(35000, 60000);
+  let stillSaid = false;
+  let stillSince = performance.now();
+  let lookStillSince = performance.now();
+  let lastYaw = 0, lastPitch = 0;
+
+  // ---------- input ----------
+  const keys = new Set();
+  const MOVE_KEYS = ['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'shift'];
+  addEventListener('keydown', e => {
+    if (e.target.closest && e.target.closest('input, textarea, select')) return;
+    const k = e.key.toLowerCase();
+    if (MOVE_KEYS.includes(k)) {
+      keys.add(k);
+      if (k.startsWith('arrow')) e.preventDefault();
+    }
+  });
+  addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
+  addEventListener('blur', () => keys.clear());
+
+  const hint = $('#hint');
+  const dot = $('#dot');
+  let hintTimer;
+  function setHint(text, fadeAfter) {
+    hint.textContent = text;
+    hint.classList.remove('gone');
+    clearTimeout(hintTimer);
+    if (fadeAfter) hintTimer = setTimeout(() => hint.classList.add('gone'), fadeAfter);
+  }
+  const HINT_DESKTOP = 'click to look around · wasd or arrows to walk';
+  const HINT_TOUCH = 'left thumb to walk · drag on the right to look';
+  setHint(coarse ? HINT_TOUCH : HINT_DESKTOP, coarse ? 7000 : 0);
+
+  let dragLook = !stage.requestPointerLock;
+  const locked = () => document.pointerLockElement === stage;
+  stage.addEventListener('click', () => {
+    if (coarse || locked() || dragLook) return;
+    try {
+      const p = stage.requestPointerLock();
+      if (p && p.catch) p.catch(() => { dragLook = true; });
+    } catch { dragLook = true; }
+  });
+  document.addEventListener('pointerlockchange', () => {
+    const on = locked();
+    dot.hidden = !on;
+    if (on) setHint('esc to let go of the mouse', 2500);
+    else if (!leaving) setHint(HINT_DESKTOP, 0);
+  });
+  document.addEventListener('pointerlockerror', () => {
+    dragLook = true;
+    setHint('drag to look around · wasd or arrows to walk', 6000);
+  });
+  addEventListener('mousemove', e => {
+    if (!locked()) return;
+    player.yaw -= e.movementX * 0.0022;
+    player.pitch = clamp(player.pitch - e.movementY * 0.0022, -1.25, 1.25);
+  });
+
+  // touch: left half is a joystick, right half looks around
+  const joyEl = $('#joy');
+  const joyKnob = joyEl.querySelector('i');
+  const joy = { id: null, ox: 0, oy: 0, x: 0, y: 0 };
+  const lookTouch = { id: null, lx: 0, ly: 0 };
+  let mouseDrag = null;
+  stage.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse') {
+      if (dragLook) mouseDrag = { x: e.clientX, y: e.clientY };
+      return;
+    }
+    e.preventDefault();
+    try { stage.setPointerCapture(e.pointerId); } catch { /* fine */ }
+    if (e.clientX < innerWidth / 2 && joy.id === null) {
+      joy.id = e.pointerId;
+      joy.ox = e.clientX;
+      joy.oy = e.clientY;
+      joy.x = joy.y = 0;
+      joyEl.style.left = e.clientX + 'px';
+      joyEl.style.top = e.clientY + 'px';
+      joyKnob.style.transform = '';
+      joyEl.hidden = false;
+    } else if (lookTouch.id === null) {
+      Object.assign(lookTouch, { id: e.pointerId, lx: e.clientX, ly: e.clientY });
+    }
+  });
+  stage.addEventListener('pointermove', e => {
+    if (e.pointerType === 'mouse') {
+      if (mouseDrag && e.buttons) {
+        player.yaw -= (e.clientX - mouseDrag.x) * 0.004;
+        player.pitch = clamp(player.pitch - (e.clientY - mouseDrag.y) * 0.004, -1.25, 1.25);
+        mouseDrag = { x: e.clientX, y: e.clientY };
+      }
+      return;
+    }
+    if (e.pointerId === joy.id) {
+      let dx = e.clientX - joy.ox;
+      let dy = e.clientY - joy.oy;
+      const d = Math.hypot(dx, dy);
+      if (d > 50) { dx = (dx / d) * 50; dy = (dy / d) * 50; }
+      joy.x = dx / 50;
+      joy.y = -dy / 50;
+      joyKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+    } else if (e.pointerId === lookTouch.id) {
+      player.yaw -= (e.clientX - lookTouch.lx) * 0.006;
+      player.pitch = clamp(player.pitch - (e.clientY - lookTouch.ly) * 0.006, -1.25, 1.25);
+      lookTouch.lx = e.clientX;
+      lookTouch.ly = e.clientY;
+    }
+  });
+  function endTouch(e) {
+    if (e.pointerType === 'mouse') { mouseDrag = null; return; }
+    if (e.pointerId === joy.id) {
+      joy.id = null;
+      joy.x = joy.y = 0;
+      joyEl.hidden = true;
+    } else if (e.pointerId === lookTouch.id) {
+      lookTouch.id = null;
+    }
+  }
+  stage.addEventListener('pointerup', endTouch);
+  stage.addEventListener('pointercancel', endTouch);
+
+  // ---------- leaving ----------
+  let leaving = false;
+  function leave() {
+    if (leaving) return;
+    leaving = true;
+    keys.clear();
+    if (locked()) document.exitPointerLock();
+    store.set(KEY_ROOMS, String(lifetime + visited.size));
+    say('you stopped looking for the way out. that was the way out.', 5000);
+    setTimeout(() => (window.CIZOLE_GO ? window.CIZOLE_GO('../') : location.assign('../')), 900);
+  }
+
+  // ---------- when you leave the tab (see ../assets/away.js) ----------
+  addEventListener('cizole:return', e => {
+    const away = (e.detail && e.detail.awayMs) ?? 0;
+    if (away < 2500 || leaving) return;
+    setPower(false, false);
+    powerTimers.push(setTimeout(() => {
+      setPower(true);
+      // and now there's something in the room with you
+      const c = cells.get(key(curCx, curCz));
+      if (!c) return;
+      const kind = pick(STRAYS.filter(k => k !== 'door015'));
+      const a = player.yaw + Math.PI + rnd(-0.6, 0.6);
+      const [x, z] = collide(player.x - Math.sin(a) * 2.2, player.z - Math.cos(a) * 2.2);
+      const stray = buildStray(kind, x, z, rnd(0, Math.PI * 2));
+      c.group.add(stray);
+      c.strays.push({ kind, x, z, said: true, group: stray });
+      setTimeout(() => say("that wasn't there. it is now. it doesn't belong either."), 1800);
+    }, 2000));
+  });
+  addEventListener('pageshow', e => {
+    if (!e.persisted) return;
+    leaving = false;
+    say('back in the backrooms. the door is gone. of course it is.');
+  });
+
+  // ---------- the loop ----------
+  const startedAt = performance.now();
+  let lastMoveAt = performance.now();
+
+  function update(dt, now) {
+    // walking
+    let f = 0, s = 0, turn = 0;
+    if (keys.has('w') || keys.has('arrowup')) f += 1;
+    if (keys.has('s') || keys.has('arrowdown')) f -= 1;
+    if (keys.has('a')) s -= 1;
+    if (keys.has('d')) s += 1;
+    if (keys.has('arrowleft')) turn += 1;
+    if (keys.has('arrowright')) turn -= 1;
+    f += joy.y;
+    s += joy.x;
+    if (leaving) f = s = turn = 0;
+    player.yaw += turn * 1.9 * dt;
+    const speed = keys.has('shift') ? 4.2 : 2.6;
+    const mag = Math.hypot(f, s);
+    if (mag > 1) { f /= mag; s /= mag; }
+    const sin = Math.sin(player.yaw), cos = Math.cos(player.yaw);
+    const tvx = (-sin * f + cos * s) * speed;
+    const tvz = (-cos * f - sin * s) * speed;
+    const k = Math.min(1, dt * 10);
+    player.vx += (tvx - player.vx) * k;
+    player.vz += (tvz - player.vz) * k;
+    [player.x, player.z] = collide(player.x + player.vx * dt, player.z + player.vz * dt);
+    const moving = Math.hypot(player.vx, player.vz) > 0.25;
+    if (moving) {
+      lastMoveAt = now;
+      stillSince = now;
+      player.bob += dt * 9;
+      if (!hint.classList.contains('gone') && !coarse && locked()) hint.classList.add('gone');
+    }
+    const looked = Math.abs(player.yaw - lastYaw) > 0.002 || Math.abs(player.pitch - lastPitch) > 0.002;
+    if (looked) lookStillSince = now;
+    lastYaw = player.yaw;
+    lastPitch = player.pitch;
+    const bob = reduceMotion ? 0 : Math.sin(player.bob) * 0.025 * Math.min(1, Math.hypot(player.vx, player.vz) / 2.6);
+    camera.position.set(player.x, EYE + bob, player.z);
+    camera.rotation.set(player.pitch, player.yaw, 0);
+
+    // which room
+    const cx = Math.round(player.x / CELL), cz = Math.round(player.z / CELL);
+    if (cx !== curCx || cz !== curCz) {
+      curCx = cx;
+      curCz = cz;
+      ensureCells();
+      const k = key(cx, cz);
+      if (!visited.has(k)) {
+        visited.add(k);
+        roomsEl.textContent = visited.size;
+        const line = MILESTONES.get(visited.size);
+        if (line) say(line, 5000);
+      }
+    }
+
+    // standing still
+    if (!stillSaid && now - stillSince > 8000 && visited.size > 2) {
+      stillSaid = true;
+      say("the hum is louder when you stop. it isn't. you just hear it now.");
+    }
+    if (now > nextAmbient && !leaving) {
+      nextAmbient = now + rnd(40000, 70000);
+      say(pick(AMBIENT));
+    }
+
+    // the way out is to stop looking for it
+    const still = Math.min(now - stillSince, now - lookStillSince);
+    if (exit.state === 'none' && !leaving && visited.size >= STILL_ROOMS && still > STILL_MS) offerExit();
+    if (exit.group) {
+      const dist = Math.hypot(exit.x - player.x, exit.z - player.z);
+      if (exit.state === 'fading-in') {
+        exit.t = Math.min(1, exit.t + dt / (reduceMotion ? 0.3 : 1.6));
+        if (moving || looked) loseExit('it was there. you moved.');
+        else if (exit.t >= 1) { exit.state = 'solid'; exit.since = now; }
+      } else if (exit.state === 'solid') {
+        exit.minDist = Math.min(exit.minDist, dist);
+        const facingAway = Math.abs(Math.atan2(Math.sin(player.yaw - exit.yaw), Math.cos(player.yaw - exit.yaw))) > Math.PI / 2;
+        if (dist < 0.9) leave();
+        else if (dist > exit.minDist + 1.2 || facingAway) loseExit('it was there. you moved.');
+        else if (now - exit.since > 20000) loseExit('the door got tired of waiting. so did you, probably.');
+      } else if (exit.state === 'fading-out') {
+        exit.t = Math.max(0, exit.t - dt / 0.6);
+        if (exit.t <= 0) removeExit();
+      }
+      for (const m of exit.mats) m.opacity = exit.t;
+    }
+
+    // fixtures, and the three real lights that follow the nearest lit ones
+    let nearLevel = 0;
+    const lit = [];
+    for (const c of cells.values()) {
+      for (const fx of c.fixtures) {
+        let level = fx.power * fx.base;
+        if (fx.starting > 0) {
+          fx.starting -= dt;
+          if (Math.random() < 0.5) level *= 0.15;
+        }
+        if (fx.faulty && fx.power > 0) {
+          fx.timer -= dt;
+          if (fx.timer <= 0) {
+            fx.flick = !fx.flick;
+            fx.timer = fx.flick ? rnd(0.03, 0.16) : rnd(0.5, 6);
+          }
+          if (fx.flick) level *= 0.1;
+        }
+        fx.level = level;
+        fx.mat.color.copy(PANEL_OFF).lerp(PANEL_ON, level);
+        if (fx.base > 0) lit.push(fx);
+      }
+    }
+    lit.sort((a, b) => Math.hypot(a.x - player.x, a.z - player.z) - Math.hypot(b.x - player.x, b.z - player.z));
+    lamps.forEach((l, i) => {
+      const fx = lit[i];
+      if (!fx) { l.intensity = 0; return; }
+      l.position.set(fx.x, H - 0.35, fx.z);
+      l.intensity = LAMP_INTENSITY * fx.level;
+      if (i === 0) nearLevel = fx.level;
+    });
+    if (humGain && actx) humGain.gain.setTargetAtTime(0.35 + nearLevel * 0.65, actx.currentTime, 0.05);
+
+    // things that don't belong, when you get close
+    for (let x = curCx - 1; x <= curCx + 1; x++) {
+      for (let z = curCz - 1; z <= curCz + 1; z++) {
+        const c = cells.get(key(x, z));
+        if (!c) continue;
+        for (const st of c.strays) {
+          if (st.said) continue;
+          if (Math.hypot(st.x - player.x, st.z - player.z) < 2.6) {
+            st.said = true;
+            say(STRAY_LINES[st.kind], 5000);
+          }
+        }
+      }
+    }
+
+    // the clock
+    const secs = Math.floor((now - startedAt) / 1000);
+    timeEl.textContent = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
+  }
+
+  let running = false;
+  let rafId = 0;
+  let lastT = 0;
+  function loop(t) {
+    rafId = requestAnimationFrame(loop);
+    const dt = Math.min(0.05, Math.max(0, (t - lastT) / 1000));
+    lastT = t;
+    update(dt, t);
+    renderer.render(scene, camera);
+  }
+  function start() {
+    if (running) return;
+    running = true;
+    lastT = performance.now();
+    lastMoveAt = performance.now();
+    rafId = requestAnimationFrame(loop);
+  }
+  function stop() {
+    running = false;
+    cancelAnimationFrame(rafId);
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      stop();
+      keys.clear();
+      if (actx) actx.suspend();
+    } else {
+      start();
+      if (actx && audioOn) actx.resume();
+    }
+  });
+
+  function resize() {
+    camera.aspect = innerWidth / innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+  }
+  addEventListener('resize', resize);
+  resize();
+  ensureCells();
+  if (!document.hidden) start();
+
+  setTimeout(() => say(lifetime > 0
+    ? `the backrooms. you've been in ${lifetime} of these before. they don't remember you.`
+    : 'the backrooms. the doorways go to more of this.'), 700);
+}
+</script>
+<script src="../assets/rooms.js"></script>
+<script src="../assets/away.js"></script>
+</body>
+</html>
