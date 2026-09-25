@@ -1,0 +1,1352 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mud room · cizole</title>
+<link rel="icon" href="../favicon.svg?v=2" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/site.css">
+<style>
+  :root {
+    --mud: #5a3d1f;
+    --mud-dark: #3d2812;
+    --wood: #8b6a45;
+    --wood-dark: #5e4630;
+    --pink: #ff2bd6;
+    --cyan: #20f0ff;
+  }
+  .page {
+    --w: max(300px, min(calc(100vw - 32px), calc((100dvh - 170px) * 1.6), 1150px));
+    padding: 56px 16px 24px;
+  }
+  .stage-wrap { width: var(--w); margin: 0 auto; }
+  .stage {
+    position: relative;
+    width: var(--w);
+    height: calc(var(--w) / 1.6);
+    overflow: hidden;
+    border-radius: 10px;
+    background: #b9b3a3;
+    container-type: size;
+    user-select: none;
+    touch-action: pan-y;
+  }
+  .marker { font-family: "Permanent Marker", cursive; }
+
+  .obj {
+    position: absolute;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
+  .obj:focus-visible, .area:focus-visible { outline: 2px solid var(--acid); outline-offset: 2px; }
+  .area { position: absolute; cursor: pointer; }
+
+  /* ---------- the room ---------- */
+  .wall {
+    position: absolute;
+    inset: 0 0 38% 0;
+    background:
+      radial-gradient(circle, rgba(0, 0, 0, 0.05) 0.1cqw, transparent 0.16cqw) 0 0 / 1.1cqw 0.9cqw,
+      linear-gradient(rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0) 20%, rgba(0, 0, 0, 0) 80%, rgba(0, 0, 0, 0.12)),
+      linear-gradient(90deg, #b3ad9c, #c1bbaa 40%, #b5ae9d);
+  }
+  .wainscot {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 40%;
+    height: 22%;
+    background:
+      repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.16) 0 0.16cqw, transparent 0.16cqw 1.9cqw, rgba(255, 255, 255, 0.12) 1.9cqw 2.05cqw, transparent 2.05cqw 3.8cqw),
+      linear-gradient(#dcd7c8, #cfc9b8);
+  }
+  .rail-trim {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 39.2%;
+    height: 1.1cqw;
+    background: linear-gradient(#efe9db, #c9c2b0);
+    box-shadow: 0 0.2cqw 0.3cqw rgba(0, 0, 0, 0.25);
+  }
+  .baseboard { position: absolute; left: 0; right: 0; top: 61%; height: 1.5cqw; background: linear-gradient(#e8e2d3, #bdb6a5); }
+  .floor {
+    position: absolute;
+    inset: 62% 0 0 0;
+    background:
+      linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0) 30%),
+      repeating-linear-gradient(90deg, #8b8f95 0 0.35cqw, transparent 0.35cqw 12cqw),
+      repeating-linear-gradient(0deg, #8b8f95 0 0.35cqw, transparent 0.35cqw 7cqw),
+      radial-gradient(circle, rgba(255, 255, 255, 0.05) 0.2cqw, transparent 0.3cqw) 0 0 / 2.3cqw 1.7cqw,
+      linear-gradient(#4f555c, #454a51);
+    touch-action: none;
+  }
+  .prints, .fx { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .prints { z-index: 5; }
+  .fx { z-index: 30; }
+
+  /* ---------- the door ---------- */
+  .door-frame {
+    position: absolute;
+    left: 3%;
+    top: 4%;
+    width: 17%;
+    height: 60%;
+    z-index: 10;
+    border: 0.8cqw solid #ece7da;
+    border-bottom: 0;
+    background: #101a2a;
+    perspective: 40cqw;
+    box-shadow: 0 0.4cqw 0.8cqw rgba(0, 0, 0, 0.3);
+  }
+  .outside {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle, rgba(255, 255, 255, 0.9) 0.12cqw, transparent 0.2cqw) 0 0 / 1.6cqw 1.3cqw,
+      radial-gradient(circle, rgba(255, 255, 255, 0.6) 0.1cqw, transparent 0.18cqw) 0.8cqw 0.6cqw / 2.1cqw 1.7cqw,
+      linear-gradient(#0b1424, #1d2b45 70%, #e9edf2 92%, #f4f6f8);
+  }
+  .door {
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, #6f8f7a, #5f7f6a);
+    box-shadow: inset 0 0 0 0.4cqw rgba(0, 0, 0, 0.12);
+    transform-origin: 0 50%;
+    transition: transform 1.1s cubic-bezier(0.3, 0.1, 0.2, 1);
+  }
+  .door.open { transform: rotateY(-88deg); }
+  .door .pane {
+    position: absolute;
+    left: 16%;
+    right: 16%;
+    top: 8%;
+    height: 34%;
+    border: 0.35cqw solid #3d5a4a;
+    background:
+      radial-gradient(circle, rgba(255, 255, 255, 0.85) 0.1cqw, transparent 0.18cqw) 0 0 / 1.4cqw 1.1cqw,
+      linear-gradient(#0b1424, #1a2842);
+  }
+  .door .panel {
+    position: absolute;
+    left: 16%;
+    right: 16%;
+    height: 20%;
+    border: 0.3cqw solid rgba(0, 0, 0, 0.18);
+    border-radius: 0.2cqw;
+  }
+  .door .panel.a { top: 50%; }
+  .door .panel.b { top: 74%; }
+  .door .knob {
+    position: absolute;
+    right: 9%;
+    top: 57%;
+    width: 1.3cqw;
+    height: 1.3cqw;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #f0d78a, #8c6a1e);
+  }
+  .door .note {
+    position: absolute;
+    left: 20%;
+    top: 46%;
+    padding: 0.1cqw 0.5cqw;
+    background: #f2e6a8;
+    color: #2a2a2a;
+    font-size: 0.85cqw;
+    transform: rotate(-4deg);
+    box-shadow: 0 0.1cqw 0.2cqw rgba(0, 0, 0, 0.3);
+    pointer-events: none;
+  }
+
+  /* thermometer */
+  .thermo { left: 21.4%; top: 9%; width: 2.2cqw; height: 12cqw; z-index: 10; }
+  .thermo .tube {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 0.8cqw;
+    height: 9.5cqw;
+    margin-left: -0.4cqw;
+    border-radius: 0.4cqw;
+    background: #e9e4d6;
+    box-shadow: inset 0 0 0 0.1cqw #8f8a7c;
+    overflow: hidden;
+  }
+  .thermo .mercury {
+    position: absolute;
+    left: 0.2cqw;
+    right: 0.2cqw;
+    bottom: 0;
+    height: 60%;
+    border-radius: 0.3cqw 0.3cqw 0 0;
+    background: #d13a2a;
+    transition: height 0.6s;
+  }
+  .thermo .bulb {
+    position: absolute;
+    left: 50%;
+    top: 8.8cqw;
+    width: 1.5cqw;
+    height: 1.5cqw;
+    margin-left: -0.75cqw;
+    border-radius: 50%;
+    background: #d13a2a;
+    box-shadow: inset 0 0 0 0.1cqw #8f8a7c;
+  }
+  .thermo .reading { position: absolute; left: -1.5cqw; right: -1.5cqw; top: 10.6cqw; color: #3b3a36; font-size: 0.85cqw; text-align: center; }
+
+  /* ---------- hooks, jackets, shelf ---------- */
+  .shelf {
+    position: absolute;
+    left: 26%;
+    top: 5%;
+    width: 46%;
+    height: 1.1cqw;
+    z-index: 10;
+    background: linear-gradient(var(--wood), var(--wood-dark));
+    box-shadow: 0 0.3cqw 0.5cqw rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+  }
+  .shelf::before, .shelf::after {
+    content: "";
+    position: absolute;
+    top: 1.1cqw;
+    width: 0.8cqw;
+    height: 2cqw;
+    background: var(--wood-dark);
+    clip-path: polygon(0 0, 100% 0, 100% 100%);
+  }
+  .shelf::before { left: 6%; }
+  .shelf::after { right: 6%; }
+  .rail {
+    position: absolute;
+    left: 26%;
+    top: 13.5%;
+    width: 46%;
+    height: 1.6cqw;
+    z-index: 10;
+    background: linear-gradient(var(--wood), var(--wood-dark));
+    box-shadow: 0 0.2cqw 0.4cqw rgba(0, 0, 0, 0.3);
+  }
+  .hook {
+    position: absolute;
+    top: 1.2cqw;
+    width: 0.6cqw;
+    height: 1.6cqw;
+    border-radius: 0 0 0.4cqw 0.4cqw;
+    background: #4a4a4e;
+  }
+  .hook::after {
+    content: "";
+    position: absolute;
+    left: -0.35cqw;
+    bottom: -0.1cqw;
+    width: 1.3cqw;
+    height: 0.5cqw;
+    border-radius: 0.3cqw;
+    background: #4a4a4e;
+  }
+
+  .jacket { z-index: 11; }
+  .jacket .body {
+    position: absolute;
+    left: 15%;
+    right: 15%;
+    top: 4%;
+    bottom: 0;
+    border-radius: 45% 45% 8% 8% / 22% 22% 6% 6%;
+    box-shadow: inset 0 -0.6cqw 0.8cqw rgba(0, 0, 0, 0.2), 0 0.4cqw 0.8cqw rgba(0, 0, 0, 0.3);
+  }
+  .jacket .sleeve {
+    position: absolute;
+    top: 8%;
+    width: 22%;
+    height: 66%;
+    border-radius: 40% 40% 30% 30% / 20% 20% 15% 15%;
+    box-shadow: inset 0 -0.4cqw 0.5cqw rgba(0, 0, 0, 0.2);
+  }
+  .jacket .sleeve.l { left: -2%; transform: rotate(6deg); }
+  .jacket .sleeve.r { right: -2%; transform: rotate(-6deg); }
+  .jacket .zip {
+    position: absolute;
+    left: 50%;
+    top: 12%;
+    bottom: 6%;
+    width: 0.25cqw;
+    margin-left: -0.125cqw;
+    background: rgba(0, 0, 0, 0.35);
+  }
+  .jacket .tag {
+    position: absolute;
+    left: 40%;
+    top: 55%;
+    width: 1.6cqw;
+    height: 1.1cqw;
+    background: #f5f0e0;
+    transform: rotate(12deg);
+    font-size: 0.45cqw;
+    color: #333;
+    text-align: center;
+    line-height: 1.1cqw;
+  }
+  .neon { left: 27%; top: 15%; width: 9.5%; height: 31%; }
+  .neon .body { background: linear-gradient(180deg, var(--pink) 0 34%, var(--cyan) 34% 67%, var(--acid) 67%); }
+  .neon .sleeve { background: linear-gradient(180deg, var(--cyan) 0 50%, var(--pink) 50%); }
+  .puffy { left: 36.5%; top: 15%; width: 9%; height: 29%; }
+  .puffy .body, .puffy .sleeve {
+    background: repeating-linear-gradient(180deg, #8f959c 0 1.4cqw, #6f757c 1.4cqw 1.65cqw);
+  }
+  .kid { left: 45.5%; top: 15%; width: 6.5%; height: 21%; }
+  .kid .body { background: linear-gradient(#f07a2a, #c95a12); }
+  .kid .sleeve { background: #d9641a; }
+
+  .beanie-hook { left: 53.5%; top: 15.5%; width: 4.6%; height: 7%; z-index: 11; }
+  .beanie-hook .dome, .stack .dome {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 78%;
+    border-radius: 50% 50% 10% 10% / 70% 70% 10% 10%;
+    background: repeating-linear-gradient(180deg, #d13a2a 0 0.6cqw, #f3ead3 0.6cqw 1.1cqw);
+    box-shadow: 0 0.2cqw 0.4cqw rgba(0, 0, 0, 0.3);
+  }
+  .beanie-hook .pom, .stack .pom {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 1.3cqw;
+    height: 1.3cqw;
+    margin-left: -0.65cqw;
+    border-radius: 50%;
+    background: #f3ead3;
+  }
+  .beanie-hook .brim, .stack .brim { position: absolute; left: 0; right: 0; bottom: 0; height: 22%; background: #a12b1e; border-radius: 0.2cqw; }
+
+  .leash { left: 62.5%; top: 15%; width: 6.5%; height: 22%; z-index: 11; }
+  .leash svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .leash.jingle svg { animation: jingle 0.5s ease-in-out; }
+  @keyframes jingle {
+    0%, 100% { transform: rotate(0); }
+    25% { transform: rotate(4deg); }
+    75% { transform: rotate(-4deg); }
+  }
+
+  .goggles { top: 1.3%; width: 7%; height: 4.6%; z-index: 11; }
+  .goggles.a { left: 29%; }
+  .goggles.b { left: 39%; }
+  .goggles .strap {
+    position: absolute;
+    left: 4%;
+    right: 4%;
+    top: 30%;
+    height: 40%;
+    border-radius: 1cqw;
+    background: #222;
+  }
+  .goggles .lens {
+    position: absolute;
+    left: 12%;
+    right: 12%;
+    top: 8%;
+    bottom: 8%;
+    border-radius: 1.4cqw / 1cqw;
+    background: linear-gradient(135deg, #ff9a3c, #d12b8a 55%, #3a1e7a);
+    box-shadow: inset 0 0 0 0.25cqw #2a2a2a, 0 0.2cqw 0.3cqw rgba(0, 0, 0, 0.3);
+  }
+  .goggles.b .lens { background: linear-gradient(135deg, #ffe66d, #c8ff3d 50%, #20b0a0); }
+  .stack { left: 52%; top: -0.4%; width: 5%; height: 6.5%; z-index: 11; }
+  .stack .dome { bottom: 40%; height: 48%; background: repeating-linear-gradient(180deg, #2f5fa7 0 0.5cqw, #dfe6f5 0.5cqw 0.9cqw); }
+  .stack .dome.two { bottom: 0; background: repeating-linear-gradient(180deg, #3d8a4c 0 0.5cqw, #e8f0d8 0.5cqw 0.9cqw); transform: rotate(-4deg); }
+  .stack .pom { top: -0.3cqw; width: 1cqw; height: 1cqw; margin-left: -0.5cqw; }
+
+  /* ---------- bench, bin, gloves ---------- */
+  .bench { left: 40%; top: 46%; width: 32%; height: 19%; z-index: 10; }
+  .bench .top {
+    position: absolute;
+    left: -2%;
+    right: -2%;
+    top: 0;
+    height: 15%;
+    border-radius: 0.3cqw;
+    background: linear-gradient(#a6875c, #8b6a45);
+    box-shadow: 0 0.4cqw 0.7cqw rgba(0, 0, 0, 0.35);
+  }
+  .bench .leg { position: absolute; top: 15%; bottom: 0; width: 6%; background: linear-gradient(90deg, #7a5c3c, #5e4630); }
+  .bench .leg.l { left: 3%; }
+  .bench .leg.r { right: 3%; }
+  .bench .low {
+    position: absolute;
+    left: 3%;
+    right: 3%;
+    top: 55%;
+    height: 9%;
+    background: linear-gradient(#8b6a45, #6a4f34);
+  }
+  .bin {
+    left: 45%;
+    top: 55.5%;
+    width: 11%;
+    height: 9%;
+    z-index: 11;
+    border-radius: 0.3cqw 0.3cqw 0.8cqw 0.8cqw;
+    background: linear-gradient(90deg, #2f5fa7, #3c74c4 40%, #2f5fa7);
+    box-shadow: inset 0 0.8cqw 0.6cqw rgba(0, 0, 0, 0.35), 0 0.3cqw 0.5cqw rgba(0, 0, 0, 0.3);
+  }
+  .bin .lbl {
+    position: absolute;
+    left: 14%;
+    right: 14%;
+    top: 34%;
+    padding: 0.15cqw 0;
+    background: #f5f0e0;
+    color: #222;
+    font-size: 0.7cqw;
+    line-height: 1.15;
+    text-align: center;
+  }
+  .bin.shake { animation: dig 0.35s ease-in-out; }
+  @keyframes dig {
+    25% { transform: translate(-0.3cqw, 0.1cqw) rotate(-2deg); }
+    75% { transform: translate(0.3cqw, 0) rotate(2deg); }
+  }
+  .glove {
+    position: absolute;
+    width: 3.2cqw;
+    height: 2.4cqw;
+    z-index: 9;
+    border-radius: 1cqw 1.2cqw 0.5cqw 0.5cqw;
+    box-shadow: 0 0.15cqw 0.25cqw rgba(0, 0, 0, 0.35);
+    cursor: pointer;
+    animation: glove-in 0.35s ease-out;
+  }
+  .glove::after {
+    content: "";
+    position: absolute;
+    left: -0.5cqw;
+    top: 0.9cqw;
+    width: 1.1cqw;
+    height: 1.3cqw;
+    border-radius: 0.5cqw;
+    background: inherit;
+  }
+  .glove.right { transform: scaleX(-1); }
+  @keyframes glove-in { from { transform: translateY(-2cqw); opacity: 0; } }
+
+  /* ---------- boot rack, dryer, puddle ---------- */
+  .rack { left: 74.5%; top: 33%; width: 22%; height: 32%; z-index: 10; }
+  .rack .bar {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 0.7cqw;
+    border-radius: 0.35cqw;
+    background: linear-gradient(#b9bcc1, #7d8188);
+    box-shadow: 0 0.2cqw 0.3cqw rgba(0, 0, 0, 0.35);
+  }
+  .rack .bar.a { top: 48%; }
+  .rack .bar.b { top: 96%; }
+  .rack .post { position: absolute; top: 0; bottom: 0; width: 0.8cqw; background: linear-gradient(90deg, #9da1a7, #6f737a); }
+  .rack .post.l { left: 4%; }
+  .rack .post.r { right: 4%; }
+  .rack .slot { position: absolute; left: 52%; top: 62%; width: 40%; color: rgba(0, 0, 0, 0.35); font-size: 0.75cqw; text-align: center; }
+  .pair { position: absolute; z-index: 12; }
+  .pair svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .ski { left: 8%; top: 8%; width: 42%; height: 40%; }
+  .snow { left: 55%; top: 6%; width: 40%; height: 42%; }
+  .tiny { left: 10%; top: 58%; width: 26%; height: 34%; }
+
+  .dryer { left: 74.5%; top: 66.5%; width: 9%; height: 10%; z-index: 10; }
+  .dryer .box {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 55%;
+    border-radius: 0.4cqw;
+    background: linear-gradient(#e9e4d6, #c4bfb1);
+    box-shadow: 0 0.3cqw 0.5cqw rgba(0, 0, 0, 0.35);
+  }
+  .dryer .tube {
+    position: absolute;
+    bottom: 50%;
+    width: 1.1cqw;
+    height: 55%;
+    border-radius: 0.5cqw 0.5cqw 0 0;
+    background: linear-gradient(90deg, #d9d4c6, #a9a497);
+  }
+  .dryer .tube.a { left: 22%; }
+  .dryer .tube.b { left: 58%; }
+  .dryer .led {
+    position: absolute;
+    right: 12%;
+    bottom: 20%;
+    width: 0.6cqw;
+    height: 0.6cqw;
+    border-radius: 50%;
+    background: #3a2a2a;
+  }
+  .dryer.on .led { background: #4be36a; box-shadow: 0 0 0.5cqw #4be36a; }
+  .dryer .sw { position: absolute; left: 12%; bottom: 14%; width: 1.4cqw; height: 0.7cqw; border-radius: 0.2cqw; background: #555; }
+  .dryer .sw::after { content: ""; position: absolute; left: 0; top: 0; width: 50%; height: 100%; border-radius: 0.2cqw; background: #222; transition: left 0.2s; }
+  .dryer.on .sw::after { left: 50%; background: #4be36a; }
+
+  .puddle {
+    left: 82%;
+    top: 69%;
+    width: 13%;
+    height: 7%;
+    z-index: 8;
+    border-radius: 50%;
+    background: radial-gradient(ellipse, rgba(120, 150, 175, 0.55), rgba(90, 120, 150, 0.35) 60%, rgba(70, 100, 130, 0) 72%);
+    transform-origin: 50% 50%;
+    cursor: pointer;
+  }
+
+  /* ---------- sign, mat, sock ---------- */
+  .sign { left: 22.5%; top: 65%; width: 6.5%; height: 17%; z-index: 12; }
+  .sign .face {
+    position: absolute;
+    left: 10%;
+    right: 10%;
+    top: 0;
+    bottom: 0;
+    background: linear-gradient(#f5d43a, #e2b81e);
+    clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  }
+  .sign .txt {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 46%;
+    color: #1b1b1b;
+    font-size: 0.85cqw;
+    font-weight: 700;
+    line-height: 1.15;
+    text-align: center;
+  }
+  .sign .foot { position: absolute; left: 0; right: 0; bottom: -0.2cqw; height: 0.5cqw; background: #b8940e; }
+  .mat {
+    left: 3.5%;
+    top: 76%;
+    width: 16.5%;
+    height: 14%;
+    z-index: 9;
+    border: 0.5cqw solid #2a231b;
+    border-radius: 0.3cqw;
+    background:
+      repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.05) 0 0.2cqw, transparent 0.2cqw 0.5cqw),
+      repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.18) 0 0.2cqw, transparent 0.2cqw 0.45cqw),
+      #5d4a35;
+    color: #e8dcc0;
+    font-size: 2cqw;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    transition: color 0.4s;
+  }
+  .stage.boots-off .mat { color: var(--acid); }
+  .sock { left: 33%; top: 86%; width: 3.6%; height: 4%; z-index: 12; }
+  .sock[hidden] { display: none; }
+  .sock svg { width: 100%; height: 100%; display: block; }
+
+  /* mud on things */
+  .mud {
+    position: absolute;
+    z-index: 3;
+    background: var(--mud);
+    opacity: 0.85;
+    pointer-events: none;
+    animation: splat 0.3s ease-out;
+  }
+  @keyframes splat { from { transform: scale(0.2); } }
+
+  /* ---------- your boots ---------- */
+  .boots {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 7cqw;
+    height: 4.2cqw;
+    z-index: 35;
+    pointer-events: none;
+    will-change: transform;
+    filter: drop-shadow(0 0.3cqw 0.3cqw rgba(0, 0, 0, 0.35));
+  }
+  .boots svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .boots.held { z-index: 36; }
+  .stage.grabbing { cursor: grabbing; }
+
+  /* ---------- hud ---------- */
+  .hud {
+    width: var(--w);
+    margin: 12px auto 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .caption { margin: 0; min-height: 2.8em; font-size: 15px; line-height: 1.4; transition: opacity 0.2s; }
+  .caption.fade { opacity: 0; }
+  .sound {
+    flex: none;
+    padding: 6px 12px;
+    border: 1px solid var(--faint);
+    border-radius: 999px;
+    background: #1a1916;
+    color: var(--dim);
+    font: 13px var(--font);
+    cursor: pointer;
+  }
+  .sound.on { border-color: var(--acid); color: var(--acid); }
+  .rotate-hint { display: none; width: var(--w); margin: 10px auto 0; color: var(--dim); font-size: 12px; }
+  @media (orientation: portrait) and (max-width: 600px) { .rotate-hint { display: block; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .door { transition: none; }
+    .leash.jingle svg { animation: none; }
+    .bin.shake { animation: none; }
+    .glove { animation: none; }
+    .mud { animation: none; }
+  }
+</style>
+</head>
+<body>
+<a class="lobby-link" href="../">&larr; lobby</a>
+
+<main class="page">
+  <div class="stage-wrap">
+    <div class="stage" id="stage">
+      <div class="wall"></div>
+      <div class="rail-trim"></div>
+      <div class="wainscot"></div>
+      <div class="baseboard"></div>
+      <div class="floor" id="floor"></div>
+      <canvas class="prints" id="prints" aria-hidden="true"></canvas>
+
+      <div class="door-frame">
+        <div class="outside"></div>
+        <button class="obj door" id="door" type="button" data-obj="door" aria-label="the door to outside">
+          <span class="pane"></span>
+          <span class="panel a"></span>
+          <span class="panel b"></span>
+          <span class="knob"></span>
+          <span class="note marker">close it. -mgmt</span>
+        </button>
+      </div>
+      <button class="obj thermo" type="button" data-obj="thermo" aria-label="thermometer">
+        <span class="tube"><span class="mercury" id="mercury"></span></span>
+        <span class="bulb"></span>
+        <span class="reading" id="reading">58&deg;f</span>
+      </button>
+
+      <div class="shelf area" data-obj="shelf" tabindex="0" role="button" aria-label="the shelf"></div>
+      <button class="obj goggles a" type="button" data-obj="goggles" aria-label="goggles"><span class="strap"></span><span class="lens"></span></button>
+      <button class="obj goggles b" type="button" data-obj="goggles2" aria-label="other goggles"><span class="strap"></span><span class="lens"></span></button>
+      <button class="obj stack" type="button" data-obj="stack" aria-label="a stack of beanies"><span class="dome"></span><span class="dome two"></span><span class="pom"></span></button>
+
+      <div class="rail" aria-hidden="true">
+        <span class="hook" style="left: 6%"></span>
+        <span class="hook" style="left: 27%"></span>
+        <span class="hook" style="left: 47%"></span>
+        <span class="hook" style="left: 64%"></span>
+        <span class="hook" style="left: 84%"></span>
+      </div>
+      <button class="obj jacket neon" type="button" data-obj="neon" aria-label="a very loud snowboard jacket">
+        <span class="sleeve l"></span><span class="sleeve r"></span><span class="body"><span class="zip"></span></span>
+      </button>
+      <button class="obj jacket puffy" type="button" data-obj="puffy" aria-label="a gray puffy jacket">
+        <span class="sleeve l"></span><span class="sleeve r"></span><span class="body"><span class="zip"></span><span class="tag">'19</span></span>
+      </button>
+      <button class="obj jacket kid" type="button" data-obj="kid" aria-label="a small jacket">
+        <span class="sleeve l"></span><span class="sleeve r"></span><span class="body"><span class="zip"></span></span>
+      </button>
+      <button class="obj beanie-hook" type="button" data-obj="beanie" aria-label="a beanie on a hook"><span class="dome"></span><span class="brim"></span><span class="pom"></span></button>
+      <button class="obj leash" id="leash" type="button" data-obj="leash" aria-label="a dog leash, no dog">
+        <svg viewBox="0 0 60 200" aria-hidden="true">
+          <path d="M30 4 v10" stroke="#3a3a3e" stroke-width="4" stroke-linecap="round"/>
+          <path d="M30 14 C10 30 50 44 30 58 C10 72 50 86 30 100 C10 114 50 128 30 142" fill="none" stroke="#b8312a" stroke-width="9" stroke-linecap="round"/>
+          <path d="M30 14 C10 30 50 44 30 58 C10 72 50 86 30 100 C10 114 50 128 30 142" fill="none" stroke="#e8463c" stroke-width="4" stroke-linecap="round"/>
+          <path d="M30 142 v18" stroke="#9a9ca3" stroke-width="5"/>
+          <path d="M22 160 h16 l4 16 h-24 z" fill="#c9ccd2" stroke="#6f737a" stroke-width="2"/>
+          <path d="M30 176 v10" stroke="#6f737a" stroke-width="4" stroke-linecap="round"/>
+        </svg>
+      </button>
+
+      <div class="bench area" data-obj="bench" tabindex="0" role="button" aria-label="the bench">
+        <span class="top"></span><span class="leg l"></span><span class="leg r"></span><span class="low"></span>
+      </div>
+      <button class="obj bin" id="bin" type="button" data-obj="bin" aria-label="a bin of gloves"><span class="lbl">gloves<br>(singles)</span></button>
+
+      <div class="rack area" id="rack" data-obj="rack" tabindex="0" role="button" aria-label="the boot rack">
+        <span class="post l"></span><span class="post r"></span><span class="bar a"></span><span class="bar b"></span>
+        <span class="slot" id="slot">yours go here</span>
+        <button class="obj pair ski" type="button" data-obj="ski" aria-label="ski boots">
+          <svg viewBox="0 0 120 70" aria-hidden="true">
+            <path d="M8 62 L8 26 Q8 14 22 12 L42 12 Q50 12 50 20 L50 40 L60 46 L60 62 Z" fill="#e8e4dc" stroke="#7a7570" stroke-width="2"/>
+            <path d="M10 30 h36 M10 40 h36" stroke="#3a6ea5" stroke-width="5"/>
+            <path d="M66 62 L66 26 Q66 14 80 12 L100 12 Q108 12 108 20 L108 40 L118 46 L118 62 Z" fill="#e8e4dc" stroke="#7a7570" stroke-width="2"/>
+            <path d="M68 30 h36 M68 40 h36" stroke="#3a6ea5" stroke-width="5"/>
+          </svg>
+        </button>
+        <button class="obj pair snow" type="button" data-obj="snowboots" aria-label="snowboard boots">
+          <svg viewBox="0 0 120 70" aria-hidden="true">
+            <path d="M6 64 L6 30 Q6 10 24 8 L40 8 Q48 8 48 18 L48 44 L58 52 L58 64 Z" fill="#2a2a2e" stroke="#111" stroke-width="2"/>
+            <path d="M14 20 L40 20 M14 30 L40 30 M14 40 L40 40" stroke="#c8ff3d" stroke-width="3" stroke-linecap="round"/>
+            <path d="M64 64 L64 30 Q64 10 82 8 L98 8 Q106 8 106 18 L106 44 L116 52 L116 64 Z" fill="#2a2a2e" stroke="#111" stroke-width="2"/>
+            <path d="M72 20 L98 20 M72 30 L98 30 M72 40 L98 40" stroke="#c8ff3d" stroke-width="3" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <button class="obj pair tiny" type="button" data-obj="tiny" aria-label="very small boots">
+          <svg viewBox="0 0 120 70" aria-hidden="true">
+            <path d="M10 62 L10 34 Q10 22 22 20 L36 20 Q44 20 44 28 L44 46 L56 52 L56 62 Z" fill="#e0453a" stroke="#8a2a22" stroke-width="2"/>
+            <path d="M64 62 L64 34 Q64 22 76 20 L90 20 Q98 20 98 28 L98 46 L110 52 L110 62 Z" fill="#e0453a" stroke="#8a2a22" stroke-width="2"/>
+          </svg>
+        </button>
+      </div>
+      <button class="obj dryer" id="dryer" type="button" data-obj="dryer" aria-label="the boot dryer">
+        <span class="tube a"></span><span class="tube b"></span><span class="box"><span class="sw"></span><span class="led"></span></span>
+      </button>
+      <div class="puddle" id="puddle" data-obj="puddle" tabindex="0" role="button" aria-label="a puddle"></div>
+
+      <button class="obj sign" type="button" data-obj="sign" aria-label="wet floor sign">
+        <span class="face"></span><span class="txt">wet<br>floor</span><span class="foot"></span>
+      </button>
+      <button class="obj mat" id="mat" type="button" data-obj="mat" aria-label="the mat"><span id="mat-text">wipe</span></button>
+      <button class="obj sock" id="sock" type="button" data-obj="sock" aria-label="a single sock" hidden>
+        <svg viewBox="0 0 60 40" aria-hidden="true">
+          <path d="M6 8 h18 v14 q0 4 4 6 l16 6 q6 2 4 8 q-2 4 -8 3 l-22 -6 q-8 -2 -10 -10 z" fill="#e9e2d0" stroke="#b9b1a0" stroke-width="2"/>
+          <path d="M6 8 h18 v6 h-18 z" fill="#c0392b"/>
+        </svg>
+      </button>
+
+      <div class="boots" id="boots" aria-hidden="true">
+        <svg viewBox="0 0 140 84">
+          <g id="boot-l">
+            <path d="M10 76 L10 36 Q10 18 30 14 L48 14 Q58 14 58 24 L58 50 L68 58 L68 76 Z" fill="#6b4a2a" stroke="#3d2812" stroke-width="3"/>
+            <path d="M10 76 h58 v-8 h-58 z" fill="#3d2812"/>
+            <path d="M18 26 L48 26 M18 36 L48 36 M18 46 L48 46" stroke="#caa26a" stroke-width="3" stroke-linecap="round"/>
+            <path d="M12 60 q10 -6 22 2 q8 6 20 -2 q6 -2 12 4 v10 h-54 z" fill="#5a3d1f" opacity="0.9"/>
+          </g>
+          <g id="boot-r">
+            <path d="M74 76 L74 36 Q74 18 94 14 L112 14 Q122 14 122 24 L122 50 L132 58 L132 76 Z" fill="#6b4a2a" stroke="#3d2812" stroke-width="3"/>
+            <path d="M74 76 h58 v-8 h-58 z" fill="#3d2812"/>
+            <path d="M82 26 L112 26 M82 36 L112 36 M82 46 L112 46" stroke="#caa26a" stroke-width="3" stroke-linecap="round"/>
+            <path d="M76 62 q12 -8 24 0 q10 6 22 -2 q6 -2 10 4 v10 h-56 z" fill="#5a3d1f" opacity="0.9"/>
+          </g>
+        </svg>
+      </div>
+
+      <canvas class="fx" id="fx" aria-hidden="true"></canvas>
+    </div>
+  </div>
+
+  <div class="hud">
+    <p class="caption" id="caption" role="status"></p>
+    <button class="sound" id="sound" type="button">sound: off</button>
+  </div>
+  <p class="rotate-hint">tip: the mud room is bigger sideways. the mud is the same size.</p>
+</main>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  const TAU = Math.PI * 2;
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const stage = $('#stage');
+  const captionEl = $('#caption');
+  const FLOOR_TOP = 0.62; // the floor starts here, as a fraction of the stage height
+
+  let captionTimer;
+  function say(text) {
+    clearTimeout(captionTimer);
+    captionEl.classList.add('fade');
+    captionTimer = setTimeout(() => {
+      captionEl.textContent = text;
+      captionEl.classList.remove('fade');
+    }, 180);
+  }
+
+  // ---------- audio: nothing exists until a click, and nothing plays until the toggle ----------
+  const audio = { ctx: null, master: null, on: false, hum: null, noise: null };
+  const soundBtn = $('#sound');
+  function initAudio() {
+    if (audio.ctx) return;
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const master = ctx.createGain();
+    master.gain.value = 0;
+    master.connect(ctx.destination);
+    const len = ctx.sampleRate * 2;
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    audio.ctx = ctx;
+    audio.master = master;
+    audio.noise = buf;
+  }
+  function noiseSource() {
+    const s = audio.ctx.createBufferSource();
+    s.buffer = audio.noise;
+    s.loop = true;
+    return s;
+  }
+  function env(g, t, peak, attack, decay) {
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(peak, t + attack);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + attack + decay);
+  }
+  const live = () => audio.on && audio.ctx;
+  function jingle() {
+    if (!live()) return;
+    const t0 = audio.ctx.currentTime;
+    [0, 0.07, 0.15, 0.26].forEach((dt, i) => {
+      const o = audio.ctx.createOscillator();
+      o.type = 'triangle';
+      o.frequency.value = rnd(2600, 4200);
+      const g = audio.ctx.createGain();
+      env(g, t0 + dt, 0.12, 0.004, 0.22 + i * 0.03);
+      o.connect(g).connect(audio.master);
+      o.start(t0 + dt);
+      o.stop(t0 + dt + 0.4);
+    });
+  }
+  function wind() {
+    if (!live()) return;
+    const t = audio.ctx.currentTime;
+    const s = noiseSource();
+    const f = audio.ctx.createBiquadFilter();
+    f.type = 'bandpass';
+    f.frequency.value = 520;
+    f.Q.value = 0.7;
+    const g = audio.ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.2, t + 0.25);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 1.8);
+    s.connect(f).connect(g).connect(audio.master);
+    s.start(t);
+    s.stop(t + 1.9);
+  }
+  function squelch() {
+    if (!live()) return;
+    const t = audio.ctx.currentTime;
+    const s = noiseSource();
+    const f = audio.ctx.createBiquadFilter();
+    f.type = 'lowpass';
+    f.frequency.value = 700;
+    const g = audio.ctx.createGain();
+    env(g, t, 0.04, 0.01, 0.09);
+    s.connect(f).connect(g).connect(audio.master);
+    s.start(t);
+    s.stop(t + 0.15);
+  }
+  function setHum(on) {
+    if (!audio.ctx) return;
+    if (on && !audio.hum) {
+      const o = audio.ctx.createOscillator();
+      o.type = 'sawtooth';
+      o.frequency.value = 88;
+      const lp = audio.ctx.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = 260;
+      const n = noiseSource();
+      const nf = audio.ctx.createBiquadFilter();
+      nf.type = 'lowpass';
+      nf.frequency.value = 600;
+      const g = audio.ctx.createGain();
+      g.gain.value = 0.0001;
+      g.gain.setTargetAtTime(0.07, audio.ctx.currentTime, 0.4);
+      const ng = audio.ctx.createGain();
+      ng.gain.value = 0.35;
+      o.connect(lp).connect(g);
+      n.connect(nf).connect(ng).connect(g);
+      g.connect(audio.master);
+      o.start();
+      n.start();
+      audio.hum = { o, n, g };
+    } else if (!on && audio.hum) {
+      const { o, n, g } = audio.hum;
+      audio.hum = null;
+      g.gain.setTargetAtTime(0.0001, audio.ctx.currentTime, 0.2);
+      setTimeout(() => { try { o.stop(); n.stop(); } catch (err) { /* already stopped */ } }, 800);
+    }
+  }
+  soundBtn.addEventListener('click', () => {
+    initAudio();
+    audio.on = !audio.on;
+    soundBtn.textContent = audio.on ? 'sound: on' : 'sound: off';
+    soundBtn.classList.toggle('on', audio.on);
+    audio.ctx.resume();
+    audio.master.gain.setTargetAtTime(audio.on ? 0.6 : 0, audio.ctx.currentTime, 0.05);
+    setHum(audio.on && dryerOn);
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (!audio.ctx) return;
+    if (document.hidden) audio.ctx.suspend();
+    else audio.ctx.resume();
+  });
+
+  // ---------- canvases ----------
+  const prints = $('#prints');
+  const fx = $('#fx');
+  const pctx = prints.getContext('2d');
+  const fctx = fx.getContext('2d');
+  let W = 0, H = 0;
+  function size() {
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    W = stage.clientWidth;
+    H = stage.clientHeight;
+    for (const [c, ctx] of [[prints, pctx], [fx, fctx]]) {
+      c.width = Math.round(W * dpr);
+      c.height = Math.round(H * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+  }
+  new ResizeObserver(size).observe(stage);
+  size();
+
+  // ---------- state ----------
+  const S = {
+    worn: true, grabbing: false,
+    pointer: { x: 0.5, y: 0.8, inside: false },
+    boots: { x: 0.14, y: 0.8 },
+    printCount: 0, lastPrint: null, foot: 0,
+    mudClicks: 0, gloves: 0,
+    doorOpen: false, temp: 58,
+    puddle: 1,
+    sockOut: false,
+  };
+  let dryerOn = false;
+
+  // ---------- boot prints on the floor ----------
+  const marks = []; // { x, y, a, foot, t } in stage fractions
+  const FADE = 45; // seconds
+  function addPrint(x, y, a, foot, age) {
+    marks.push({ x, y, a, foot, t: performance.now() / 1000 - (age || 0) });
+    if (marks.length > 400) marks.shift();
+  }
+  // rounded rects, with a plain rect for canvases that don't know roundRect yet
+  const rr = (ctx, x, y, w, h, r) => (ctx.roundRect ? ctx.roundRect(x, y, w, h, r) : ctx.rect(x, y, w, h));
+  function drawPrints() {
+    pctx.clearRect(0, 0, W, H);
+    const now = performance.now() / 1000;
+    const L = W * 0.032, B = W * 0.013;
+    for (let i = marks.length - 1; i >= 0; i--) {
+      const m = marks[i];
+      const age = now - m.t;
+      if (age > FADE) { marks.splice(i, 1); continue; }
+      const alpha = 0.6 * (1 - age / FADE);
+      pctx.save();
+      pctx.translate(m.x * W, m.y * H);
+      pctx.rotate(m.a);
+      pctx.translate(0, (m.foot ? 1 : -1) * W * 0.007);
+      pctx.fillStyle = `rgba(74, 48, 24, ${alpha.toFixed(3)})`;
+      pctx.beginPath();
+      rr(pctx, -L * 0.15, -B / 2, L * 0.65, B, B / 2); // sole
+      pctx.fill();
+      pctx.beginPath();
+      rr(pctx, -L * 0.5, -B * 0.42, L * 0.26, B * 0.84, B * 0.3); // heel
+      pctx.fill();
+      pctx.restore();
+    }
+  }
+  const TRACK_LINES = [
+    'the floor is keeping count.',
+    'another print. the floor has a lot of them now.',
+    'the mat would like a word.',
+    'you could take those off. the rack is right there.',
+    "every print is a small decision. you keep making it.",
+  ];
+  function maybePrint(x, y) {
+    if (!S.worn || S.grabbing || y < FLOOR_TOP) return;
+    const lp = S.lastPrint;
+    if (lp) {
+      const dx = (x - lp.x) * W, dy = (y - lp.y) * H;
+      if (Math.hypot(dx, dy) < W * 0.038) return;
+      addPrint(x, y, Math.atan2(dy, dx), S.foot);
+    } else {
+      addPrint(x, y, 0, S.foot);
+    }
+    S.foot ^= 1;
+    S.lastPrint = { x, y };
+    S.printCount++;
+    if (S.printCount % 2 === 0) squelch();
+    if (S.printCount % 14 === 0) say(pick(TRACK_LINES));
+    updateMat();
+  }
+  // a trail of prints along a path, for arrivals
+  function trail(from, to, n, age) {
+    for (let i = 0; i <= n; i++) {
+      const t = i / n;
+      const x = from.x + (to.x - from.x) * t + rnd(-0.008, 0.008);
+      const y = from.y + (to.y - from.y) * t + rnd(-0.01, 0.01);
+      addPrint(x, y, Math.atan2((to.y - from.y) * H, (to.x - from.x) * W), i % 2, age);
+    }
+  }
+
+  // ---------- the mat has a tone ----------
+  const matText = $('#mat-text');
+  function updateMat() {
+    if (!S.worn) { matText.textContent = 'thank you.'; return; }
+    const n = S.printCount;
+    matText.textContent = n < 12 ? 'wipe' : n < 26 ? 'wipe.' : n < 45 ? 'WIPE' : n < 75 ? 'wipe. please.' : n < 120 ? "you're not, are you." : 'fine.';
+  }
+
+  // ---------- mud on things ----------
+  function addMud(el) {
+    if (el.querySelectorAll('.mud').length >= 3) return;
+    const m = document.createElement('i');
+    m.className = 'mud';
+    const s = rnd(0.7, 1.5);
+    m.style.cssText = `left:${rnd(10, 75).toFixed(0)}%;top:${rnd(10, 75).toFixed(0)}%;width:${s.toFixed(2)}cqw;height:${(s * rnd(0.7, 1.1)).toFixed(2)}cqw;` +
+      `border-radius:${rnd(40, 65).toFixed(0)}% ${rnd(35, 60).toFixed(0)}% ${rnd(45, 65).toFixed(0)}% ${rnd(35, 55).toFixed(0)}% / ${rnd(45, 60).toFixed(0)}% ${rnd(50, 65).toFixed(0)}% ${rnd(35, 50).toFixed(0)}% ${rnd(45, 60).toFixed(0)}%`;
+    el.appendChild(m);
+  }
+
+  // ---------- your boots ----------
+  const bootsEl = $('#boots');
+  const rack = $('#rack');
+  const slotEl = $('#slot');
+  const RACK_SLOT = { x: 0.905, y: 0.585 };
+  function bootsTo(x, y, instant) {
+    const b = bootsEl.getBoundingClientRect();
+    const target = { x: x * W - b.width / 2, y: y * H - b.height / 2 };
+    if (instant || reduceMotion) { S.boots.x = target.x; S.boots.y = target.y; }
+    else {
+      S.boots.x += (target.x - S.boots.x) * 0.14;
+      S.boots.y += (target.y - S.boots.y) * 0.14;
+    }
+    bootsEl.style.transform = `translate(${S.boots.x.toFixed(1)}px, ${S.boots.y.toFixed(1)}px)${S.grabbing ? ' scale(1.15)' : ''}`;
+  }
+  function bootsOff(how) {
+    if (!S.worn) return;
+    S.worn = false;
+    S.grabbing = false;
+    stage.classList.add('boots-off');
+    stage.classList.remove('grabbing');
+    bootsEl.classList.remove('held');
+    slotEl.textContent = '';
+    S.lastPrint = null;
+    updateMat();
+    say(how === 'drop'
+      ? "boots on the rack. the floor exhales. the mat says thank you. it's the first nice thing it's said."
+      : 'you sit on the bench. the boots come off. the mat says thank you. the bench forgives nothing, but it noticed.');
+  }
+  function bootsOn() {
+    if (S.worn) return;
+    S.worn = true;
+    stage.classList.remove('boots-off');
+    slotEl.textContent = 'yours go here';
+    S.printCount = Math.max(0, S.printCount - 20);
+    updateMat();
+    say('boots on. the floor braces.');
+  }
+
+  // where the pointer is, as fractions of the stage
+  function at(e) {
+    const r = stage.getBoundingClientRect();
+    return { x: clamp((e.clientX - r.left) / r.width, 0, 1), y: clamp((e.clientY - r.top) / r.height, 0, 1) };
+  }
+  stage.addEventListener('pointermove', e => {
+    const p = at(e);
+    S.pointer.x = p.x;
+    S.pointer.y = p.y;
+    S.pointer.inside = true;
+    if (S.grabbing) return;
+    maybePrint(p.x, p.y);
+  });
+  stage.addEventListener('pointerleave', () => { S.pointer.inside = false; });
+
+  // hold anywhere on the floor to pick your boots up, then drop them on the rack
+  let hold = null;
+  stage.addEventListener('pointerdown', e => {
+    if (!S.worn || e.button !== 0 || e.target.closest('[data-obj]')) return;
+    const p = at(e);
+    if (p.y < FLOOR_TOP) return;
+    const start = { x: e.clientX, y: e.clientY, id: e.pointerId };
+    hold = setTimeout(() => {
+      hold = null;
+      S.grabbing = true;
+      stage.classList.add('grabbing');
+      bootsEl.classList.add('held');
+      try { stage.setPointerCapture(start.id); } catch (err) { /* synthetic pointer */ }
+      say("boots. in your hands. they're heavy. they're wet. the rack is over there.");
+    }, 300);
+    const cancel = ev => {
+      if (Math.hypot(ev.clientX - start.x, ev.clientY - start.y) > 10) { clearTimeout(hold); hold = null; stage.removeEventListener('pointermove', cancel); }
+    };
+    stage.addEventListener('pointermove', cancel);
+    stage.addEventListener('pointerup', () => { clearTimeout(hold); hold = null; stage.removeEventListener('pointermove', cancel); }, { once: true });
+  });
+  stage.addEventListener('pointerup', e => {
+    if (!S.grabbing) return;
+    S.grabbing = false;
+    stage.classList.remove('grabbing');
+    bootsEl.classList.remove('held');
+    const r = rack.getBoundingClientRect();
+    const pad = r.width * 0.15;
+    if (e.clientX > r.left - pad && e.clientX < r.right + pad && e.clientY > r.top - pad && e.clientY < r.bottom + pad) bootsOff('drop');
+    else say("you're still wearing them. they're on your feet. that's how boots work.");
+  });
+  stage.addEventListener('pointercancel', () => {
+    clearTimeout(hold);
+    hold = null;
+    if (S.grabbing) { S.grabbing = false; stage.classList.remove('grabbing'); bootsEl.classList.remove('held'); }
+  });
+
+  // ---------- the door, and the weather it lets in ----------
+  const door = $('#door');
+  const mercury = $('#mercury');
+  const reading = $('#reading');
+  function setDoor(open) {
+    S.doorOpen = open;
+    door.classList.toggle('open', open);
+    if (open) wind();
+  }
+  function drawTemp() {
+    mercury.style.height = `${clamp(S.temp / 80, 0.04, 1) * 100}%`;
+    reading.innerHTML = `${Math.round(S.temp)}&deg;f`;
+  }
+
+  // ---------- the boot dryer ----------
+  const dryer = $('#dryer');
+  function setDryer(on) {
+    dryerOn = on;
+    dryer.classList.toggle('on', on);
+    setHum(audio.on && on);
+  }
+
+  // ---------- particles: snow through the door, steam off the boots ----------
+  const parts = [];
+  function spawnSnow() {
+    for (let i = 0; i < (reduceMotion ? 2 : 6); i++) {
+      parts.push({ k: 'snow', x: rnd(0.04, 0.18), y: rnd(0.08, 0.6), vx: rnd(0.22, 0.6), vy: rnd(0.04, 0.22), life: rnd(1.4, 3), age: 0, r: rnd(1, 2.6) });
+    }
+  }
+  let steamAcc = 0;
+  function spawnSteam(dt) {
+    steamAcc += dt;
+    const every = reduceMotion ? 0.5 : 0.12;
+    while (steamAcc > every) {
+      steamAcc -= every;
+      parts.push({ k: 'steam', x: rnd(0.78, 0.95), y: 0.41, vx: rnd(-0.01, 0.01), vy: rnd(-0.05, -0.09), life: rnd(2, 3), age: 0, r: rnd(3, 6) });
+    }
+  }
+  function drawParts(dt) {
+    fctx.clearRect(0, 0, W, H);
+    for (let i = parts.length - 1; i >= 0; i--) {
+      const p = parts[i];
+      p.age += dt;
+      if (p.age > p.life) { parts.splice(i, 1); continue; }
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      const k = p.age / p.life;
+      if (p.k === 'snow') {
+        p.vy += 0.12 * dt;
+        p.x += Math.sin(p.age * 9) * 0.0006;
+        fctx.fillStyle = `rgba(255, 255, 255, ${(0.9 * (1 - k)).toFixed(3)})`;
+        fctx.beginPath();
+        fctx.arc(p.x * W, p.y * H, p.r, 0, TAU);
+        fctx.fill();
+      } else {
+        const r = p.r * (1 + k * 3) * (W / 900);
+        fctx.fillStyle = `rgba(255, 255, 255, ${(0.22 * (1 - k)).toFixed(3)})`;
+        fctx.beginPath();
+        fctx.arc(p.x * W, p.y * H, r, 0, TAU);
+        fctx.fill();
+      }
+    }
+  }
+
+  // ---------- everything you can click ----------
+  function cycle(lines) {
+    let i = 0;
+    return () => (i < lines.length ? lines[i++] : pick(lines));
+  }
+  const dirty = {
+    mat: cycle(["the mat says wipe. it's not a suggestion.", 'the mat has seen many boots. yours are the worst so far.', "the mat is doing its best. it's a mat.", "wipe. it's one word. it's the whole mat."]),
+    sign: cycle(["wet floor. the sign is right. the sign is always right. that's the sign's whole thing.", 'someone should move the sign. someone put it there. it\'s a stalemate.', 'caution. the floor is wet. also cold. also yours to walk on, apparently.']),
+    bench: cycle(['the bench. it was clean. it was clean for eleven minutes.', 'you sat on the bench with mud on you. the bench remembers.', 'the bench is where boots come off. hint. hint.']),
+    shelf: cycle(['the shelf. it holds the small things. the small things are the ones that get lost. so far: 2.', 'there is a lift ticket up here from a mountain that closed.']),
+    ski: cycle(["ski boots. two buckles each. it takes forty minutes to put them on. that's the sport.", "they're still wet from last time. last time was april."]),
+    snowboots: cycle(['snowboard boots. soft. laced. they smell like a season.', "the left one has a rock in it. it's been there since january. it's part of the boot now."]),
+    tiny: cycle(['very small boots. they fit nobody here anymore. they stay on the rack. that\'s the rule.', 'the small boots have been on this rack longer than the big ones. seniority.']),
+    neon: cycle(['the loud jacket. you can see it from the lift. that\'s the point.', "magenta, cyan, and a green that isn't in nature. it was on sale. it was not on sale.", "it's fine to wear it in the house. nobody said that. it's still fine."]),
+    puffy: cycle(["the gray puffy. it's the responsible one. it goes to the grocery store.", "there's a lift ticket on the zipper from 2019. it stays."]),
+    kid: cycle(['a small jacket. it fits nobody who lives here anymore. it stays on the hook. that\'s the rule.', 'the small jacket has a hot chocolate stain. the hot chocolate is also from 2019.']),
+    beanie: cycle(['a beanie. there are eleven beanies in this room. this one is the one.', 'it has a pompom. the pompom does nothing. the pompom is essential.']),
+    stack: cycle(['the beanie stack. it leans. it has leaned since october.', 'two beanies. or one beanie and a rumor.']),
+    goggles: cycle(['goggles. the lenses are scratched in the shape of one specific tree.', 'the tree was fine. the goggles were not.']),
+    goggles2: cycle(['goggles. the other pair. these are for flat light, which is always.', "the strap says 'do not touch' on the inside. nobody knows who wrote it."]),
+    puddle: cycle(["a puddle. it's from the boots. it's also from the boots you don't see. it's from all boots.", "the puddle is bigger than it was. it's not going anywhere. that's what puddles do."]),
+    sock: cycle(["a single sock. it's not yours. it might be dustin's. he'd say it isn't.", 'the sock has no partner. neither do the gloves. this room is where pairs come to end.']),
+  };
+  const clean = {
+    mat: cycle(["the mat. it says thank you now. it can't say it out loud. it's a mat.", 'the mat is at peace. that lasts until the next boots.']),
+    sign: cycle(['the sign relaxes a little. it stays up. it has seen you before.', 'wet floor. still. but you\'re in socks now. that\'s between you and the floor.']),
+    bench: cycle(['the bench. you sat here and took your boots off. the bench respects that.', 'the bench is fine. the bench is always fine when there\'s no mud.']),
+    shelf: cycle(['the shelf. up close it\'s mostly dust and one mitten clip.']),
+    ski: cycle(['ski boots. in socks they look bigger. everything looks bigger from socks.']),
+    snowboots: cycle(['snowboard boots. yours are next to them now. the rack approves of the arrangement.']),
+    tiny: cycle(['very small boots. next to yours they look like a suggestion.']),
+    neon: cycle(['the loud jacket. in socks you could try it on. nobody would know. the jacket would know.']),
+    puffy: cycle(["the gray puffy. it's warm. it's not a snowboard jacket. it doesn't claim to be."]),
+    kid: cycle(['the small jacket. it is smaller than you remember. it always is.']),
+    beanie: cycle(['a beanie. it\'s yours now. it was always yours. nobody claims beanies.']),
+    stack: cycle(['the beanie stack. you straightened it. it\'s leaning again. it leans on purpose.']),
+    goggles: cycle(['goggles. you can see the tree in the scratch if you tilt them. a specific tree.']),
+    goggles2: cycle(['goggles. these smell like a helmet. the helmet is elsewhere.']),
+    puddle: cycle(['the puddle. in socks, the puddle is your problem now. it was always your problem.']),
+    sock: cycle(["the sock. you have socks on. this could be the third. don't."]),
+  };
+  const GLOVE_COLORS = ['#c0392b', '#2f5fa7', '#3d8a4c', '#e8a33a', '#5b3d8a', '#8b6a45', '#20b0a0', '#d13a9a', '#7a7a7a', '#f07a2a', '#1e3a5f', '#b8d13a', '#a12b1e', '#3a3a3e', '#ff2bd6'];
+  function dig() {
+    const bin = $('#bin');
+    bin.classList.remove('shake');
+    void bin.offsetWidth;
+    bin.classList.add('shake');
+    const n = ++S.gloves;
+    if (n <= 15) {
+      const g = document.createElement('div');
+      g.className = 'glove' + (n === 15 ? ' right' : '');
+      g.style.background = GLOVE_COLORS[n - 1];
+      const col = (n - 1) % 7, row = Math.floor((n - 1) / 7);
+      g.style.left = `${(41 + col * 4.2 + rnd(-0.8, 0.8)).toFixed(1)}%`;
+      g.style.top = `${(67 + row * 8 + rnd(-1, 1)).toFixed(1)}%`;
+      g.style.transform = `${n === 15 ? 'scaleX(-1) ' : ''}rotate(${rnd(-30, 30).toFixed(0)}deg)`;
+      g.title = n === 15 ? 'a right glove. from somewhere else.' : 'a left glove.';
+      stage.appendChild(g);
+    }
+    if (n === 1) return 'you dig. one glove. left.';
+    if (n === 5) return 'five gloves. all left. the right ones are somewhere. together. probably laughing.';
+    if (n === 10) return 'ten. ten lefts. this is a collection now.';
+    if (n < 14) return `${n} gloves. ${n} lefts. 0 pairs.`;
+    if (n === 14) return '14 gloves. 0 pairs.';
+    if (n === 15) return "a right glove. finally. it doesn't match any of them. it's from a different bin. there is no other bin.";
+    return pick(['the bin is empty. it has been empty for a while. you kept digging. that\'s fair.', 'nothing. lint. a lift ticket. no gloves.', 'the bin has nothing left to give.']);
+  }
+  const ACT = {
+    door() {
+      setDoor(!S.doorOpen);
+      if (S.doorOpen) return pick(['the door is open. the outside is coming in. it was cold out there. it\'s cold in here now.', 'open. the snow has opinions about the floor.']);
+      return pick(['closed. the mat says thank you. the mat says a lot of things.', 'closed. the room starts to warm up. it will take a while. it always takes a while.']);
+    },
+    thermo: () => `${Math.round(S.temp)} degrees in here. ${S.doorOpen ? "the door is open. that's why." : "the door is closed. it's still cold. it's a mud room."}`,
+    dryer() {
+      setDryer(!dryerOn);
+      return dryerOn
+        ? 'the boot dryer. it hums. it will hum until the boots are dry, or forever, whichever comes first.'
+        : 'off. the boots will dry the old way. by never.';
+    },
+    leash() {
+      const el = $('#leash');
+      el.classList.remove('jingle');
+      void el.offsetWidth;
+      el.classList.add('jingle');
+      jingle();
+      return pick(['the leash. you jingle it. the dog does not come. the dog is in a different room. the dog is always in a different room.', 'jingle. nothing. the dog heard. the dog is choosing.', 'the leash has a clip. the clip has clipped many walks. today it clips air.']);
+    },
+    bin: dig,
+    rack() {
+      if (S.worn) { bootsOff('rack'); return null; }
+      return 'the rack. yours are on it. it was built for this moment. it has had the moment. it would like another.';
+    },
+    sock() { return (S.worn ? dirty : clean).sock(); },
+  };
+  const bootsBtnLine = () => { bootsOn(); return null; };
+
+  stage.addEventListener('click', e => {
+    const el = e.target.closest('[data-obj]');
+    if (!el) return;
+    const key = el.dataset.obj;
+    // your own boots on the rack: put them back on
+    if (key === 'rack' && !S.worn) {
+      const b = bootsEl.getBoundingClientRect();
+      if (e.clientX > b.left && e.clientX < b.right && e.clientY > b.top && e.clientY < b.bottom) { bootsBtnLine(); return; }
+    }
+    initAudio();
+    let line = null;
+    if (ACT[key]) line = ACT[key]();
+    else line = (S.worn ? dirty : clean)[key] ? (S.worn ? dirty : clean)[key]() : dirty[key] ? dirty[key]() : null;
+    if (S.worn && key !== 'rack' && key !== 'door' && key !== 'mat' && key !== 'puddle' && key !== 'sock' && key !== 'thermo') {
+      addMud(el);
+      S.mudClicks++;
+    }
+    if (line) say(line);
+  });
+  // divs with role=button
+  stage.addEventListener('keydown', e => {
+    const el = e.target.closest('.area, .puddle');
+    if (!el || (e.key !== 'Enter' && e.key !== ' ')) return;
+    e.preventDefault();
+    el.click();
+  });
+
+  // ---------- the puddle ----------
+  const puddle = $('#puddle');
+  function drawPuddle() {
+    puddle.style.transform = `scale(${S.puddle.toFixed(3)}, ${(0.8 + S.puddle * 0.2).toFixed(3)})`;
+  }
+
+  // ---------- back from another tab ----------
+  addEventListener('cizole:return', e => {
+    if (e.detail.awayMs < 4000) return;
+    S.puddle = Math.min(2.4, S.puddle + 0.35);
+    trail({ x: 0.12, y: 0.74 }, { x: 0.52, y: 0.82 }, 9, 2);
+    if (!S.sockOut) {
+      S.sockOut = true;
+      $('#sock').hidden = false;
+      say('someone came in while you were gone. they had boots. they left a sock.');
+    } else {
+      say('someone came in while you were gone. they had boots. again.');
+    }
+  });
+
+  // ---------- go ----------
+  // you walked in from the door
+  trail({ x: 0.12, y: 0.7 }, { x: 0.36, y: 0.84 }, 6, 12);
+  S.lastPrint = { x: 0.36, y: 0.84 };
+  bootsTo(0.38, 0.86, true);
+  drawTemp();
+  drawPuddle();
+  say('the mud room. you came in with your boots on. the floor noticed.');
+
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    // temperature
+    S.temp = S.doorOpen ? Math.max(18, S.temp - 1.1 * dt) : Math.min(58, S.temp + 0.3 * dt);
+    if (Math.abs(S.temp - (drawTemp.shown || 0)) > 0.4) { drawTemp.shown = S.temp; drawTemp(); }
+    // the puddle grows unless the dryer is on
+    S.puddle = clamp(S.puddle + (dryerOn ? -0.006 : 0.0035) * dt, 0.6, 2.4);
+    drawPuddle();
+    // your boots
+    if (S.grabbing) bootsTo(S.pointer.x, S.pointer.y);
+    else if (S.worn) bootsTo(S.pointer.inside ? S.pointer.x : S.boots.x / W + bootsEl.offsetWidth / 2 / W, S.pointer.inside ? Math.max(FLOOR_TOP + 0.05, S.pointer.y + 0.05) : S.boots.y / H + bootsEl.offsetHeight / 2 / H);
+    else bootsTo(RACK_SLOT.x, RACK_SLOT.y);
+    // weather
+    if (S.doorOpen) spawnSnow();
+    if (dryerOn) spawnSteam(dt);
+    drawParts(dt);
+    drawPrints();
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+<script src="../assets/rooms.js"></script>
+<script src="../assets/away.js"></script>
+</body>
+</html>
