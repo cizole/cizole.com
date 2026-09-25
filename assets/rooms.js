@@ -31,7 +31,11 @@
     { n: '021', slug: 'freezer', name: 'freezer', blurb: 'the door closes. they do that.' },
     { n: '022', slug: 'retro', name: 'retro gaming', blurb: 'blow on it first' },
     { n: '023', slug: 'nothing', name: 'nothing', blurb: "you weren't supposed to find this", hidden: true },
-    // 023 is the secret room for good. new rooms start at 024 and go above this line;
+    { n: '024', slug: 'mud-room', name: 'mud room', blurb: 'boots off' },
+    { n: '025', slug: 'office', name: 'office', blurb: 'this could have been an email' },
+    { n: '026', slug: 'backrooms', name: 'backrooms', blurb: 'rooms: many. exits: 0.' },
+    { n: '027', slug: 'space', name: 'space', blurb: 'gravity is off. we checked.' },
+    // 023 is the secret room for good. new rooms take the next number and go above this line;
     // the missing 023 in the lobby is the clue. about is always 999 and always last.
     { n: '999', slug: 'about', name: 'about', blurb: 'regrettably, a person' },
   ];
