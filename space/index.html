@@ -1,0 +1,1291 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>space · cizole</title>
+<link rel="icon" href="../favicon.svg?v=2" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/site.css">
+<style>
+  .page {
+    --w: max(300px, min(calc(100vw - 32px), calc((100dvh - 170px) * 1.6), 1200px));
+    width: var(--w);
+    margin: 0 auto;
+    padding: 52px 0 24px;
+  }
+
+  /* ---------- the capsule ---------- */
+  .stage {
+    position: relative;
+    width: var(--w);
+    height: calc(var(--w) / 1.6);
+    overflow: hidden;
+    border-radius: 12px;
+    background: #d9d3c4;
+    container-type: size;
+    user-select: none;
+    touch-action: none;
+  }
+  /* padded walls: a quilt of soft bumps, with panel seams */
+  .walls {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.35), rgba(0, 0, 0, 0.06) 60%, rgba(0, 0, 0, 0.14) 100%) 0 0 / 8cqw 8cqw,
+      linear-gradient(#e2dccd, #cfc8b6);
+    transition: filter 0.5s;
+  }
+  .walls::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(90deg, transparent 0 24cqw, #a8a08d 24cqw calc(24cqw + 0.4cqw), transparent calc(24cqw + 0.4cqw) 76cqw, #a8a08d 76cqw calc(76cqw + 0.4cqw), transparent 0),
+      linear-gradient(transparent 0 30cqh, #a8a08d 30cqh calc(30cqh + 0.5cqw), transparent 0);
+  }
+  .stage.dark .walls { filter: brightness(0.45); }
+  .stage.dark .panel, .stage.dark .bag, .stage.dark .hatch, .stage.dark .patch, .stage.dark .strip { filter: brightness(0.5); }
+  .stage.dark .porthole { box-shadow: 0 0 6cqw rgba(120, 170, 255, 0.35), inset 0 0 0 1.4cqw #55534d; }
+  .strip {
+    position: absolute;
+    height: 1.4cqw;
+    border-radius: 0.3cqw;
+    background: repeating-linear-gradient(90deg, #2c2822 0 0.4cqw, #4a4438 0.4cqw 0.8cqw);
+    box-shadow: 0 0.2cqw 0.3cqw rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+  }
+  .strip.a { left: 27cqw; top: 8cqw; width: 18cqw; }
+  .strip.b { left: 65.5cqw; top: 5cqw; width: 13cqw; transform: rotate(90deg); transform-origin: 0 0; }
+  .strip.c { left: 6cqw; top: 46cqw; width: 14cqw; }
+
+  .hatch {
+    position: absolute;
+    left: 78cqw;
+    top: 5cqw;
+    width: 17cqw;
+    height: 17cqw;
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 50%, #9b968a 0 30%, #7d786c 31% 60%, #6a655a 61%);
+    box-shadow: inset 0 0 0 1cqw #55534d, 0 0.6cqw 1.2cqw rgba(0, 0, 0, 0.35);
+    cursor: pointer;
+  }
+  .hatch::before {
+    /* the wheel */
+    content: "";
+    position: absolute;
+    inset: 30%;
+    border: 1.1cqw solid #c9c2ad;
+    border-radius: 50%;
+    box-shadow: 0 0 0 0.3cqw #3a3730, inset 0 0 0 0.3cqw #3a3730;
+  }
+  .hatch::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 30%;
+    width: 1.1cqw;
+    height: 40%;
+    margin-left: -0.55cqw;
+    background: #c9c2ad;
+    box-shadow: 0 0 0 0.3cqw #3a3730;
+  }
+  .hatch .sign {
+    position: absolute;
+    left: 50%;
+    bottom: -3cqw;
+    padding: 0.2cqw 0.8cqw;
+    background: #e8d9a8;
+    color: #1b1b1b;
+    font-family: "Permanent Marker", cursive;
+    font-size: max(10px, 1.3cqw);
+    white-space: nowrap;
+    transform: translateX(-50%) rotate(-3deg);
+  }
+
+  .porthole {
+    position: absolute;
+    left: 31cqw;
+    top: 3cqw;
+    width: 30cqw;
+    height: 30cqw;
+    border-radius: 50%;
+    overflow: hidden;
+    background: #04060f;
+    box-shadow: inset 0 0 0 1.4cqw #55534d, inset 0 0 0 1.9cqw #8a8577, 0 0.6cqw 1.6cqw rgba(0, 0, 0, 0.4);
+    transition: box-shadow 0.5s;
+  }
+  .porthole canvas { display: block; width: 100%; height: 100%; }
+  .porthole::after {
+    /* glass */
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.14), transparent 40%, transparent 65%, rgba(255, 255, 255, 0.06));
+    pointer-events: none;
+  }
+  .iss {
+    position: absolute;
+    left: 31cqw;
+    top: 33.6cqw;
+    width: 30cqw;
+    margin: 0;
+    color: #4a463d;
+    font-size: max(10px, 1.15cqw);
+    line-height: 1.35;
+    text-align: center;
+  }
+
+  .bag {
+    position: absolute;
+    left: 5cqw;
+    top: 10cqw;
+    width: 13cqw;
+    height: 30cqw;
+    border-radius: 6cqw 6cqw 3cqw 3cqw;
+    background: linear-gradient(90deg, #4f6b8f, #6b86a8 40%, #4a6486);
+    box-shadow: inset 0 0 0 0.4cqw #3b5270, 0 0.5cqw 1cqw rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+  }
+  .bag::before, .bag::after {
+    /* the straps holding it to the wall */
+    content: "";
+    position: absolute;
+    left: -1.5cqw;
+    right: -1.5cqw;
+    height: 1.6cqw;
+    background: #2c2822;
+    border-radius: 0.3cqw;
+  }
+  .bag::before { top: 7cqw; }
+  .bag::after { top: 20cqw; }
+  .bag .zip {
+    position: absolute;
+    left: 50%;
+    top: 3cqw;
+    bottom: 3cqw;
+    width: 0.5cqw;
+    margin-left: -0.25cqw;
+    background: repeating-linear-gradient(#2c2822 0 0.4cqw, #8aa0bb 0.4cqw 0.8cqw);
+  }
+
+  .patch {
+    position: absolute;
+    left: 20cqw;
+    top: 37cqw;
+    width: 9cqw;
+    height: 9cqw;
+    border-radius: 50%;
+    background: radial-gradient(circle, #1d2a44 0 62%, #c9a24a 63% 72%, #1d2a44 73%);
+    box-shadow: 0 0 0 0.4cqw #e8e2d2, 0 0.3cqw 0.6cqw rgba(0, 0, 0, 0.3);
+    color: #f3ead2;
+    font-size: max(9px, 1.1cqw);
+    line-height: 1.2;
+    text-align: center;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+  }
+  .patch b { display: block; font-size: 1.5cqw; }
+
+  /* ---------- the control panel ---------- */
+  .panel {
+    position: absolute;
+    right: 3cqw;
+    bottom: 6cqw;
+    width: 30cqw;
+    height: 26cqw;
+    border-radius: 1cqw;
+    background: linear-gradient(#3a3b3f, #26272b);
+    box-shadow: inset 0 0 0 0.35cqw #55565b, 0 0.6cqw 1.4cqw rgba(0, 0, 0, 0.45);
+    color: #d7d3c8;
+    font-size: 1.1cqw;
+  }
+  .panel .title { position: absolute; left: 1.6cqw; top: 1cqw; letter-spacing: 0.12em; color: #9a978e; font-size: max(9px, 1cqw); }
+  .sw {
+    position: absolute;
+    width: 2.4cqw;
+    height: 5cqw;
+    padding: 0;
+    border: 0.25cqw solid #15161a;
+    border-radius: 0.5cqw;
+    background: #4a4b50;
+    cursor: pointer;
+    font: inherit;
+    color: inherit;
+  }
+  .sw::before {
+    content: "";
+    position: absolute;
+    left: 20%;
+    width: 60%;
+    height: 40%;
+    top: 8%;
+    border-radius: 0.3cqw;
+    background: #b8b4a8;
+    transition: top 0.15s;
+  }
+  .sw.on::before { top: 52%; background: #c8ff3d; }
+  .sw .lbl { position: absolute; left: 50%; top: 105%; transform: translateX(-50%); white-space: nowrap; font-size: max(9px, 1cqw); color: #9a978e; }
+  .sw:focus-visible { outline: 2px solid var(--acid); }
+  .sw.lights { left: 2cqw; top: 4cqw; }
+  .sw.fans { left: 6.5cqw; top: 4cqw; }
+  .sw.coffee { left: 11cqw; top: 4cqw; }
+
+  .leds { position: absolute; left: 1.6cqw; top: 13cqw; display: grid; gap: 0.6cqw; }
+  .led { display: flex; align-items: center; gap: 0.7cqw; white-space: nowrap; font-size: max(9px, 1.05cqw); }
+  .led i { width: 0.9cqw; height: 0.9cqw; border-radius: 50%; background: #3f4a2a; box-shadow: 0 0 0.6cqw transparent; transition: background 0.4s, box-shadow 0.4s; }
+  .led.ok i { background: #6fd06a; box-shadow: 0 0 0.6cqw #6fd06a; }
+  .led.warn i { background: #ffb030; box-shadow: 0 0 0.6cqw #ffb030; }
+  .led.bad i { background: #ff5a4a; box-shadow: 0 0 0.6cqw #ff5a4a; }
+  .led.blink i { animation: blink 1.6s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0.25; } }
+
+  .gravity {
+    position: absolute;
+    right: 2cqw;
+    top: 3cqw;
+    width: 9cqw;
+    height: 13cqw;
+  }
+  .gravity .gl { position: absolute; left: 0; right: 0; top: 0; text-align: center; color: #ff8a6a; letter-spacing: 0.15em; font-size: max(9px, 1.1cqw); }
+  .gsw {
+    position: absolute;
+    left: 50%;
+    top: 3.2cqw;
+    width: 3.4cqw;
+    height: 7cqw;
+    margin-left: -1.7cqw;
+    padding: 0;
+    border: 0.3cqw solid #15161a;
+    border-radius: 0.6cqw;
+    background: #5a3b3b;
+    cursor: pointer;
+  }
+  .gsw::before {
+    content: "";
+    position: absolute;
+    left: 18%;
+    width: 64%;
+    height: 42%;
+    top: 6%;
+    border-radius: 0.4cqw;
+    background: #c9c2ad;
+    transition: top 0.15s;
+  }
+  .gsw.on::before { top: 52%; background: #ff5a4a; }
+  .gsw:focus-visible { outline: 2px solid var(--acid); }
+  .cover {
+    position: absolute;
+    left: 50%;
+    top: 2.6cqw;
+    width: 5cqw;
+    height: 8.2cqw;
+    margin-left: -2.5cqw;
+    padding: 0;
+    border: 0.25cqw solid #7a1f1f;
+    border-radius: 0.6cqw;
+    background: repeating-linear-gradient(135deg, rgba(255, 220, 80, 0.55) 0 0.8cqw, rgba(180, 30, 30, 0.75) 0.8cqw 1.6cqw);
+    transform-origin: 50% 0;
+    transition: transform 0.35s cubic-bezier(0.3, 1.3, 0.5, 1);
+    cursor: pointer;
+    color: #fff;
+    font: 700 1cqw var(--font);
+  }
+  .cover.open { transform: perspective(30cqw) rotateX(-135deg); }
+  .cover:focus-visible { outline: 2px solid var(--acid); }
+  .gravity .count { position: absolute; left: -2cqw; right: -2cqw; top: 11.4cqw; text-align: center; color: #9a978e; font-size: max(9px, 0.95cqw); white-space: nowrap; }
+
+  /* the drifting things live on this canvas, above everything */
+  #things { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+
+  /* ---------- below the capsule ---------- */
+  .caption-box { position: relative; height: 3.2em; margin: 14px 0 0; font-size: 15px; line-height: 1.4; }
+  .caption { position: absolute; left: 0; right: 0; top: 0; margin: 0; will-change: transform; }
+  .controls { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 6px; color: var(--dim); font-size: 12px; }
+  .controls .hint { flex: 1; }
+  .pill {
+    padding: 6px 12px;
+    border: 1px solid #34312b;
+    border-radius: 999px;
+    background: #151412;
+    color: var(--dim);
+    font: 13px var(--font);
+    cursor: pointer;
+  }
+  .pill:hover, .pill.on { border-color: var(--acid); color: var(--acid); }
+  .pill[hidden] { display: none; }
+  .rotate-hint { display: none; margin: 10px 0 0; color: var(--dim); font-size: 12px; }
+  @media (orientation: portrait) and (max-width: 600px) {
+    .rotate-hint { display: block; }
+  }
+
+  /* ---------- the mission log ---------- */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: grid;
+    place-items: center;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.6);
+  }
+  .overlay[hidden] { display: none; }
+  .clipboard {
+    position: relative;
+    width: min(440px, 100%);
+    max-height: calc(100vh - 32px);
+    overflow: auto;
+    padding: 34px 22px 22px;
+    border-radius: 6px;
+    background: #6b4f33;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  }
+  .clipboard::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 10px;
+    width: 90px;
+    height: 16px;
+    margin-left: -45px;
+    border-radius: 4px;
+    background: #9a978e;
+    box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.3);
+  }
+  .paper { padding: 16px 16px 18px; background: #f3eee2; color: #1d1b17; font-size: 13px; line-height: 1.5; }
+  .paper h2 { margin: 0 0 10px; font-size: 14px; letter-spacing: 0.12em; text-transform: uppercase; color: #5d584d; }
+  .paper ol { margin: 0; padding-left: 1.2em; }
+  .paper li { margin: 4px 0; }
+  .paper li.new { color: #7a3a31; }
+  .close {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    padding: 4px 10px;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.35);
+    color: #f3eee2;
+    font: 12px var(--font);
+    cursor: pointer;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cover { transition: none; }
+    .led.blink i { animation: none; }
+  }
+</style>
+</head>
+<body>
+<a class="lobby-link" href="../">&larr; lobby</a>
+
+<main class="page">
+  <div class="stage" id="stage">
+    <div class="walls"></div>
+    <div class="strip a" data-obj="strip"></div>
+    <div class="strip b" data-obj="strip"></div>
+    <div class="strip c" data-obj="strip"></div>
+    <div class="hatch" data-obj="hatch" title="the hatch"><span class="sign">keep closed. all of it.</span></div>
+    <div class="porthole"><canvas id="porthole" width="300" height="300" aria-label="a porthole with the earth going by"></canvas></div>
+    <p class="iss" id="iss">finding the station...</p>
+    <div class="bag" data-obj="bag" title="sleeping bag"><span class="zip"></span></div>
+    <div class="patch" data-obj="patch"><span><b>CZ-1</b>mostly orbital</span></div>
+
+    <div class="panel">
+      <span class="title">CZ-1 · CONTROLS</span>
+      <button class="sw lights" type="button" data-sw="lights" aria-pressed="false"><span class="lbl">lights</span></button>
+      <button class="sw fans on" type="button" data-sw="fans" aria-pressed="true"><span class="lbl">fans</span></button>
+      <button class="sw coffee" type="button" data-sw="coffee" aria-pressed="false"><span class="lbl">coffee</span></button>
+      <div class="leds">
+        <div class="led ok"><i></i>oxygen: fine. stop asking.</div>
+        <div class="led warn" id="led-snacks"><i></i>snacks: low</div>
+        <div class="led ok blink"><i></i>orbit: yes</div>
+      </div>
+      <div class="gravity">
+        <span class="gl">GRAVITY</span>
+        <button class="gsw" id="gsw" type="button" aria-label="gravity switch" aria-pressed="false"></button>
+        <button class="cover" id="cover" type="button" aria-label="safety cover">lift</button>
+        <span class="count" id="gcount">gravity events: 0</span>
+      </div>
+    </div>
+
+    <canvas id="things" aria-label="things drifting around the capsule: a pen, a wrench, water, snacks, a sock, the mission log"></canvas>
+  </div>
+
+  <div class="caption-box"><p class="caption" id="caption" role="status"></p></div>
+  <div class="controls">
+    <span class="hint">drag things. throw them. tap the clipboard for the log. the gravity switch is under the cover.</span>
+    <button class="pill" id="tilt" type="button" hidden>enable tilt</button>
+    <button class="pill" id="sound" type="button">sound: off</button>
+  </div>
+  <p class="rotate-hint">tip: the capsule is bigger sideways. so is space.</p>
+</main>
+
+<div class="overlay" id="log" hidden>
+  <div class="clipboard" role="dialog" aria-label="mission log">
+    <button class="close" id="log-close" type="button">close</button>
+    <div class="paper">
+      <h2>mission log · CZ-1</h2>
+      <ol id="log-entries"></ol>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const TAU = Math.PI * 2;
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const coarse = matchMedia('(pointer: coarse)').matches;
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch (err) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (err) { /* storage off */ } },
+  };
+
+  // the capsule in logical units; everything scales to the stage's real size
+  const W = 1000, H = 625, PAD = 14;
+  const stage = $('#stage');
+  const canvas = $('#things');
+  const g = canvas.getContext('2d');
+  let scale = 1, dpr = 1, stageRect = { left: 0, top: 0, width: W, height: H };
+
+  function resize() {
+    stageRect = stage.getBoundingClientRect();
+    scale = stageRect.width / W;
+    dpr = Math.min(devicePixelRatio || 1, 2);
+    canvas.width = Math.round(stageRect.width * dpr);
+    canvas.height = Math.round(stageRect.height * dpr);
+  }
+  addEventListener('resize', resize);
+  resize();
+
+  // ---------- captions ----------
+  const captionEl = $('#caption');
+  let lastSay = 0;
+  function say(text) {
+    captionEl.textContent = text;
+    lastSay = performance.now();
+  }
+
+  // ---------- the mission log ----------
+  const LOG = [
+    'day 12. arrived. the pen was already missing.',
+    'day 30. taught the water to stay in one piece. it did not listen.',
+    'day 41. the pen is still missing. it is above me.',
+    'day 44. ate the last of the good snacks. mission proceeds.',
+    'day 47. gravity was turned on by accident. nobody is saying who.',
+    'day 49. found a sock. nobody here owns a sock.',
+    'day 51. the station passed overhead. waved. it did not wave back. it was busy.',
+  ];
+  let logDay = 52;
+  const logList = $('#log-entries');
+  function renderLog() {
+    logList.textContent = '';
+    for (const line of LOG) {
+      const li = document.createElement('li');
+      li.textContent = line;
+      if (line.startsWith('day ' + (logDay - 1)) && LOG.indexOf(line) >= 7) li.className = 'new';
+      logList.appendChild(li);
+    }
+  }
+  function logEntry(text) {
+    LOG.push(`day ${logDay++}. ${text}`);
+    if (!$('#log').hidden) renderLog();
+  }
+  function openLog() {
+    renderLog();
+    $('#log').hidden = false;
+    $('#log-close').focus();
+  }
+  function closeLog() { $('#log').hidden = true; }
+  $('#log-close').addEventListener('click', closeLog);
+  $('#log').addEventListener('click', e => { if (e.target === $('#log')) closeLog(); });
+  addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#log').hidden) closeLog(); });
+
+  // ---------- sound ----------
+  const sound = (() => {
+    const btn = $('#sound');
+    let ctx = null;
+    let on = false;
+    function ensure() {
+      if (!ctx) ctx = new AudioContext();
+      if (ctx.state === 'suspended') ctx.resume();
+    }
+    function noise(t, dur, freq, gain, type = 'bandpass') {
+      const len = Math.ceil(ctx.sampleRate * dur);
+      const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      const f = ctx.createBiquadFilter();
+      f.type = type;
+      f.frequency.value = freq;
+      f.Q.value = 1.2;
+      const gn = ctx.createGain();
+      gn.gain.setValueAtTime(gain, t);
+      gn.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      src.connect(f).connect(gn).connect(ctx.destination);
+      src.start(t);
+      src.stop(t + dur + 0.02);
+    }
+    function thud(t, freq, gain) {
+      const o = ctx.createOscillator();
+      const gn = ctx.createGain();
+      o.frequency.setValueAtTime(freq, t);
+      o.frequency.exponentialRampToValueAtTime(freq * 0.4, t + 0.12);
+      gn.gain.setValueAtTime(gain, t);
+      gn.gain.exponentialRampToValueAtTime(0.0001, t + 0.2);
+      o.connect(gn).connect(ctx.destination);
+      o.start(t);
+      o.stop(t + 0.25);
+    }
+    btn.addEventListener('click', () => {
+      on = !on;
+      btn.textContent = on ? 'sound: on' : 'sound: off';
+      btn.classList.toggle('on', on);
+      if (on) ensure();
+      else if (ctx) ctx.suspend();
+    });
+    document.addEventListener('visibilitychange', () => {
+      if (!ctx) return;
+      if (document.hidden) ctx.suspend();
+      else if (on) ctx.resume();
+    });
+    return {
+      click() { if (!on) return; ensure(); const t = ctx.currentTime; thud(t, 900, 0.08); },
+      clatter() {
+        if (!on) return;
+        ensure();
+        const t = ctx.currentTime;
+        for (let i = 0; i < 11; i++) noise(t + Math.random() * 0.7, 0.05 + Math.random() * 0.08, 900 + Math.random() * 2500, 0.18);
+        for (let i = 0; i < 4; i++) thud(t + 0.05 + Math.random() * 0.6, 80 + Math.random() * 90, 0.35);
+      },
+      splat() { if (!on) return; ensure(); noise(ctx.currentTime, 0.16, 500, 0.22, 'lowpass'); },
+      bump(v) { if (!on) return; ensure(); noise(ctx.currentTime, 0.04, 1200, clamp(v / 900, 0.02, 0.12)); },
+      lift() { if (!on) return; ensure(); const t = ctx.currentTime; for (let i = 0; i < 3; i++) thud(t + i * 0.12, 220 + i * 60, 0.05); },
+    };
+  })();
+
+  // ---------- the things ----------
+  const KINDS = {
+    pen: { r: 16, m: 0.6, hard: true, line: 'the pen. it has been missing for 41 days. it is right there.' },
+    wrench: { r: 24, m: 3, hard: true, line: 'a wrench. for the one bolt. the bolt is fine. the wrench worries.' },
+    snacks: { r: 26, m: 1, line: 'the last bag of snacks. do not throw it. the bag is fragile. so is the mission.' },
+    toothbrush: { r: 16, m: 0.5, hard: true, line: 'a toothbrush. it drifts past twice a day, like the sun.' },
+    checklist: { r: 30, m: 1.5, hard: true, line: 'the checklist. item 1: find the pen. item 2: see item 1.' },
+    sock: { r: 18, m: 0.4, line: "a single sock. dustin's, probably. it has been everywhere." },
+    log: { r: 30, m: 1.5, hard: true, line: 'the mission log. tap it to read it.' },
+    water: { r: 22, m: 1.2, water: true, line: "a ball of water. it's holding together out of habit." },
+    crumb: { r: 2.5, m: 0.02, crumb: true, line: 'a crumb. one of many. they were snacks once.' },
+  };
+  const bodies = [];
+  function make(kind, x, y) {
+    const k = KINDS[kind];
+    const b = {
+      kind, x, y, r: k.r, m: k.m, hard: !!k.hard, water: !!k.water, crumb: !!k.crumb,
+      vx: (Math.random() - 0.5) * 40, vy: (Math.random() - 0.5) * 40,
+      a: Math.random() * TAU, va: (Math.random() - 0.5) * 0.8,
+      seed: Math.random() * TAU, wob: 0, wobT: 0, puddle: false, held: false, rest: 0,
+    };
+    bodies.push(b);
+    return b;
+  }
+  function seedRoom() {
+    const spots = [[150, 300], [330, 480], [520, 200], [640, 470], [420, 330], [230, 160], [760, 180], [560, 560]];
+    ['pen', 'wrench', 'water', 'snacks', 'toothbrush', 'checklist', 'sock', 'log'].forEach((k, i) => make(k, spots[i][0], spots[i][1]));
+    for (let i = 0; i < 16; i++) make('crumb', 200 + Math.random() * 600, 100 + Math.random() * 400);
+  }
+  seedRoom();
+
+  // ---------- gravity, tilt, fans ----------
+  const G = 1500;
+  const gravity = { on: false, count: parseInt(store.get('cizole.space.gravity'), 10) || 0 };
+  const tilt = { x: 0, y: 0, enabled: false };
+  let fans = true;
+  let time = 0;
+
+  // ---------- physics ----------
+  const waterCount = () => bodies.filter(b => b.water).length;
+  let lastWaterSay = 0;
+  let lastBumpSound = 0;
+  let snacksOpen = false;
+
+  function stepBody(b, dt) {
+    if (b.held) return;
+    if (gravity.on) {
+      if (b.puddle) { b.vx = 0; b.vy = 0; b.y = H - PAD - b.r * 0.35; return; }
+      b.vy += G * dt;
+      const damp = Math.pow(0.999, dt * 60);
+      b.vx *= damp; b.vy *= damp;
+    } else {
+      b.vx += tilt.x * dt;
+      b.vy += tilt.y * dt;
+      if (fans && !reduceMotion) {
+        b.vx += Math.sin(time * 0.31 + b.seed) * 5 * dt;
+        b.vy += Math.cos(time * 0.27 + b.seed * 1.3) * 5 * dt;
+      }
+      const damp = Math.pow(0.994, dt * 60);
+      b.vx *= damp; b.vy *= damp;
+      const floor = reduceMotion ? 4 : 9;
+      const sp = Math.hypot(b.vx, b.vy);
+      if (sp < floor && sp > 0.01 && !b.crumb) { b.vx *= floor / sp; b.vy *= floor / sp; }
+      b.va *= Math.pow(0.995, dt * 60);
+    }
+    const max = 1400;
+    const sp = Math.hypot(b.vx, b.vy);
+    if (sp > max) { b.vx *= max / sp; b.vy *= max / sp; }
+    b.x += b.vx * dt;
+    b.y += b.vy * dt;
+    b.a += b.va * dt;
+    // the walls are padded
+    const rest = gravity.on ? 0.32 : 0.62;
+    if (b.x < PAD + b.r) { b.x = PAD + b.r; if (b.vx < 0) { b.vx = -b.vx * rest; b.va *= 0.7; } }
+    if (b.x > W - PAD - b.r) { b.x = W - PAD - b.r; if (b.vx > 0) { b.vx = -b.vx * rest; b.va *= 0.7; } }
+    if (b.y < PAD + b.r) { b.y = PAD + b.r; if (b.vy < 0) { b.vy = -b.vy * rest; b.va *= 0.7; } }
+    if (b.y > H - PAD - b.r) {
+      b.y = H - PAD - b.r;
+      if (b.vy > 0) {
+        if (gravity.on && b.water && b.vy > 90 && !b.puddle) splat(b);
+        if (gravity.on && b.vy > 140 && !b.crumb && performance.now() - lastBumpSound > 60) { lastBumpSound = performance.now(); sound.bump(b.vy); }
+        b.vy = -b.vy * rest;
+        if (gravity.on && Math.abs(b.vy) < 40) b.vy = 0;
+      }
+      if (gravity.on) { b.vx *= Math.pow(0.86, dt * 60); b.va *= Math.pow(0.86, dt * 60); if (Math.abs(b.vx) < 3) b.vx = 0; if (Math.abs(b.va) < 0.05) b.va = 0; }
+    }
+  }
+
+  function collide(a, b) {
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const dist = Math.hypot(dx, dy) || 0.001;
+    const min = a.r + b.r;
+    if (dist >= min) return;
+    const nx = dx / dist, ny = dy / dist;
+    const overlap = min - dist;
+    const ma = a.held ? 1e9 : a.m, mb = b.held ? 1e9 : b.m;
+    const total = ma + mb;
+    if (!a.held) { a.x -= nx * overlap * (mb / total); a.y -= ny * overlap * (mb / total); }
+    if (!b.held) { b.x += nx * overlap * (ma / total); b.y += ny * overlap * (ma / total); }
+    const rvx = b.vx - a.vx, rvy = b.vy - a.vy;
+    const vn = rvx * nx + rvy * ny;
+    if (vn > 0) return;
+    // water and water: they'd rather be one thing
+    if (a.water && b.water && !a.puddle && !b.puddle && Math.abs(vn) < 140) { merge(a, b); return; }
+    // water and something hard, hard enough: it comes apart
+    const hitter = a.water ? b : b.water ? a : null;
+    const wat = a.water ? a : b.water ? b : null;
+    if (wat && hitter && hitter.hard && !wat.puddle && Math.abs(vn) > 240 && wat.r >= 13 && waterCount() < 8) { split(wat, nx, ny, hitter); }
+    const e = (a.water || b.water) ? 0.25 : (a.crumb || b.crumb) ? 0.4 : 0.55;
+    const j = -(1 + e) * vn / (1 / ma + 1 / mb);
+    if (!a.held) { a.vx -= j / ma * nx; a.vy -= j / ma * ny; a.va += (Math.random() - 0.5) * 0.4; }
+    if (!b.held) { b.vx += j / mb * nx; b.vy += j / mb * ny; b.va += (Math.random() - 0.5) * 0.4; }
+    if (wat) { wat.wob = 1; }
+    if (!a.crumb && !b.crumb && Math.abs(vn) > 160 && performance.now() - lastBumpSound > 60) { lastBumpSound = performance.now(); sound.bump(Math.abs(vn)); }
+    // the snack bag is not built for this
+    const bag = a.kind === 'snacks' ? a : b.kind === 'snacks' ? b : null;
+    if (bag && !snacksOpen && Math.abs(vn) > 520 && !(a.crumb || b.crumb)) openSnacks(bag);
+  }
+
+  function split(w, nx, ny, hitter) {
+    const r = w.r / Math.SQRT2;
+    const tx = -ny, ty = nx;
+    const i = bodies.indexOf(w);
+    if (i >= 0) bodies.splice(i, 1);
+    for (const s of [1, -1]) {
+      const c = make('water', w.x + tx * (r + 3) * s, w.y + ty * (r + 3) * s);
+      c.r = r;
+      c.m = w.m / 2;
+      c.vx = w.vx + tx * 70 * s;
+      c.vy = w.vy + ty * 70 * s;
+      c.wob = 1;
+    }
+    if (performance.now() - lastWaterSay > 6000) {
+      lastWaterSay = performance.now();
+      say(pick(['the water has split. both halves are still water. that\'s how it works.', `the ${hitter.kind} went through the water. the water is now plural.`, 'two waters. neither one is happy about it.']));
+      logEntry('the water is in two places now. investigating.');
+    }
+  }
+  function merge(a, b) {
+    const r = Math.sqrt(a.r * a.r + b.r * b.r);
+    const m = a.m + b.m;
+    const x = (a.x * a.m + b.x * b.m) / m, y = (a.y * a.m + b.y * b.m) / m;
+    const vx = (a.vx * a.m + b.vx * b.m) / m, vy = (a.vy * a.m + b.vy * b.m) / m;
+    for (const w of [a, b]) { const i = bodies.indexOf(w); if (i >= 0) bodies.splice(i, 1); }
+    const c = make('water', x, y);
+    c.r = Math.min(r, 34);
+    c.m = m;
+    c.vx = vx; c.vy = vy;
+    c.wob = 1;
+    if (performance.now() - lastWaterSay > 6000) {
+      lastWaterSay = performance.now();
+      say(pick(['the water has found itself again.', 'one water. as intended.', 'the waters merged. no ceremony.']));
+    }
+  }
+  function splat(w) {
+    w.puddle = true;
+    w.wob = 0;
+    w.vx = 0; w.vy = 0;
+    sound.splat();
+    if (performance.now() - lastWaterSay > 3000) {
+      lastWaterSay = performance.now();
+      say("that's the floor. we don't use it. the water is using it.");
+    }
+  }
+  function openSnacks(bag) {
+    snacksOpen = true;
+    for (let i = 0; i < 18; i++) {
+      const c = make('crumb', bag.x + (Math.random() - 0.5) * 20, bag.y + (Math.random() - 0.5) * 20);
+      c.vx = bag.vx * 0.5 + (Math.random() - 0.5) * 320;
+      c.vy = bag.vy * 0.5 + (Math.random() - 0.5) * 320;
+    }
+    const led = $('#led-snacks');
+    led.className = 'led bad';
+    led.lastChild.textContent = 'snacks: gone';
+    say("the snacks are open. they're everywhere now. this was always how it was going to go.");
+    logEntry('the snacks have been opened. by force. by a visitor.');
+  }
+
+  let penBehind = 0;
+  let penLogged = false;
+  function step(dt) {
+    time += dt;
+    for (const b of bodies) stepBody(b, dt);
+    for (let i = 0; i < bodies.length; i++) {
+      const a = bodies[i];
+      for (let j = i + 1; j < bodies.length; j++) {
+        const b = bodies[j];
+        if (a.crumb && b.crumb) continue;
+        collide(a, b);
+      }
+    }
+    for (const b of bodies) {
+      if (b.water && b.wob > 0) { b.wob = Math.max(0, b.wob - dt * 0.9); b.wobT += dt * 9; }
+    }
+    // the pen and the panel have an arrangement
+    const pen = bodies.find(b => b.kind === 'pen');
+    if (pen && !pen.held && pen.x > 670 && pen.y > 305 && Math.hypot(pen.vx, pen.vy) < 25) {
+      penBehind += dt;
+      if (penBehind > 3 && !penLogged) {
+        penLogged = true;
+        say('the pen is behind the panel. it lives there now.');
+        logEntry('pen is behind the panel. again.');
+      }
+    } else penBehind = 0;
+  }
+
+  // ---------- your hands ----------
+  const toLogical = e => ({ x: (e.clientX - stageRect.left) / scale, y: (e.clientY - stageRect.top) / scale });
+  let held = null;
+  let hist = [];
+  let dragMoved = false;
+  let suppressClick = false;
+  let lastTapSay = 0;
+
+  function hitBody(p) {
+    let best = null, bd = Infinity;
+    for (const b of bodies) {
+      const d = Math.hypot(b.x - p.x, b.y - p.y);
+      const reach = b.r + (b.crumb ? 6 : 8);
+      if (d < reach && d < bd) { bd = d; best = b; }
+    }
+    return best;
+  }
+  stage.addEventListener('pointerdown', e => {
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
+    const p = toLogical(e);
+    const b = hitBody(p);
+    if (!b) return;
+    e.stopPropagation();
+    e.preventDefault();
+    suppressClick = true;
+    setTimeout(() => { suppressClick = false; }, 400);
+    try { stage.setPointerCapture(e.pointerId); } catch (err) { /* synthetic pointer */ }
+    held = b;
+    b.held = true;
+    b.vx = 0; b.vy = 0;
+    dragMoved = false;
+    hist = [{ x: p.x, y: p.y, t: performance.now() }];
+    stage.style.cursor = 'grabbing';
+  }, true);
+  stage.addEventListener('click', e => { if (suppressClick) { e.stopPropagation(); e.preventDefault(); } }, true);
+  stage.addEventListener('pointermove', e => {
+    const p = toLogical(e);
+    if (!held) {
+      stage.style.cursor = hitBody(p) ? 'grab' : '';
+      return;
+    }
+    const now = performance.now();
+    if (Math.hypot(p.x - hist[0].x, p.y - hist[0].y) > 6) dragMoved = true;
+    held.x = clamp(p.x, PAD + held.r, W - PAD - held.r);
+    held.y = clamp(p.y, PAD + held.r, H - PAD - held.r);
+    if (held.puddle) held.puddle = false;
+    hist.push({ x: held.x, y: held.y, t: now });
+    while (hist.length > 8) hist.shift();
+  });
+  function release() {
+    if (!held) return;
+    const b = held;
+    held = null;
+    b.held = false;
+    const now = performance.now();
+    const old = hist.find(h => now - h.t <= 90) || hist[0];
+    const dt = Math.max(16, now - old.t) / 1000;
+    b.vx = clamp((b.x - old.x) / dt, -1100, 1100);
+    b.vy = clamp((b.y - old.y) / dt, -1100, 1100);
+    b.va += (Math.random() - 0.5) * 2;
+    stage.style.cursor = '';
+    if (!dragMoved) {
+      if (b.kind === 'log') openLog();
+      else if (now - lastTapSay > 700) { lastTapSay = now; say(KINDS[b.kind].line); }
+    }
+  }
+  stage.addEventListener('pointerup', release);
+  stage.addEventListener('pointercancel', release);
+
+  // ---------- the panel ----------
+  const swLines = {
+    lights: on => on ? 'lights off. the porthole is the light now.' : 'lights on. the capsule is beige again.',
+    fans: on => on ? 'fans on. the air moves. so does everything else.' : 'fans off. things will drift where they like. they did anyway.',
+    coffee: on => on ? "the coffee is a pouch. it's in the drift somewhere. it always is." : 'coffee off. it was never on. it was a pouch.',
+  };
+  for (const sw of document.querySelectorAll('.sw')) {
+    sw.addEventListener('click', () => {
+      const name = sw.dataset.sw;
+      const on = !sw.classList.contains('on');
+      sw.classList.toggle('on', on);
+      sw.setAttribute('aria-pressed', String(on));
+      sound.click();
+      if (name === 'lights') stage.classList.toggle('dark', on);
+      if (name === 'fans') fans = on;
+      say(swLines[name](on));
+    });
+  }
+  const cover = $('#cover');
+  const gsw = $('#gsw');
+  const gcount = $('#gcount');
+  gcount.textContent = `gravity events: ${gravity.count}`;
+  cover.addEventListener('click', () => {
+    const open = !cover.classList.contains('open');
+    cover.classList.toggle('open', open);
+    sound.click();
+    say(open ? 'the cover is up. the switch is right there. it has a cover for a reason.' : 'cover down. good.');
+  });
+  const GRAVITY_ON = [
+    "gravity. everything is on the floor now. that's what floors are for, apparently.",
+    'gravity on. the pen has been found. it is on the floor with everything else.',
+    'the floor has been informed. it was not ready.',
+  ];
+  const GRAVITY_OFF = [
+    'gravity off. everything lifts. slowly. like it was never sure about the floor.',
+    'and back to drifting. the floor is a wall again.',
+    'gravity off. the water has remembered itself.',
+  ];
+  function setGravity(on) {
+    gravity.on = on;
+    gsw.classList.toggle('on', on);
+    gsw.setAttribute('aria-pressed', String(on));
+    gravity.count++;
+    store.set('cizole.space.gravity', String(gravity.count));
+    gcount.textContent = `gravity events: ${gravity.count}`;
+    sound.click();
+    if (on) {
+      sound.clatter();
+      say(pick(GRAVITY_ON));
+      logEntry('gravity was turned on. by a visitor. it is being logged.');
+      penLogged = false;
+    } else {
+      sound.lift();
+      say(pick(GRAVITY_OFF));
+      for (const b of bodies) {
+        b.puddle = false;
+        b.vx += (Math.random() - 0.5) * 60;
+        b.vy = -(30 + Math.random() * 70);
+        b.va = (Math.random() - 0.5) * 1.2;
+      }
+    }
+  }
+  gsw.addEventListener('click', () => {
+    if (!cover.classList.contains('open')) { say('the cover is down. lift the cover.'); return; }
+    setGravity(!gravity.on);
+  });
+
+  // ---------- the rest of the room ----------
+  const cycle = lines => { let i = 0; return () => lines[i++ % lines.length]; };
+  const OBJ = {
+    hatch: cycle(['the hatch. it stays closed. everyone agrees on this.', 'outside the hatch: space. inside: the sock. we stay inside.', 'the wheel turns. the hatch does not. this is by design.']),
+    bag: cycle(['the sleeping bag. strapped to the wall, so you don\'t drift into the panel at night. someone did once.', 'it sleeps standing up. lying down is a matter of opinion here.']),
+    patch: cycle(['CZ-1. mostly orbital. the "mostly" was added later.', 'the mission patch. it has been on the wall since before the mission. the wall came with it.']),
+    strip: cycle(['velcro. the only thing keeping anything anywhere.', 'a strip of velcro. currently holding nothing. it is ready.']),
+  };
+  stage.addEventListener('click', e => {
+    if (suppressClick) return;
+    const el = e.target.closest('[data-obj]');
+    if (el && OBJ[el.dataset.obj]) say(OBJ[el.dataset.obj]());
+  });
+
+  // ---------- the porthole ----------
+  const ph = $('#porthole');
+  const pg = ph.getContext('2d');
+  const PR = 150;
+  const stars = [];
+  for (let i = 0; i < 140; i++) stars.push({ a: Math.random() * TAU, d: 20 + Math.random() * 190, s: 0.5 + Math.random() * 1.4, z: Math.random() < 0.35 ? 0.55 : 1, tw: Math.random() * TAU });
+  const clouds = [];
+  for (let i = 0; i < 9; i++) clouds.push({ x: Math.random() * 600, y: Math.random() * 60, r: 18 + Math.random() * 30 });
+  const land = [];
+  for (let i = 0; i < 8; i++) land.push({ x: i * 78 + Math.random() * 30, y: Math.random() * 70 - 20, r: 26 + Math.random() * 36, t: Math.random() * TAU });
+  const iss = { lat: null, lon: null, kmh: null, night: null, lon0: 0, solar: null, at: 0, fresh: false };
+  function drawPorthole(now) {
+    const rot = reduceMotion ? 0 : now * 0.00003;
+    pg.clearRect(0, 0, 300, 300);
+    pg.fillStyle = '#04060f';
+    pg.fillRect(0, 0, 300, 300);
+    for (const s of stars) {
+      const a = s.a + rot * s.z;
+      const x = PR + Math.cos(a) * s.d, y = PR + Math.sin(a) * s.d;
+      const tw = 0.6 + 0.4 * Math.sin(now * 0.002 + s.tw);
+      pg.fillStyle = `rgba(235, 240, 255, ${(tw * (s.z === 1 ? 0.95 : 0.5)).toFixed(2)})`;
+      pg.beginPath();
+      pg.arc(x, y, s.s, 0, TAU);
+      pg.fill();
+    }
+    // the earth: a big circle whose top edge crosses the lower half of the window
+    const ex = PR, ey = PR + 300, er = 330;
+    const lon = iss.lon == null ? (now * 0.0004) % 360 : iss.lon;
+    const shift = (lon / 360) * 624;
+    pg.save();
+    pg.beginPath();
+    pg.arc(ex, ey, er, 0, TAU);
+    pg.clip();
+    const sea = pg.createLinearGradient(0, ey - er, 0, ey - er + 140);
+    sea.addColorStop(0, '#5ea6e6');
+    sea.addColorStop(1, '#1d4f8c');
+    pg.fillStyle = sea;
+    pg.fillRect(0, 0, 300, 300);
+    // land, sliding by with the station
+    pg.fillStyle = '#5f8a4a';
+    for (const l of land) {
+      for (const k of [-624, 0]) {
+        const lx = ((l.x - shift + 900) % 624) + k;
+        const ly = ey - er + 40 + l.y;
+        pg.beginPath();
+        pg.ellipse(lx, ly, l.r, l.r * 0.55, l.t, 0, TAU);
+        pg.fill();
+      }
+    }
+    pg.fillStyle = 'rgba(255, 255, 255, 0.55)';
+    for (const c of clouds) {
+      const cx = ((c.x - shift * 0.8 - now * 0.003 + 6000) % 624) - 100;
+      pg.beginPath();
+      pg.ellipse(cx, ey - er + 30 + c.y, c.r, c.r * 0.4, 0, 0, TAU);
+      pg.fill();
+    }
+    // night
+    const night = iss.night == null ? 0.25 : iss.night ? 0.82 : 0.06;
+    const dir = iss.solar == null ? 1 : Math.sign(Math.sin((lon - iss.solar) * Math.PI / 180)) || 1;
+    const sh = pg.createLinearGradient(dir > 0 ? 0 : 300, 0, dir > 0 ? 300 : 0, 0);
+    sh.addColorStop(0, `rgba(2, 6, 20, ${Math.min(1, night + 0.15).toFixed(2)})`);
+    sh.addColorStop(1, `rgba(2, 6, 20, ${Math.max(0, night - 0.15).toFixed(2)})`);
+    pg.fillStyle = sh;
+    pg.fillRect(0, 0, 300, 300);
+    pg.restore();
+    // the atmosphere
+    pg.strokeStyle = 'rgba(120, 190, 255, 0.55)';
+    pg.lineWidth = 6;
+    pg.beginPath();
+    pg.arc(ex, ey, er + 3, 0, TAU);
+    pg.stroke();
+    pg.strokeStyle = 'rgba(120, 190, 255, 0.18)';
+    pg.lineWidth = 16;
+    pg.beginPath();
+    pg.arc(ex, ey, er + 10, 0, TAU);
+    pg.stroke();
+    // the station itself, a bright dot passing the window now and then
+    const st = (now * 0.00008) % 1;
+    if (st < 0.25) {
+      const sx = 30 + st * 4 * 240, sy = 90 - Math.sin(st * 4 * Math.PI) * 30;
+      pg.fillStyle = '#fff';
+      pg.beginPath();
+      pg.arc(sx, sy, 1.8, 0, TAU);
+      pg.fill();
+    }
+  }
+
+  // ---------- where the station is ----------
+  const issEl = $('#iss');
+  const LAND = [[-170, -50, 15, 72], [-82, -34, -56, 12], [-10, 40, 36, 71], [-18, 52, -35, 37], [40, 180, 5, 77], [112, 154, -44, -10]];
+  const overLand = (lat, lon) => lat < -60 || LAND.some(([a, b, c, d]) => lon >= a && lon <= b && lat >= c && lat <= d);
+  function showIss(d, cached) {
+    iss.lat = d.latitude; iss.lon = d.longitude; iss.kmh = d.velocity; iss.night = d.visibility === 'eclipsed'; iss.solar = d.solar_lon;
+    const ns = d.latitude >= 0 ? 'n' : 's', ew = d.longitude >= 0 ? 'e' : 'w';
+    issEl.textContent = `the station is over ${Math.abs(d.latitude).toFixed(1)}°${ns}, ${Math.abs(d.longitude).toFixed(1)}°${ew} at ${Math.round(d.velocity).toLocaleString()} km/h. probably over ${overLand(d.latitude, d.longitude) ? 'land' : 'water'}. it's ${iss.night ? 'night' : 'day'} down there.${cached ? ' (from earlier. it has moved.)' : ''}`;
+  }
+  async function fetchIss() {
+    if (document.hidden) return;
+    try {
+      const res = await fetch('https://api.wheretheiss.at/v1/satellites/25544', { cache: 'no-store' });
+      if (!res.ok) throw new Error(res.status);
+      const d = await res.json();
+      if (typeof d.latitude !== 'number') throw new Error('odd data');
+      store.set('cizole.space.iss', JSON.stringify(d));
+      showIss(d, false);
+    } catch (err) {
+      let cached = null;
+      try { cached = JSON.parse(store.get('cizole.space.iss') || 'null'); } catch (e2) { cached = null; }
+      if (cached && typeof cached.latitude === 'number') showIss(cached, true);
+      else issEl.textContent = "the station is somewhere. it's fast.";
+    }
+  }
+  fetchIss();
+  setInterval(fetchIss, 10000);
+
+  // ---------- tilt and shake ----------
+  const tiltBtn = $('#tilt');
+  function listenTilt() {
+    tilt.enabled = true;
+    tiltBtn.hidden = true;
+    addEventListener('deviceorientation', e => {
+      if (gravity.on || e.gamma == null) return;
+      // holding the phone at about 40 degrees is level; further than that pushes things
+      tilt.x = clamp(e.gamma / 45, -1, 1) * 380;
+      tilt.y = clamp((e.beta - 40) / 45, -1, 1) * 380;
+      if (Math.abs(tilt.x) < 40) tilt.x = 0;
+      if (Math.abs(tilt.y) < 40) tilt.y = 0;
+    });
+    let lastShake = 0;
+    addEventListener('devicemotion', e => {
+      const a = e.accelerationIncludingGravity;
+      if (!a) return;
+      const mag = Math.hypot(a.x || 0, a.y || 0, a.z || 0);
+      if (mag > 24 && performance.now() - lastShake > 1200) {
+        lastShake = performance.now();
+        for (const b of bodies) { b.vx += (Math.random() - 0.5) * 500; b.vy += (Math.random() - 0.5) * 500; b.va += (Math.random() - 0.5) * 3; }
+        say('you shook the capsule. everything noticed.');
+      }
+    });
+    say('tilt on. tip the phone and the capsule tips with it. the things inside disagree.');
+  }
+  if (coarse && typeof DeviceOrientationEvent !== 'undefined') {
+    tiltBtn.hidden = false;
+    tiltBtn.addEventListener('click', async () => {
+      try {
+        if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+          const r = await DeviceOrientationEvent.requestPermission();
+          if (r !== 'granted') { say('no tilt. the capsule stays level. relatively.'); return; }
+        }
+        listenTilt();
+      } catch (err) { say('no tilt. the capsule stays level. relatively.'); }
+    });
+  }
+
+  // ---------- leaving and coming back ----------
+  addEventListener('cizole:return', e => {
+    if (e.detail.awayMs < 4000 || gravity.on) return;
+    const cx = Math.random() < 0.5 ? PAD + 90 : W - PAD - 90;
+    const cy = Math.random() < 0.5 ? PAD + 70 : H - PAD - 70;
+    for (const b of bodies) {
+      if (b.held) continue;
+      b.x = cx + (Math.random() - 0.5) * 150;
+      b.y = cy + (Math.random() - 0.5) * 110;
+      b.vx = (Math.random() - 0.5) * 20;
+      b.vy = (Math.random() - 0.5) * 20;
+    }
+    say('things drift. you were gone. they drifted.');
+  });
+
+  // ---------- drawing ----------
+  function rrect(x, y, w, h, r) {
+    g.beginPath();
+    g.moveTo(x + r, y);
+    g.arcTo(x + w, y, x + w, y + h, r);
+    g.arcTo(x + w, y + h, x, y + h, r);
+    g.arcTo(x, y + h, x, y, r);
+    g.arcTo(x, y, x + w, y, r);
+    g.closePath();
+  }
+  function drawBody(b, now) {
+    g.save();
+    g.translate(b.x, b.y);
+    if (gravity.on && !b.puddle && b.y > H - PAD - b.r - 2) {
+      g.fillStyle = 'rgba(0, 0, 0, 0.18)';
+      g.beginPath();
+      g.ellipse(0, b.r * 0.9, b.r * 1.1, b.r * 0.28, 0, 0, TAU);
+      g.fill();
+    }
+    if (b.puddle) {
+      g.fillStyle = 'rgba(120, 190, 255, 0.55)';
+      g.beginPath();
+      g.ellipse(0, b.r * 0.65, b.r * 2.4, b.r * 0.5, 0, 0, TAU);
+      g.fill();
+      g.restore();
+      return;
+    }
+    g.rotate(b.a);
+    switch (b.kind) {
+      case 'crumb':
+        g.fillStyle = '#b8864e';
+        g.beginPath();
+        g.arc(0, 0, b.r, 0, TAU);
+        g.fill();
+        break;
+      case 'water': {
+        const amp = 0.06 * b.wob + 0.015;
+        g.fillStyle = 'rgba(120, 190, 255, 0.72)';
+        g.beginPath();
+        for (let i = 0; i <= 16; i++) {
+          const ang = (i / 16) * TAU;
+          const rr = b.r * (1 + amp * Math.sin(3 * ang + b.wobT) + amp * 0.5 * Math.sin(5 * ang - b.wobT * 1.3));
+          const px = Math.cos(ang) * rr, py = Math.sin(ang) * rr;
+          if (i === 0) g.moveTo(px, py); else g.lineTo(px, py);
+        }
+        g.closePath();
+        g.fill();
+        g.fillStyle = 'rgba(255, 255, 255, 0.55)';
+        g.beginPath();
+        g.ellipse(-b.r * 0.35, -b.r * 0.4, b.r * 0.22, b.r * 0.14, -0.6, 0, TAU);
+        g.fill();
+        break;
+      }
+      case 'pen':
+        rrect(-30, -4, 60, 8, 3);
+        g.fillStyle = '#2b3f8a';
+        g.fill();
+        g.fillStyle = '#d9d3c4';
+        g.beginPath();
+        g.moveTo(30, -3); g.lineTo(38, 0); g.lineTo(30, 3);
+        g.fill();
+        g.fillStyle = '#9aa7cf';
+        g.fillRect(-26, -4, 6, 8);
+        break;
+      case 'wrench':
+        g.fillStyle = '#9a9a9a';
+        rrect(-26, -6, 42, 12, 4);
+        g.fill();
+        g.beginPath();
+        g.arc(22, 0, 13, 0, TAU);
+        g.fill();
+        g.fillStyle = '#d9d3c4';
+        g.fillRect(24, -6, 14, 12);
+        g.fillStyle = '#6e6e6e';
+        g.beginPath();
+        g.arc(-20, 0, 3, 0, TAU);
+        g.fill();
+        break;
+      case 'snacks':
+        rrect(-24, -17, 48, 34, 5);
+        g.fillStyle = snacksOpen ? '#b86b2a' : '#e8892c';
+        g.fill();
+        g.strokeStyle = 'rgba(0, 0, 0, 0.18)';
+        g.lineWidth = 1.5;
+        for (const y of [-14, 14]) { g.beginPath(); g.moveTo(-24, y); g.lineTo(24, y); g.stroke(); }
+        g.fillStyle = '#fff3d6';
+        g.font = 'bold 9px monospace';
+        g.textAlign = 'center';
+        g.textBaseline = 'middle';
+        g.fillText(snacksOpen ? 'SNAX?' : 'SNAX', 0, 0);
+        break;
+      case 'toothbrush':
+        rrect(-27, -3, 54, 6, 3);
+        g.fillStyle = '#f0ece2';
+        g.fill();
+        g.fillStyle = '#4fa0e0';
+        g.fillRect(16, -6, 11, 12);
+        break;
+      case 'checklist':
+      case 'log': {
+        const isLog = b.kind === 'log';
+        rrect(-22, -28, 44, 56, 3);
+        g.fillStyle = '#6b4f33';
+        g.fill();
+        g.fillStyle = isLog ? '#e4efd2' : '#f3eee2';
+        g.fillRect(-18, -20, 36, 44);
+        g.fillStyle = '#9a978e';
+        rrect(-9, -30, 18, 8, 2);
+        g.fill();
+        g.strokeStyle = isLog ? '#5d6e4a' : '#7a7466';
+        g.lineWidth = 1.2;
+        for (let i = 0; i < 4; i++) { g.beginPath(); g.moveTo(-14, -12 + i * 8); g.lineTo(12, -12 + i * 8); g.stroke(); }
+        g.fillStyle = '#1d1b17';
+        g.font = 'bold 8px monospace';
+        g.textAlign = 'center';
+        g.textBaseline = 'middle';
+        g.fillText(isLog ? 'LOG' : 'TODO', 0, 18);
+        break;
+      }
+      case 'sock':
+        g.lineCap = 'round';
+        g.lineJoin = 'round';
+        g.strokeStyle = '#e9e2d0';
+        g.lineWidth = 11;
+        g.beginPath();
+        g.moveTo(-14, -6); g.lineTo(6, -6); g.lineTo(13, 6);
+        g.stroke();
+        g.strokeStyle = '#c0392b';
+        g.lineWidth = 2.5;
+        g.beginPath();
+        g.moveTo(-8, -11); g.lineTo(-8, -1); g.moveTo(-3, -11); g.lineTo(-3, -1);
+        g.stroke();
+        break;
+    }
+    g.restore();
+    if (b.held) {
+      g.strokeStyle = 'rgba(200, 255, 61, 0.7)';
+      g.lineWidth = 1.5;
+      g.beginPath();
+      g.arc(b.x, b.y, b.r + 5, 0, TAU);
+      g.stroke();
+    }
+  }
+  function draw(now) {
+    g.setTransform(dpr * scale, 0, 0, dpr * scale, 0, 0);
+    g.clearRect(0, 0, W, H);
+    for (const b of bodies) if (b.crumb) drawBody(b, now);
+    for (const b of bodies) if (!b.crumb) drawBody(b, now);
+  }
+
+  // the caption drifts too. gently. it's still a caption.
+  let capY = 0;
+  function driftCaption(now, dt) {
+    if (reduceMotion) return;
+    if (gravity.on) {
+      capY += (10 - capY) * Math.min(1, dt * 6);
+      captionEl.style.transform = `translate(0, ${capY.toFixed(1)}px)`;
+    } else {
+      capY += (0 - capY) * Math.min(1, dt * 1.5);
+      const x = Math.sin(now * 0.00037) * 14, y = Math.sin(now * 0.00053) * 5 + capY;
+      captionEl.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
+    }
+  }
+
+  // ---------- the loop ----------
+  let last = performance.now();
+  let raf = 0;
+  let phFrame = 0;
+  function frame(now) {
+    const dt = Math.min(0.033, (now - last) / 1000);
+    last = now;
+    // small fixed steps keep fast throws from tunnelling through things
+    const steps = dt > 0.02 ? 2 : 1;
+    for (let i = 0; i < steps; i++) step(dt / steps);
+    draw(now);
+    if ((phFrame++ % 2) === 0) drawPorthole(now);
+    driftCaption(now, dt);
+    raf = requestAnimationFrame(frame);
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { cancelAnimationFrame(raf); raf = 0; }
+    else if (!raf) { last = performance.now(); raf = requestAnimationFrame(frame); }
+  });
+  say("a capsule. gravity is off. it's been off for 51 days. things drift.");
+  raf = requestAnimationFrame(frame);
+})();
+</script>
+<script src="../assets/rooms.js"></script>
+<script src="../assets/away.js"></script>
+</body>
+</html>
