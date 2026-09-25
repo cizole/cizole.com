@@ -56,10 +56,10 @@
     text-decoration: none;
   }
   .exhibits a:hover { color: var(--acid); }
-  .num { color: var(--dim); font-size: 13px; }
+  .num { color: var(--dim); font-size: 14px; }
   .name { font-size: 20px; font-weight: 700; }
-  .blurb { margin-left: auto; color: var(--dim); font-size: 14px; text-align: right; }
-  .note { display: block; color: var(--acid); font-size: 12px; }
+  .blurb { margin-left: auto; color: var(--dim); font-size: 15px; text-align: right; }
+  .note { display: block; color: var(--acid); font-size: 13px; }
   .last .blurb::after { content: "  \00b7  you were just here"; color: var(--acid); }
   /* retired rooms keep their number, and a reason */
   .exhibits .closed {
@@ -69,34 +69,34 @@
     padding: 18px 4px;
     cursor: not-allowed;
   }
-  .closed .num { color: #45423b; }
-  .closed .name { color: #5b574d; text-decoration: line-through; text-decoration-thickness: 2px; }
-  .closed .blurb { color: #77725f; font-style: italic; }
+  .closed .num { color: #5a564c; }
+  .closed .name { color: #736e62; text-decoration: line-through; text-decoration-thickness: 2px; }
+  .closed .blurb { color: #8f8a7c; font-style: italic; }
   .stamp {
     align-self: center;
     padding: 1px 7px;
     border: 1px solid #7a3a31;
     border-radius: 3px;
     color: #c0574a;
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 0.14em;
     text-transform: uppercase;
     transform: rotate(-4deg);
   }
-  footer { margin-top: 56px; color: #4a463d; font-size: 12px; }
+  footer { margin-top: 56px; color: #6a655a; font-size: 13px; }
   /* where 023 would be: an empty row. it says so if you look. */
   .gap-row {
+    /* laid out exactly like a room link, so the row is the same height */
     display: flex;
     align-items: baseline;
     gap: 20px;
-    padding: 12px 4px;
+    padding: 18px 4px;
     opacity: 0;
     cursor: help;
     transition: opacity 0.4s;
   }
   .gap-row:hover, .gap-row:focus-visible { opacity: 1; outline: none; }
-  .gap-row .num, .gap-row .blurb { color: #4a463d; }
-  .gap-row .name { min-width: 1em; }
+  .gap-row .num, .gap-row .blurb { color: #6a655a; }
   /* the secret room, the moment it's found */
   .found a { animation: found 2.4s ease-out; }
   @keyframes found {
@@ -165,7 +165,7 @@
     div.setAttribute('role', 'button');
     div.tabIndex = 0;
     div.setAttribute('aria-label', `there is no ${r.n}`);
-    div.append(span('num', r.n), span('name', ''), span('blurb', `(there is no ${r.n}.)`));
+    div.append(span('num', r.n), span('name', ' '), span('blurb', `(there is no ${r.n}.)`));
     const hint = () => window.dispatchEvent(new CustomEvent('cizole:hint'));
     div.addEventListener('click', hint);
     div.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); hint(); } });
