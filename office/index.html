@@ -1,0 +1,1309 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>office · cizole</title>
+<link rel="icon" href="../favicon.svg?v=2" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/site.css">
+<style>
+  :root {
+    --beige: #d9d3c4;
+    --beige-2: #cfc8b8;
+    --putty: #b8b09e;
+    --fabric: #8d97a3;
+    --desk: #c9bda3;
+    --carpet: #6f6d68;
+    --plastic: #e6e1d3;
+    --ink: #2a2924;
+    --led: #ff5a3a;
+  }
+  .page {
+    --w: max(300px, min(calc(100vw - 32px), calc((100dvh - 170px) * 1.6), 1150px));
+    padding: 56px 16px 24px;
+  }
+  .stage-wrap { width: var(--w); margin: 0 auto; }
+  .stage {
+    position: relative;
+    width: var(--w);
+    height: calc(var(--w) / 1.6);
+    overflow: hidden;
+    border-radius: 10px;
+    background: var(--beige);
+    container-type: size;
+    user-select: none;
+  }
+  .marker { font-family: "Permanent Marker", cursive; }
+
+  .obj {
+    position: absolute;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+  .obj:focus-visible { outline: 2px solid var(--acid); outline-offset: 2px; }
+
+  /* ---------- the room ---------- */
+  .ceiling {
+    position: absolute;
+    inset: 0 0 91% 0;
+    background:
+      repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.12) 0 0.2cqw, transparent 0.2cqw 12cqw),
+      linear-gradient(#eeeae0, #dcd6c8);
+  }
+  .fluorescent {
+    position: absolute;
+    left: 34%;
+    top: 2%;
+    width: 32%;
+    height: 5%;
+    border: 0.25cqw solid #b9b3a4;
+    background: linear-gradient(#ffffff, #f0f1e8);
+    box-shadow: 0 0 3cqw rgba(255, 255, 240, 0.9), 0 0.4cqw 1.2cqw rgba(255, 255, 220, 0.5);
+    animation: flicker 9s steps(1) infinite;
+  }
+  @keyframes flicker {
+    0%, 93%, 100% { opacity: 1; }
+    94% { opacity: 0.86; }
+    95% { opacity: 1; }
+    96.5% { opacity: 0.9; }
+  }
+  .wall {
+    position: absolute;
+    inset: 9% 0 30% 0;
+    background:
+      linear-gradient(rgba(0, 0, 0, 0.06), rgba(0, 0, 0, 0) 20%, rgba(0, 0, 0, 0) 80%, rgba(0, 0, 0, 0.12)),
+      var(--beige);
+  }
+  .baseboard { position: absolute; left: 0; right: 0; top: 69.5%; height: 1.4cqw; background: linear-gradient(#a9a294, #8f887a); }
+  .carpet {
+    position: absolute;
+    inset: 70% 0 0 0;
+    background:
+      repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.14) 0 0.16cqw, transparent 0.16cqw 8cqw),
+      repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.14) 0 0.16cqw, transparent 0.16cqw 8cqw),
+      radial-gradient(circle, rgba(255, 255, 255, 0.07) 0.1cqw, transparent 0.18cqw) 0 0 / 0.6cqw 0.6cqw,
+      linear-gradient(#77756f, #62605b);
+  }
+  .outlet { position: absolute; left: 20%; top: 63%; width: 1.6cqw; height: 2.4cqw; border: 0.12cqw solid #b7b0a1; background: #ebe6d9; }
+  .outlet::before, .outlet::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    width: 0.55cqw;
+    height: 0.55cqw;
+    margin-left: -0.275cqw;
+    border-radius: 0.1cqw;
+    background: #6b665b;
+  }
+  .outlet::before { top: 18%; }
+  .outlet::after { top: 58%; }
+
+  /* whiteboard */
+  .whiteboard {
+    left: 3%;
+    top: 14%;
+    width: 22%;
+    height: 30%;
+    border: 0.7cqw solid #c9c4b8;
+    border-radius: 0.3cqw;
+    background: #f7f7f2;
+    box-shadow: 0 0.3cqw 0.8cqw rgba(0, 0, 0, 0.25), inset 0 0 1.5cqw rgba(0, 0, 0, 0.04);
+  }
+  .whiteboard svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .wb-layer { transition: opacity 0.5s; }
+  .wb-tray {
+    position: absolute;
+    left: 6%;
+    right: 6%;
+    bottom: -2cqw;
+    height: 1cqw;
+    border-radius: 0 0 0.3cqw 0.3cqw;
+    background: #b9b3a5;
+  }
+  .wb-tray i {
+    position: absolute;
+    top: -0.35cqw;
+    width: 2.6cqw;
+    height: 0.7cqw;
+    border-radius: 0.35cqw;
+  }
+  .wb-tray i:nth-child(1) { left: 8%; background: #1f2a4a; }
+  .wb-tray i:nth-child(2) { left: 24%; background: #b8322a; }
+  .wb-tray i:nth-child(3) { left: 40%; width: 2.2cqw; background: #4a4a4a; }
+  .wb-tray i:nth-child(4) { right: 6%; width: 3cqw; height: 1.2cqw; top: -0.6cqw; border-radius: 0.2cqw; background: #6d6558; }
+
+  /* water cooler */
+  .cooler { left: 5.5%; top: 48%; width: 7%; height: 36%; }
+  .cooler .bottle {
+    position: absolute;
+    left: 12%;
+    right: 12%;
+    top: 0;
+    height: 40%;
+    border-radius: 45% 45% 12% 12% / 30% 30% 8% 8%;
+    background: linear-gradient(90deg, rgba(120, 190, 220, 0.55), rgba(190, 230, 245, 0.75) 45%, rgba(110, 175, 210, 0.6));
+    box-shadow: inset 0 -1.5cqw 0 rgba(90, 160, 200, 0.35);
+  }
+  .cooler .bottle::after {
+    content: "";
+    position: absolute;
+    left: 18%;
+    top: 10%;
+    width: 14%;
+    height: 45%;
+    border-radius: 1cqw;
+    background: rgba(255, 255, 255, 0.55);
+  }
+  .cooler .body {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 38%;
+    bottom: 0;
+    border-radius: 0.5cqw 0.5cqw 0.2cqw 0.2cqw;
+    background: linear-gradient(90deg, #d8d3c6, #efeae0 40%, #cfc9bb);
+    box-shadow: 0 0.4cqw 0.8cqw rgba(0, 0, 0, 0.25);
+  }
+  .cooler .taps { position: absolute; left: 30%; top: 50%; width: 40%; height: 5%; display: flex; justify-content: space-between; }
+  .cooler .taps i { width: 40%; height: 100%; border-radius: 0.2cqw; }
+  .cooler .taps i:first-child { background: #3c7dd6; }
+  .cooler .taps i:last-child { background: #d64a3c; }
+  .cooler .cup { position: absolute; left: 62%; top: 60%; width: 20%; height: 9%; background: #f4f1ea; clip-path: polygon(0 0, 100% 0, 85% 100%, 15% 100%); }
+
+  /* fake plant */
+  .plant { left: 13.5%; top: 57%; width: 8%; height: 25%; }
+  .plant .leaf {
+    position: absolute;
+    left: 50%;
+    bottom: 32%;
+    width: 34%;
+    height: 60%;
+    margin-left: -17%;
+    border-radius: 50% 50% 50% 50% / 75% 75% 25% 25%;
+    background: linear-gradient(#4f8a4c, #2f5f31);
+    transform-origin: 50% 100%;
+    box-shadow: inset 0.2cqw 0 0 rgba(255, 255, 255, 0.12);
+  }
+  .plant .leaf:nth-child(1) { transform: rotate(-40deg); }
+  .plant .leaf:nth-child(2) { transform: rotate(-14deg); height: 66%; }
+  .plant .leaf:nth-child(3) { transform: rotate(8deg); height: 70%; }
+  .plant .leaf:nth-child(4) { transform: rotate(30deg); height: 58%; }
+  .plant .leaf:nth-child(5) { transform: rotate(48deg); height: 50%; }
+  .plant .pot {
+    position: absolute;
+    left: 15%;
+    right: 15%;
+    bottom: 0;
+    height: 34%;
+    background: linear-gradient(#a08b6a, #7d6b4f);
+    clip-path: polygon(0 0, 100% 0, 86% 100%, 14% 100%);
+  }
+  .plant .tag {
+    position: absolute;
+    left: 58%;
+    bottom: 8%;
+    padding: 0.1cqw 0.4cqw;
+    background: #fff;
+    color: #333;
+    font-size: 0.75cqw;
+    transform: rotate(8deg);
+  }
+
+  /* the cubicle */
+  .partition {
+    position: absolute;
+    left: 27%;
+    top: 21%;
+    width: 47%;
+    height: 49.5%;
+    border-top: 0.9cqw solid #9a948a;
+    background:
+      radial-gradient(circle, rgba(255, 255, 255, 0.12) 0.08cqw, transparent 0.14cqw) 0 0 / 0.5cqw 0.5cqw,
+      linear-gradient(#95a0ad, #7f8996);
+    box-shadow: inset 0 0 2.5cqw rgba(0, 0, 0, 0.15), 0.5cqw 0 1cqw rgba(0, 0, 0, 0.18);
+  }
+  .partition::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 1.2cqw;
+    background: linear-gradient(90deg, #6f7883, #8d97a3);
+  }
+  .partition::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 1.2cqw;
+    background: linear-gradient(90deg, #8d97a3, #6f7883);
+  }
+  .pin {
+    position: absolute;
+    width: 1cqw;
+    height: 1cqw;
+    border-radius: 50%;
+    box-shadow: 0 0.15cqw 0.2cqw rgba(0, 0, 0, 0.35);
+  }
+  .memo {
+    left: 30%;
+    top: 25%;
+    width: 9%;
+    height: 12%;
+    padding: 1.1cqw 0.6cqw 0.4cqw;
+    background: #fbfaf5;
+    color: #4a4840;
+    font-size: 0.72cqw;
+    line-height: 1.35;
+    box-shadow: 0 0.2cqw 0.5cqw rgba(0, 0, 0, 0.3);
+    transform: rotate(-1.5deg);
+  }
+  .memo b { display: block; font-size: 0.8cqw; }
+  .memo .pin { left: 46%; top: 0.3cqw; background: #d64a3c; }
+  .wfh {
+    left: 41%;
+    top: 24%;
+    width: 6%;
+    height: 8%;
+    padding-top: 0.8cqw;
+    background: #f5edb8;
+    color: #1f1e1a;
+    font-size: 2cqw;
+    line-height: 1;
+    text-align: center;
+    box-shadow: 0 0.2cqw 0.5cqw rgba(0, 0, 0, 0.3);
+    transform: rotate(2deg);
+  }
+  .wfh .pin { left: 46%; top: 0.2cqw; background: #3c7dd6; }
+  .sticker { left: 62%; top: 26%; width: 7%; height: 9%; }
+  .sticker svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .photo {
+    left: 50%;
+    top: 23%;
+    width: 7%;
+    height: 8.5%;
+    padding: 0.35cqw;
+    background: #fff;
+    box-shadow: 0 0.2cqw 0.5cqw rgba(0, 0, 0, 0.3);
+    transform: rotate(-3deg);
+  }
+  .photo i {
+    display: block;
+    height: 100%;
+    background:
+      linear-gradient(160deg, transparent 55%, #f2f4f6 55%, #f2f4f6 60%, #7f8b95 60%),
+      linear-gradient(200deg, transparent 50%, #e9ecef 50%, #e9ecef 56%, #5f6b76 56%),
+      linear-gradient(#a9cbe8, #dfeaf3);
+  }
+  .photo .pin { left: 44%; top: -0.4cqw; background: #4aa860; }
+
+  /* the desk */
+  .desk-top { position: absolute; left: 28.5%; top: 55%; width: 44%; height: 2.2cqw; border-radius: 0.2cqw; background: linear-gradient(#d9ceb3, #bfb298); box-shadow: 0 0.4cqw 0.8cqw rgba(0, 0, 0, 0.3); }
+  .desk-front { position: absolute; left: 29.5%; top: 58.4%; width: 42%; height: 11.5%; background: linear-gradient(#b3a68b, #9d9078); }
+  .desk-front::before { content: ""; position: absolute; right: 4%; top: 12%; width: 22%; height: 76%; border: 0.15cqw solid rgba(0, 0, 0, 0.2); background: rgba(0, 0, 0, 0.06); }
+  .desk-front::after { content: ""; position: absolute; right: 12%; top: 46%; width: 6%; height: 8%; border-radius: 0.3cqw; background: #6b6152; }
+  .chair {
+    left: 44%;
+    top: 62%;
+    width: 13%;
+    height: 26%;
+  }
+  .chair .back { position: absolute; left: 8%; right: 8%; top: 0; height: 58%; border-radius: 1.2cqw 1.2cqw 0.4cqw 0.4cqw; background: linear-gradient(#3a3d44, #2a2c31); box-shadow: 0 0.3cqw 0.8cqw rgba(0, 0, 0, 0.35); }
+  .chair .back::after { content: ""; position: absolute; left: 14%; right: 14%; top: 18%; height: 56%; border-radius: 0.6cqw; background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.05) 0 0.25cqw, transparent 0.25cqw 0.9cqw); }
+  .chair .arm { position: absolute; top: 40%; width: 8%; height: 34%; background: #23252a; }
+  .chair .arm.l { left: 0; }
+  .chair .arm.r { right: 0; }
+  .chair .post { position: absolute; left: 47%; top: 58%; width: 6%; height: 30%; background: #4a4d55; }
+  .chair .base { position: absolute; left: 10%; right: 10%; bottom: 0; height: 12%; border-radius: 50%; background: #3a3d44; }
+
+  .monitor { left: 41%; top: 33%; width: 18%; height: 23%; }
+  .monitor .screen {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 74%;
+    border: 0.55cqw solid #2c2d31;
+    border-radius: 0.35cqw;
+    background: #f4f5f7;
+    overflow: hidden;
+    box-shadow: 0 0.3cqw 0.9cqw rgba(0, 0, 0, 0.35);
+  }
+  .monitor .neck { position: absolute; left: 44%; top: 74%; width: 12%; height: 14%; background: #33353a; }
+  .monitor .foot { position: absolute; left: 25%; right: 25%; top: 86%; height: 10%; border-radius: 40%; background: #2c2d31; }
+  .sheet {
+    position: absolute;
+    inset: 0;
+    background:
+      repeating-linear-gradient(90deg, transparent 0 2.1cqw, #d2d6dc 2.1cqw 2.16cqw),
+      repeating-linear-gradient(0deg, transparent 0 0.9cqw, #d2d6dc 0.9cqw 0.96cqw),
+      linear-gradient(#e2e6ea 0 0.96cqw, #f8f9fb 0.96cqw);
+  }
+  .sheet i {
+    position: absolute;
+    height: 0.9cqw;
+    background: rgba(70, 130, 90, 0.35);
+  }
+  .sheet .sel { position: absolute; left: 2.16cqw; top: 2.88cqw; width: 2.1cqw; height: 0.96cqw; border: 0.15cqw solid #2f7d4f; }
+  .mini-call { position: absolute; inset: 0; display: none; grid-template-columns: repeat(3, 1fr); gap: 0.2cqw; padding: 0.2cqw; background: #1b1c20; }
+  .mini-call i { border-radius: 0.2cqw; }
+  .monitor.meeting .sheet { display: none; }
+  .monitor.meeting .mini-call { display: grid; }
+
+  .keyboard { position: absolute; left: 40.5%; top: 53%; width: 19%; height: 2.6%; border-radius: 0.3cqw; background: repeating-linear-gradient(90deg, #d7d2c6 0 0.9cqw, #bfb9ab 0.9cqw 1.05cqw); box-shadow: 0 0.15cqw 0.3cqw rgba(0, 0, 0, 0.3); }
+  .mouse { position: absolute; left: 60.5%; top: 52.8%; width: 2cqw; height: 3cqw; border-radius: 50% 50% 45% 45%; background: linear-gradient(#e2ddd0, #c5bfb1); box-shadow: 0 0.15cqw 0.3cqw rgba(0, 0, 0, 0.3); }
+  .mug { left: 31%; top: 49%; width: 4%; height: 7%; }
+  .mug .cup { position: absolute; left: 0; width: 72%; height: 100%; border-radius: 0.2cqw 0.2cqw 0.5cqw 0.5cqw; background: linear-gradient(90deg, #f0ede4, #d8d3c6); }
+  .mug .cup::after { content: "ok"; position: absolute; inset: 0; display: grid; place-items: center; color: #b8322a; font-size: 1cqw; font-weight: 700; }
+  .mug .handle { position: absolute; right: 0; top: 22%; width: 34%; height: 46%; border: 0.35cqw solid #d8d3c6; border-left: 0; border-radius: 0 0.8cqw 0.8cqw 0; }
+  .mug .steam { position: absolute; left: 25%; top: -55%; width: 25%; height: 55%; border-radius: 50%; border: 0.12cqw solid rgba(255, 255, 255, 0.55); border-color: rgba(255, 255, 255, 0.55) transparent; animation: steam 2.4s ease-in-out infinite; }
+  @keyframes steam { 50% { transform: translateY(-0.4cqw) scaleX(-1); opacity: 0.3; } }
+  .stapler { left: 64.5%; top: 51.5%; width: 6%; height: 4%; }
+  .stapler .top { position: absolute; left: 0; right: 0; top: 0; height: 55%; border-radius: 0.5cqw 0.2cqw 0.2cqw 0.2cqw; background: linear-gradient(#d0453a, #a8352c); transform-origin: 100% 100%; }
+  .stapler.snap .top { animation: snap 0.25s; }
+  @keyframes snap { 50% { transform: rotate(6deg); } }
+  .stapler .bottom { position: absolute; left: 0; right: 0; bottom: 0; height: 40%; border-radius: 0.2cqw; background: #2a2a2a; }
+
+  /* desk phone */
+  .phone { left: 66%; top: 41%; width: 8%; height: 13%; }
+  .phone .body { position: absolute; left: 0; right: 0; bottom: 0; height: 70%; border-radius: 0.5cqw 0.5cqw 0.3cqw 0.3cqw; background: linear-gradient(#e9e4d6, #cfc8b8); box-shadow: 0 0.3cqw 0.6cqw rgba(0, 0, 0, 0.3); transform: skewX(-6deg); }
+  .phone .keys { position: absolute; left: 44%; right: 12%; top: 40%; bottom: 14%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.15cqw; }
+  .phone .keys i { background: #8f8a7d; border-radius: 0.1cqw; }
+  .phone .handset { position: absolute; left: 4%; width: 34%; top: 8%; height: 84%; border-radius: 1cqw; background: linear-gradient(90deg, #d9d3c5, #b9b3a4); box-shadow: 0 0.2cqw 0.4cqw rgba(0, 0, 0, 0.3); }
+  .phone .lcd { position: absolute; left: 44%; right: 12%; top: 18%; height: 16%; background: #8ca67e; }
+  .phone .vm { position: absolute; left: 44%; top: 4%; width: 0.7cqw; height: 0.7cqw; border-radius: 50%; background: #5a2a22; }
+  .phone.waiting .vm { background: var(--led); box-shadow: 0 0 0.6cqw var(--led); animation: blink 1.2s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0.2; } }
+  .phone .cord { position: absolute; left: 20%; top: 88%; width: 26%; height: 22%; border-bottom: 0.25cqw dotted #9a9385; border-radius: 0 0 50% 50%; }
+
+  /* right wall */
+  .poster {
+    left: 78%;
+    top: 12%;
+    width: 15%;
+    height: 21%;
+    padding: 0.5cqw;
+    background: #111;
+    box-shadow: 0 0.3cqw 0.8cqw rgba(0, 0, 0, 0.35);
+    color: #eee;
+  }
+  .poster .pic { height: 66%; background: linear-gradient(180deg, #2b4a7a, #a7c3e0 55%, #f2f5f8 55%, #cfd8e2 62%, #4a5560 62%); position: relative; overflow: hidden; }
+  .poster .pic::before { content: ""; position: absolute; left: 18%; top: 34%; width: 64%; height: 60%; background: #34404a; clip-path: polygon(0 100%, 30% 25%, 45% 45%, 62% 0, 100% 100%); }
+  .poster .pic::after { content: ""; position: absolute; left: 30%; top: 34%; width: 20%; height: 22%; background: #f2f5f8; clip-path: polygon(0 100%, 35% 25%, 65% 55%, 100% 0, 100% 100%); opacity: 0.8; }
+  .poster b { display: block; margin-top: 0.5cqw; font-size: 1.1cqw; letter-spacing: 0.12em; text-align: center; }
+  .poster small { display: block; margin-top: 0.2cqw; color: #bbb; font-size: 0.68cqw; text-align: center; line-height: 1.3; }
+  .incident {
+    left: 78%;
+    top: 37%;
+    width: 15%;
+    height: 9%;
+    padding: 0.5cqw;
+    border: 0.25cqw solid #2f2f2f;
+    background: #f5efd2;
+    color: #1f1e1a;
+    text-align: center;
+  }
+  .incident small { display: block; font-size: 0.72cqw; letter-spacing: 0.06em; }
+  .incident b { display: block; font-size: 2.4cqw; line-height: 1.05; }
+  .clock { left: 66%; top: 9.5%; width: 6.4cqw; height: 6.4cqw; }
+  .clock .face {
+    position: absolute;
+    inset: 0;
+    border: 0.45cqw solid #2f2f2f;
+    border-radius: 50%;
+    background: radial-gradient(circle, #ffffff 60%, #f0efe8);
+    box-shadow: 0 0.3cqw 0.7cqw rgba(0, 0, 0, 0.3);
+  }
+  .clock .face::before { content: ""; position: absolute; inset: 8%; border-radius: 50%; background: repeating-conic-gradient(#2f2f2f 0 1.2deg, transparent 1.2deg 30deg); -webkit-mask-image: radial-gradient(circle, transparent 82%, #000 83%); mask-image: radial-gradient(circle, transparent 82%, #000 83%); }
+  .hand { position: absolute; left: 50%; bottom: 50%; transform-origin: 50% 100%; background: #2f2f2f; border-radius: 0.2cqw; }
+  .hand.h { width: 0.45cqw; height: 1.55cqw; margin-left: -0.225cqw; }
+  .hand.m { width: 0.3cqw; height: 2.3cqw; margin-left: -0.15cqw; }
+  .hand.s { width: 0.12cqw; height: 2.5cqw; margin-left: -0.06cqw; background: #b8322a; }
+  .clock .pip { position: absolute; left: 50%; top: 50%; width: 0.6cqw; height: 0.6cqw; margin: -0.3cqw; border-radius: 50%; background: #2f2f2f; }
+
+  /* printer */
+  .printer { left: 77.5%; top: 47%; width: 16%; height: 15%; }
+  .printer .top { position: absolute; left: 6%; right: 6%; top: 0; height: 26%; border-radius: 0.4cqw 0.4cqw 0 0; background: linear-gradient(#e5e0d3, #d1cbbd); }
+  .printer .main { position: absolute; left: 0; right: 0; top: 24%; bottom: 0; border-radius: 0.3cqw; background: linear-gradient(#ddd8ca, #bdb6a6); box-shadow: 0 0.4cqw 0.8cqw rgba(0, 0, 0, 0.3); }
+  .printer .slot { position: absolute; left: 12%; right: 12%; top: 34%; height: 6%; background: #4a463f; }
+  .printer .tray { position: absolute; left: 20%; right: 20%; bottom: -8%; height: 14%; background: #c9c3b4; border-radius: 0 0 0.3cqw 0.3cqw; }
+  .printer .panel { position: absolute; right: 8%; top: 46%; width: 24%; height: 22%; background: #b0aa9b; border-radius: 0.2cqw; }
+  .printer .led { position: absolute; left: 10%; top: 25%; width: 0.6cqw; height: 0.6cqw; border-radius: 50%; background: #4aa860; box-shadow: 0 0 0.4cqw #4aa860; }
+  .printer.jammed .led { background: var(--led); box-shadow: 0 0 0.5cqw var(--led); animation: blink 0.7s steps(1) infinite; }
+  .printer.busy .led { background: #f0b429; box-shadow: 0 0 0.5cqw #f0b429; animation: blink 0.4s steps(1) infinite; }
+  .printer.dead .led { background: #4a463f; box-shadow: none; animation: none; }
+  .printer .page {
+    position: absolute;
+    left: 20%;
+    right: 20%;
+    top: 40%;
+    height: 0;
+    overflow: hidden;
+    background: #fff;
+    color: #1f1e1a;
+    font-size: 0.62cqw;
+    line-height: 1.3;
+    text-align: center;
+    box-shadow: 0 0.2cqw 0.4cqw rgba(0, 0, 0, 0.2);
+    transition: height 1.6s linear;
+  }
+  .printer .page span { display: block; padding: 0.6cqw 0.3cqw; }
+  .printer.jammed .page { transform: rotate(-6deg); }
+  .printer .shelf { position: absolute; left: -4%; right: -4%; top: 100%; height: 1.4cqw; background: linear-gradient(#a59d8b, #8b8371); box-shadow: 0 0.3cqw 0.6cqw rgba(0, 0, 0, 0.3); }
+  .printer .legs { position: absolute; left: 6%; right: 6%; top: 100%; height: 45%; border-left: 0.9cqw solid #7a7263; border-right: 0.9cqw solid #7a7263; }
+  .bin { position: absolute; left: 72%; top: 62%; width: 4%; height: 9%; background: linear-gradient(90deg, #3b3d42, #4b4d53 50%, #33353a); clip-path: polygon(6% 0, 94% 0, 100% 100%, 0 100%); }
+  .bin::after { content: ""; position: absolute; left: 20%; top: -18%; width: 60%; height: 34%; background: #f4f1ea; clip-path: polygon(0 100%, 20% 20%, 55% 0, 100% 45%, 80% 100%); }
+
+  /* the meeting invite */
+  .toast {
+    position: absolute;
+    right: 2%;
+    top: 11%;
+    z-index: 40;
+    width: min(30cqw, 260px);
+    padding: 1cqw 1.1cqw;
+    border-radius: 0.6cqw;
+    background: #23252b;
+    color: #eee;
+    font-size: clamp(9px, 1.05cqw, 13px);
+    line-height: 1.4;
+    box-shadow: 0 1cqw 2cqw rgba(0, 0, 0, 0.45);
+    transform: translateX(120%);
+    transition: transform 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.1);
+  }
+  .toast.in { transform: none; }
+  .toast small { display: block; color: #9aa0ab; font-size: 0.85em; letter-spacing: 0.08em; }
+  .toast b { display: block; margin: 0.25em 0; font-size: 1.1em; }
+  .toast .row { display: flex; gap: 0.6cqw; margin-top: 0.7cqw; }
+  .toast button {
+    padding: 0.45cqw 0.9cqw;
+    border: 1px solid #444;
+    border-radius: 0.4cqw;
+    background: #2f323a;
+    color: #eee;
+    font: inherit;
+    cursor: pointer;
+  }
+  .toast button.yes { background: #3c7dd6; border-color: #3c7dd6; }
+  .toast button:hover { filter: brightness(1.15); }
+
+  /* ---------- hud ---------- */
+  .hud {
+    width: var(--w);
+    margin: 12px auto 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .caption { margin: 0; min-height: 2.8em; font-size: 15px; line-height: 1.4; transition: opacity 0.2s; }
+  .caption.fade { opacity: 0; }
+  .sound {
+    flex: none;
+    padding: 6px 12px;
+    border: 1px solid var(--faint);
+    border-radius: 999px;
+    background: #1a1916;
+    color: var(--dim);
+    font: 13px var(--font);
+    cursor: pointer;
+  }
+  .sound.on { border-color: var(--acid); color: var(--acid); }
+  .rotate-hint { display: none; width: var(--w); margin: 10px auto 0; color: var(--dim); font-size: 12px; }
+  @media (orientation: portrait) and (max-width: 600px) { .rotate-hint { display: block; } }
+
+  /* ---------- the computer, up close ---------- */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: grid;
+    place-items: center;
+    padding: 16px;
+    background: rgba(10, 10, 12, 0.75);
+  }
+  .overlay[hidden] { display: none; }
+  .pc-panel {
+    position: relative;
+    width: min(900px, 100%);
+    max-height: calc(100dvh - 32px);
+    overflow: auto;
+    padding: 14px 14px 12px;
+    border-radius: 12px;
+    background: #2c2d31;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+  }
+  .pc-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; color: #bbb; font-size: 12px; }
+  .pc-top button {
+    padding: 6px 12px;
+    border: 1px solid #555;
+    border-radius: 999px;
+    background: #1e1f23;
+    color: #ddd;
+    font: 12px var(--font);
+    cursor: pointer;
+  }
+  .pc-top button:hover { color: var(--acid); border-color: var(--acid); }
+  .pc-top .leave { border-color: #b8322a; color: #f0a59e; }
+  .pc-top .leave:hover { background: #3a1f1c; color: #fff; }
+  .screen-big { position: relative; aspect-ratio: 16 / 9; border-radius: 4px; background: #f4f5f7; overflow: hidden; }
+  .xls { position: absolute; inset: 0; font-size: 11px; color: #222; }
+  .xls .bar { height: 24px; background: #2f7d4f; color: #fff; padding: 0 10px; line-height: 24px; font-size: 11px; }
+  .xls .cells { position: absolute; inset: 24px 0 0 0; display: grid; grid-template-columns: 32px repeat(6, 1fr); grid-auto-rows: 22px; }
+  .xls .cells span { border-right: 1px solid #d2d6dc; border-bottom: 1px solid #d2d6dc; padding: 0 6px; line-height: 22px; overflow: hidden; white-space: nowrap; }
+  .xls .cells span.h { background: #e2e6ea; color: #555; text-align: center; }
+  .xls .cells span.sel { outline: 2px solid #2f7d4f; outline-offset: -2px; }
+  .call { position: absolute; inset: 0; display: none; grid-template-columns: 1fr 240px; background: #1b1c20; color: #ddd; }
+  .screen-big.meeting .xls { display: none; }
+  .screen-big.meeting .call { display: grid; }
+  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); gap: 6px; padding: 8px; }
+  .tile { position: relative; border-radius: 6px; background: #2b2d34; overflow: hidden; }
+  .tile .name { position: absolute; left: 6px; bottom: 5px; padding: 2px 6px; border-radius: 3px; background: rgba(0, 0, 0, 0.55); font-size: 10px; }
+  .tile .muted { position: absolute; right: 6px; bottom: 6px; width: 14px; height: 14px; border-radius: 50%; background: #b8322a; }
+  .tile .muted::after { content: ""; position: absolute; left: 3px; right: 3px; top: 6px; height: 2px; background: #fff; transform: rotate(-45deg); }
+  .tile.speaking { box-shadow: inset 0 0 0 2px #4aa860; }
+  .tile svg { width: 100%; height: 100%; display: block; }
+  .tile.off { display: grid; place-items: center; background: #1f2026; }
+  .tile.off b { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; background: #3c7dd6; font-size: 16px; }
+  .mouth { transform-origin: 50% 50%; }
+  .tile.speaking .mouth, .tile.talking .mouth { animation: talk 0.35s steps(2) infinite; }
+  @keyframes talk { 50% { transform: scaleY(2.2); } }
+  .nod { transform-origin: 50% 100%; animation: nod 3.2s ease-in-out infinite; }
+  @keyframes nod { 30% { transform: rotate(0); } 40% { transform: rotate(3deg); } 50% { transform: rotate(-2deg); } 60% { transform: rotate(0); } }
+  .cat { position: absolute; left: -40%; bottom: 8%; width: 36%; height: 24%; }
+  .cat.walk { animation: walk 5s linear forwards; }
+  @keyframes walk { to { left: 110%; } }
+  .sandwich { animation: bite 2.8s ease-in-out infinite; transform-origin: 50% 100%; }
+  @keyframes bite { 40% { transform: translateY(-9px); } 55% { transform: translateY(-9px) scaleX(0.94); } }
+  .you-mute {
+    position: absolute;
+    left: 50%;
+    top: 12px;
+    padding: 6px 10px;
+    border-radius: 4px;
+    background: #b8322a;
+    color: #fff;
+    font-size: 11px;
+    white-space: nowrap;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .you-mute.show { opacity: 1; }
+  .transcript { border-left: 1px solid #33353c; padding: 8px 10px; font-size: 11px; line-height: 1.45; overflow: hidden; display: flex; flex-direction: column; }
+  .transcript h3 { margin: 0 0 6px; font-size: 10px; color: #9aa0ab; font-weight: 400; letter-spacing: 0.1em; text-transform: uppercase; }
+  .transcript ol { list-style: none; margin: 0; padding: 0; flex: 1; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; }
+  .transcript li { margin: 0 0 6px; animation: line-in 0.3s ease-out; }
+  .transcript li b { color: #9ec7ff; font-weight: 400; }
+  @keyframes line-in { from { opacity: 0; transform: translateY(4px); } }
+  .transcript .agenda { margin-top: auto; padding-top: 6px; border-top: 1px solid #33353c; color: #9aa0ab; }
+  .pc-foot { margin: 8px 0 0; color: #9aa0ab; font-size: 11px; }
+  @media (max-width: 640px) {
+    .call { grid-template-columns: 1fr; }
+    .transcript { display: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fluorescent { animation: none; }
+    .mug .steam { animation: none; }
+    .toast { transition: none; }
+    .nod, .sandwich, .cat.walk { animation: none; }
+    .tile.speaking .mouth, .tile.talking .mouth { animation: none; }
+    .printer .page { transition: none; }
+    .phone.waiting .vm, .printer.jammed .led, .printer.busy .led { animation: none; }
+  }
+</style>
+</head>
+<body>
+<a class="lobby-link" href="../">&larr; lobby</a>
+
+<main class="page">
+  <div class="stage-wrap">
+    <div class="stage" id="stage">
+      <div class="ceiling"></div>
+      <div class="fluorescent"></div>
+      <div class="wall"></div>
+      <div class="carpet"></div>
+      <div class="baseboard"></div>
+      <div class="outlet"></div>
+
+      <button class="obj whiteboard" type="button" data-obj="whiteboard" aria-label="whiteboard">
+        <svg viewBox="0 0 220 100" aria-hidden="true">
+          <g id="wb-3" class="wb-layer" opacity="0" stroke="#2f5fa7" fill="none" stroke-width="1.6">
+            <ellipse cx="110" cy="52" rx="34" ry="18"/>
+            <text x="110" y="57" fill="#2f5fa7" stroke="none" font-size="15" text-anchor="middle" font-family="Permanent Marker, cursive">q3</text>
+          </g>
+          <g id="wb-2" class="wb-layer" opacity="0" stroke="#b8322a" fill="none" stroke-width="1.6">
+            <path d="M18 70 Q60 20 110 60 T200 30" stroke-dasharray="4 3"/>
+            <circle cx="60" cy="42" r="6"/><circle cx="120" cy="62" r="6"/><circle cx="170" cy="40" r="6"/>
+            <text x="18" y="88" fill="#b8322a" stroke="none" font-size="9" font-family="Permanent Marker, cursive">growth (?)</text>
+            <text x="150" y="88" fill="#b8322a" stroke="none" font-size="9" font-family="Permanent Marker, cursive">us</text>
+            <path d="M200 30 l-8 -3 m8 3 l-6 6"/>
+          </g>
+          <g id="wb-1" class="wb-layer" opacity="1" stroke="#1f2a4a" fill="none" stroke-width="1.6">
+            <rect x="14" y="22" width="52" height="26" rx="3"/>
+            <rect x="84" y="22" width="52" height="26" rx="3"/>
+            <rect x="154" y="22" width="52" height="26" rx="3"/>
+            <rect x="84" y="64" width="52" height="24" rx="3"/>
+            <path d="M66 35 H84 M136 35 H154 M110 48 V64"/>
+            <path d="M80 35 l-5 -3 m5 3 l-5 3 M150 35 l-5 -3 m5 3 l-5 3 M110 60 l-3 -5 m3 5 l3 -5"/>
+            <g fill="#1f2a4a" stroke="none" font-size="9" font-family="Permanent Marker, cursive" text-anchor="middle">
+              <text x="40" y="39">synergy</text>
+              <text x="110" y="39">alignment</text>
+              <text x="180" y="39">???</text>
+              <text x="110" y="80">profit</text>
+            </g>
+            <text x="150" y="14" fill="#1f2a4a" stroke="none" font-size="8" font-family="Permanent Marker, cursive">DO NOT ERASE</text>
+          </g>
+        </svg>
+        <span class="wb-tray"><i></i><i></i><i></i><i></i></span>
+      </button>
+
+      <button class="obj cooler" type="button" data-obj="cooler" aria-label="water cooler">
+        <span class="bottle"></span><span class="body"></span><span class="taps"><i></i><i></i></span><span class="cup"></span>
+      </button>
+
+      <button class="obj plant" type="button" data-obj="plant" aria-label="a plant">
+        <span class="leaf"></span><span class="leaf"></span><span class="leaf"></span><span class="leaf"></span><span class="leaf"></span>
+        <span class="pot"></span><span class="tag">real</span>
+      </button>
+
+      <div class="partition"></div>
+      <button class="obj memo" type="button" data-obj="memo" aria-label="a pinned memo"><span class="pin"></span><b>memo</b>the kitchen fridge will be cleaned friday. anything left will be thrown out. this means you.</button>
+      <button class="obj wfh marker" type="button" data-obj="wfh" aria-label="a sign that says wfh"><span class="pin"></span>wfh</button>
+      <button class="obj photo" type="button" data-obj="photo" aria-label="a photo of a mountain"><span class="pin"></span><i></i></button>
+      <button class="obj sticker" type="button" data-obj="sticker" aria-label="a snowboard sticker">
+        <svg viewBox="0 0 60 80" aria-hidden="true">
+          <path d="M30 2 C50 2 54 20 54 40 C54 60 50 78 30 78 C10 78 6 60 6 40 C6 20 10 2 30 2 Z" fill="#c8ff3d" stroke="#0e0d0b" stroke-width="3"/>
+          <path d="M14 56 L30 18 L46 56 Z" fill="#0e0d0b"/>
+          <path d="M22 46 L30 30 L38 46 Z" fill="#c8ff3d"/>
+          <rect x="18" y="60" width="24" height="7" rx="2" fill="#0e0d0b"/>
+          <rect x="18" y="12" width="24" height="7" rx="2" fill="#0e0d0b"/>
+        </svg>
+      </button>
+
+      <div class="desk-top"></div>
+      <div class="desk-front"></div>
+      <button class="obj chair" type="button" data-obj="chair" aria-label="office chair">
+        <span class="back"></span><span class="arm l"></span><span class="arm r"></span><span class="post"></span><span class="base"></span>
+      </button>
+
+      <button class="obj monitor" id="monitor" type="button" data-obj="monitor" aria-label="the computer">
+        <span class="screen">
+          <span class="sheet"><i style="left:2.16cqw;top:0.96cqw;width:2.1cqw"></i><i style="left:6.48cqw;top:1.92cqw;width:2.1cqw"></i><i style="left:4.32cqw;top:3.84cqw;width:4.2cqw"></i><span class="sel"></span></span>
+          <span class="mini-call" id="mini-call"><i style="background:#5b6b7f"></i><i style="background:#24262d"></i><i style="background:#6f5f4f"></i><i style="background:#4a6a5a"></i><i style="background:#7a5a6a"></i><i style="background:#3b4b5c"></i></span>
+        </span>
+        <span class="neck"></span><span class="foot"></span>
+      </button>
+      <div class="keyboard"></div>
+      <div class="mouse"></div>
+      <button class="obj mug" type="button" data-obj="mug" aria-label="a mug"><span class="cup"></span><span class="handle"></span><span class="steam"></span></button>
+      <button class="obj stapler" id="stapler" type="button" data-obj="stapler" aria-label="a red stapler"><span class="top"></span><span class="bottom"></span></button>
+      <button class="obj phone waiting" id="phone" type="button" data-obj="phone" aria-label="desk phone with a voicemail">
+        <span class="body"></span><span class="lcd"></span><span class="vm"></span><span class="keys"><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="handset"></span><span class="cord"></span>
+      </button>
+
+      <button class="obj poster" type="button" data-obj="poster" aria-label="a motivational poster">
+        <span class="pic"></span>
+        <b>COMMITMENT</b>
+        <small>it's like a meeting, but forever.</small>
+      </button>
+      <button class="obj incident" type="button" data-obj="incident" aria-label="days since last incident sign">
+        <small>days since last incident</small>
+        <b id="incident-days">14</b>
+      </button>
+      <button class="obj clock" type="button" data-obj="clock" aria-label="wall clock">
+        <span class="face"><i class="hand h" id="hand-h"></i><i class="hand m" id="hand-m"></i><i class="hand s" id="hand-s"></i><span class="pip"></span></span>
+      </button>
+
+      <button class="obj printer" id="printer" type="button" data-obj="printer" aria-label="the printer">
+        <span class="top"></span><span class="main"></span><span class="slot"></span><span class="page" id="print-page"><span id="print-text"></span></span><span class="tray"></span><span class="panel"><i class="led"></i></span>
+        <span class="shelf"></span><span class="legs"></span>
+      </button>
+      <div class="bin"></div>
+
+      <div class="toast" id="toast" role="dialog" aria-label="calendar invite">
+        <small>calendar &middot; starts now</small>
+        <b id="toast-title">sync (30 min)</b>
+        <span id="toast-sub">no agenda.</span>
+        <span class="row"><button type="button" class="yes" id="toast-yes">accept</button><button type="button" id="toast-no">decline</button></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="hud">
+    <p class="caption" id="caption" role="status"></p>
+    <button class="sound" id="sound" type="button">sound: off</button>
+  </div>
+  <p class="rotate-hint">tip: the office is bigger sideways. it's still the office.</p>
+</main>
+
+<div class="overlay" id="pc-wrap" hidden>
+  <div class="pc-panel" role="dialog" aria-label="the computer">
+    <div class="pc-top">
+      <span id="pc-title">Q3_final_FINAL_v2.xlsx</span>
+      <span><button type="button" class="leave" id="leave" hidden>leave meeting</button> <button type="button" id="pc-close">back to the desk</button></span>
+    </div>
+    <div class="screen-big" id="screen-big">
+      <div class="xls">
+        <div class="bar">Q3_final_FINAL_v2.xlsx &middot; autosaved 14 minutes ago &middot; 4,212 unread rows</div>
+        <div class="cells" id="cells"></div>
+      </div>
+      <div class="call">
+        <div class="tiles" id="tiles">
+          <div class="tile" data-who="dan">
+            <svg viewBox="0 0 100 70" aria-hidden="true"><rect width="100" height="70" fill="#5b6b7f"/><circle cx="50" cy="30" r="14" fill="#e7c9a6"/><rect x="36" y="14" width="28" height="9" rx="4" fill="#5a3b26"/><circle cx="45" cy="29" r="1.6" fill="#222"/><circle cx="55" cy="29" r="1.6" fill="#222"/><rect class="mouth" x="45" y="36" width="10" height="2" rx="1" fill="#7a3b2e"/><path d="M28 70 Q50 44 72 70 Z" fill="#3c4a6b"/></svg>
+            <span class="name">dan</span><span class="muted"></span>
+          </div>
+          <div class="tile off" data-who="priya"><b>P</b><span class="name">priya (camera off)</span></div>
+          <div class="tile" data-who="marcus">
+            <svg viewBox="0 0 100 70" aria-hidden="true"><rect width="100" height="70" fill="#6f5f4f"/><rect x="0" y="0" width="100" height="26" fill="#8a7a68"/><rect x="62" y="6" width="30" height="16" fill="#c9bfa8"/><circle cx="50" cy="32" r="14" fill="#8d5a3b"/><path d="M36 24 Q50 8 64 24 Z" fill="#1e1a17"/><circle cx="45" cy="31" r="1.6" fill="#222"/><circle cx="55" cy="31" r="1.6" fill="#222"/><rect class="mouth" x="45" y="38" width="10" height="2" rx="1" fill="#4a2a1e"/><path d="M28 70 Q50 46 72 70 Z" fill="#2f5f4f"/></svg>
+            <svg class="cat" id="cat" viewBox="0 0 60 30" aria-hidden="true"><ellipse cx="30" cy="20" rx="20" ry="8" fill="#1a1a1a"/><circle cx="48" cy="14" r="7" fill="#1a1a1a"/><path d="M43 9 L45 2 L49 8 Z M51 8 L55 2 L56 9 Z" fill="#1a1a1a"/><path d="M12 18 Q2 10 6 2" stroke="#1a1a1a" stroke-width="3" fill="none"/><circle cx="46" cy="13" r="1" fill="#c8ff3d"/><circle cx="51" cy="13" r="1" fill="#c8ff3d"/></svg>
+            <span class="name">marcus</span>
+          </div>
+          <div class="tile" data-who="jen">
+            <svg viewBox="0 0 100 70" aria-hidden="true"><rect width="100" height="70" fill="#4a6a5a"/><circle cx="50" cy="30" r="14" fill="#f0d5b8"/><path d="M34 30 Q34 10 50 12 Q66 10 66 30 L62 30 Q60 18 50 18 Q40 18 38 30 Z" fill="#c9862b"/><circle cx="45" cy="29" r="1.6" fill="#222"/><circle cx="55" cy="29" r="1.6" fill="#222"/><rect class="mouth" x="45" y="36" width="10" height="2" rx="1" fill="#7a3b2e"/><path d="M28 70 Q50 44 72 70 Z" fill="#7a3b4b"/><g class="sandwich"><rect x="56" y="48" width="22" height="12" rx="3" fill="#e0b060"/><rect x="58" y="52" width="18" height="3" fill="#6aa84f"/><rect x="58" y="55" width="18" height="2" fill="#c0392b"/></g></svg>
+            <span class="name">jen</span>
+          </div>
+          <div class="tile" data-who="the vp">
+            <svg viewBox="0 0 100 70" aria-hidden="true"><rect width="100" height="70" fill="#7a5a6a"/><g class="nod"><circle cx="50" cy="30" r="14" fill="#e2b892"/><path d="M36 26 Q50 12 64 26 L64 22 Q50 6 36 22 Z" fill="#9a9a9a"/><circle cx="45" cy="29" r="1.6" fill="#222"/><circle cx="55" cy="29" r="1.6" fill="#222"/><rect class="mouth" x="45" y="36" width="10" height="2" rx="1" fill="#7a3b2e"/></g><path d="M28 70 Q50 44 72 70 Z" fill="#23252b"/><path d="M48 50 L52 50 L51 62 L49 62 Z" fill="#b8322a"/></svg>
+            <span class="name">the vp</span>
+          </div>
+          <div class="tile" data-who="you" id="you-tile">
+            <svg viewBox="0 0 100 70" aria-hidden="true"><rect width="100" height="70" fill="#3b4b5c"/><rect x="0" y="0" width="100" height="70" fill="#2a2a2a" opacity="0.35"/><circle cx="50" cy="30" r="14" fill="#c8ff3d"/><path d="M58.5 36.5 A9 9 0 1 1 58.5 23.5" fill="none" stroke="#0e0d0b" stroke-width="5"/><circle cx="52" cy="30" r="3" fill="#0e0d0b"/><path d="M28 70 Q50 44 72 70 Z" fill="#1f2a1a"/></svg>
+            <span class="name">you</span><span class="muted"></span>
+            <span class="you-mute" id="you-mute">you're on mute</span>
+          </div>
+        </div>
+        <div class="transcript">
+          <h3>transcript</h3>
+          <ol id="transcript"></ol>
+          <div class="agenda" id="agenda">agenda: none. next steps: another sync.</div>
+        </div>
+      </div>
+    </div>
+    <p class="pc-foot" id="pc-foot">click a cell. nothing happens. it's a very big spreadsheet.</p>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const stage = $('#stage');
+  const captionEl = $('#caption');
+
+  let captionTimer;
+  function say(text) {
+    clearTimeout(captionTimer);
+    captionEl.classList.add('fade');
+    captionTimer = setTimeout(() => {
+      captionEl.textContent = text;
+      captionEl.classList.remove('fade');
+    }, 180);
+  }
+  function cycle(lines) {
+    let i = 0;
+    return () => (i < lines.length ? lines[i++] : pick(lines));
+  }
+
+  // ---------- sound: a fluorescent hum, and nothing until someone asks ----------
+  const audio = { ctx: null, on: false, master: null };
+  const soundBtn = $('#sound');
+  function initAudio() {
+    if (audio.ctx) return;
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const master = ctx.createGain();
+    master.gain.value = 0;
+    master.connect(ctx.destination);
+    // the light above the desk, and the one that's slightly wrong
+    for (const [f, g] of [[120, 0.035], [240, 0.012], [119.3, 0.02]]) {
+      const o = ctx.createOscillator();
+      o.type = f > 200 ? 'triangle' : 'sawtooth';
+      o.frequency.value = f;
+      const lp = ctx.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = 700;
+      const gain = ctx.createGain();
+      gain.gain.value = g;
+      o.connect(lp).connect(gain).connect(master);
+      o.start();
+    }
+    audio.ctx = ctx;
+    audio.master = master;
+  }
+  function setSound(on) {
+    audio.on = on;
+    soundBtn.textContent = on ? 'sound: on' : 'sound: off';
+    soundBtn.classList.toggle('on', on);
+    if (!audio.ctx && !on) return;
+    initAudio();
+    if (on) audio.ctx.resume();
+    audio.master.gain.setTargetAtTime(on ? 1 : 0, audio.ctx.currentTime, 0.2);
+    if (!on && window.speechSynthesis) speechSynthesis.cancel();
+  }
+  soundBtn.addEventListener('click', () => setSound(!audio.on));
+  function ding() {
+    if (!audio.on || !audio.ctx) return;
+    const t = audio.ctx.currentTime;
+    for (const [f, at] of [[880, 0], [1174.7, 0.12]]) {
+      const o = audio.ctx.createOscillator();
+      o.type = 'sine';
+      o.frequency.value = f;
+      const g = audio.ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t + at);
+      g.gain.exponentialRampToValueAtTime(0.12, t + at + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + at + 0.5);
+      o.connect(g).connect(audio.master);
+      o.start(t + at);
+      o.stop(t + at + 0.55);
+    }
+  }
+  function speak(text) {
+    if (!audio.on || !window.speechSynthesis) return;
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate = 0.9;
+    u.pitch = 0.7;
+    u.volume = 0.7;
+    speechSynthesis.cancel();
+    speechSynthesis.speak(u);
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (!audio.ctx) return;
+    if (document.hidden) audio.ctx.suspend();
+    else if (audio.on) audio.ctx.resume();
+  });
+
+  // ---------- the clock. it slows down in meetings. ----------
+  const handH = $('#hand-h');
+  const handM = $('#hand-m');
+  const handS = $('#hand-s');
+  let clockMs = Date.now();
+  let lastTick = performance.now();
+  function tickClock(now) {
+    const dt = now - lastTick;
+    lastTick = now;
+    clockMs += dt * (meeting.on ? 0.12 : 1);
+    const d = new Date(clockMs);
+    const s = d.getSeconds() + d.getMilliseconds() / 1000;
+    const m = d.getMinutes() + s / 60;
+    const h = (d.getHours() % 12) + m / 60;
+    handH.style.transform = `rotate(${h * 30}deg)`;
+    handM.style.transform = `rotate(${m * 6}deg)`;
+    handS.style.transform = `rotate(${Math.floor(s) * 6}deg)`;
+  }
+  const clockText = () => {
+    const d = new Date(clockMs);
+    return `${d.getHours() % 12 || 12}:${String(d.getMinutes()).padStart(2, '0')}`;
+  };
+
+  // ---------- the meeting ----------
+  const meeting = { on: false, n: 0, timer: null, endTimer: null, lines: 0, muteSays: 0 };
+  const toast = $('#toast');
+  const toastTitle = $('#toast-title');
+  const toastSub = $('#toast-sub');
+  const monitor = $('#monitor');
+  const pcWrap = $('#pc-wrap');
+  const screenBig = $('#screen-big');
+  const pcTitle = $('#pc-title');
+  const pcFoot = $('#pc-foot');
+  const leaveBtn = $('#leave');
+  const transcript = $('#transcript');
+  const tiles = [...document.querySelectorAll('#tiles .tile')];
+  let inviteTimer = null;
+  let pendingTitle = 'sync (30 min)';
+
+  const TITLES = [
+    ['sync (30 min)', 'no agenda.'],
+    ['sync about the sync', 'agenda: the sync.'],
+    ['quick sync (60 min)', "it won't be quick."],
+    ['follow-up: sync', 'follow-up to the follow-up.'],
+    ['pre-sync', 'to prepare for the sync.'],
+    ['sync (moved)', 'it was moved to now.'],
+    ['1:1 (6 people)', 'no agenda.'],
+    ['retro on the sync', 'what went well: nothing. what to improve: the sync.'],
+  ];
+  function invite(title, sub, delay) {
+    clearTimeout(inviteTimer);
+    inviteTimer = setTimeout(() => {
+      if (meeting.on) return;
+      pendingTitle = title;
+      toastTitle.textContent = title;
+      toastSub.textContent = sub;
+      toast.classList.add('in');
+      ding();
+    }, delay);
+  }
+  function hideToast() { toast.classList.remove('in'); }
+
+  const TALK = [
+    'can everyone see my screen',
+    "you're on mute",
+    "let's circle back on that",
+    "i'll take that offline",
+    "we're at time, so, real quick",
+    'just to piggyback on that',
+    'sorry, you go',
+    'no you go',
+    "let's put a pin in it",
+    'does anyone have anything else',
+    'i think we lost dan',
+    "dan, you're muted",
+    "i can hear you now. no. no i can't",
+    "let's align on next steps",
+    'the next step is another sync',
+    "quick question. it isn't quick",
+    'can we get the recording',
+    'there is no recording',
+    'sorry, my cat',
+    "i'll drop a note in the doc",
+    'which doc',
+    'the doc',
+    "let's table that",
+    'great sync everyone',
+    'can we go back one slide',
+    'there are no slides',
+    'i have a hard stop. i do not have a hard stop',
+    'is this the right meeting',
+    'it is now',
+  ];
+  const WHO = ['dan', 'priya', 'marcus', 'jen', 'the vp'];
+  let lastWho = '';
+  function addLine(who, text) {
+    const li = document.createElement('li');
+    const b = document.createElement('b');
+    b.textContent = who + ': ';
+    li.append(b, text);
+    transcript.appendChild(li);
+    while (transcript.childElementCount > 9) transcript.firstElementChild.remove();
+    for (const t of tiles) t.classList.toggle('speaking', t.dataset.who === who && who !== 'dan');
+    meeting.lines++;
+  }
+  function chatter() {
+    let who = pick(WHO);
+    if (who === lastWho) who = pick(WHO);
+    lastWho = who;
+    // dan is muted. dan talks anyway. nobody hears dan.
+    if (who === 'dan') addLine('dan', '(muted)');
+    else addLine(who, pick(TALK));
+    if (Math.random() < 0.12) catWalk();
+    meeting.timer = setTimeout(chatter, 2600 + Math.random() * 3200);
+  }
+  const catEl = $('#cat');
+  function catWalk() {
+    if (reduceMotion) return;
+    catEl.classList.remove('walk');
+    void catEl.offsetWidth;
+    catEl.classList.add('walk');
+  }
+
+  function startMeeting() {
+    hideToast();
+    meeting.on = true;
+    meeting.n++;
+    meeting.lines = 0;
+    monitor.classList.add('meeting');
+    screenBig.classList.add('meeting');
+    pcTitle.textContent = pendingTitle;
+    leaveBtn.hidden = false;
+    pcFoot.textContent = "you're on mute. you have always been on mute.";
+    transcript.textContent = '';
+    addLine('the vp', 'ok let\'s get started, we have a lot to not cover');
+    openPc();
+    say(meeting.n === 1
+      ? 'the meeting has started. the clock has slowed down. it does that in meetings.'
+      : 'another meeting. the clock knows. it has slowed down again.');
+    clearTimeout(meeting.timer);
+    meeting.timer = setTimeout(chatter, 2400);
+    clearTimeout(meeting.endTimer);
+    meeting.endTimer = setTimeout(endMeeting, 150000 + Math.random() * 60000);
+  }
+  function stopMeeting() {
+    meeting.on = false;
+    clearTimeout(meeting.timer);
+    clearTimeout(meeting.endTimer);
+    monitor.classList.remove('meeting');
+    screenBig.classList.remove('meeting');
+    leaveBtn.hidden = true;
+    pcTitle.textContent = 'Q3_final_FINAL_v2.xlsx';
+    pcFoot.textContent = "click a cell. nothing happens. it's a very big spreadsheet.";
+    for (const t of tiles) t.classList.remove('speaking');
+  }
+  function nextInvite(delay) {
+    const [title, sub] = TITLES[Math.min(meeting.n, TITLES.length - 1)];
+    invite(title, sub, delay);
+  }
+  function endMeeting() {
+    addLine('the vp', "let's take this offline");
+    setTimeout(() => {
+      stopMeeting();
+      closePc();
+      say('the meeting ended on its own. "let\'s take this offline." another one has been scheduled.');
+      nextInvite(14000);
+    }, 1800);
+  }
+  function leaveEarly() {
+    stopMeeting();
+    closePc();
+    say('you left early. a follow-up has been scheduled.');
+    nextInvite(7000);
+  }
+  $('#toast-yes').addEventListener('click', startMeeting);
+  $('#toast-no').addEventListener('click', () => {
+    hideToast();
+    say('declined. it was moved to now anyway.');
+    const [title] = TITLES[Math.min(meeting.n, TITLES.length - 1)];
+    invite(title.includes('moved') ? title : 'sync (moved)', 'it was moved to now.', 12000);
+  });
+  leaveBtn.addEventListener('click', leaveEarly);
+
+  // "you're on mute", whenever you try to do anything in the call
+  const youMute = $('#you-mute');
+  let muteTimer;
+  screenBig.addEventListener('click', () => {
+    if (!meeting.on) { pcFoot.textContent = pick(["you clicked a cell. it's a number. it was always a number.", 'the spreadsheet has 4,212 unread rows. they are all fine.', 'you scrolled. there is more spreadsheet.']); return; }
+    youMute.classList.add('show');
+    clearTimeout(muteTimer);
+    muteTimer = setTimeout(() => youMute.classList.remove('show'), 1600);
+    const n = meeting.muteSays++;
+    addLine('you', n === 0 ? '(muted)' : n === 1 ? 'sorry, i was on mute' : '(muted again)');
+    if (n === 1) setTimeout(() => addLine('the vp', 'we heard you the second time. we did not'), 1400);
+  });
+
+  // ---------- the computer, up close ----------
+  const cells = $('#cells');
+  (() => {
+    const cols = ['', 'A', 'B', 'C', 'D', 'E', 'F'];
+    const frag = document.createDocumentFragment();
+    for (const c of cols) { const s = document.createElement('span'); s.className = 'h'; s.textContent = c; frag.appendChild(s); }
+    const words = ['q3', 'fine', 'tbd', '?', 'see tab 4', 'ok', 'circle back', 'n/a', 'pending'];
+    for (let r = 1; r <= 12; r++) {
+      const h = document.createElement('span');
+      h.className = 'h';
+      h.textContent = r;
+      frag.appendChild(h);
+      for (let c = 1; c < cols.length; c++) {
+        const s = document.createElement('span');
+        const roll = (r * 7 + c * 13) % 10;
+        s.textContent = roll < 6 ? String((r * 137 + c * 911) % 9000 + 100) : roll < 9 ? words[(r + c) % words.length] : '';
+        if (r === 4 && c === 2) s.classList.add('sel');
+        frag.appendChild(s);
+      }
+    }
+    cells.appendChild(frag);
+  })();
+  function openPc() { pcWrap.hidden = false; }
+  function closePc() { pcWrap.hidden = true; }
+  $('#pc-close').addEventListener('click', () => {
+    closePc();
+    if (meeting.on) say('you minimized the meeting. it continues. the clock knows.');
+  });
+  addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !pcWrap.hidden) { e.preventDefault(); closePc(); }
+  });
+
+  // ---------- the printer ----------
+  const printer = $('#printer');
+  const printPage = $('#print-page');
+  const printText = $('#print-text');
+  let printState = 'idle'; // idle -> busy -> jammed -> clearing -> printed -> dead
+  const printerLine = () => {
+    if (printState === 'idle') {
+      printState = 'busy';
+      printer.classList.add('busy');
+      printText.textContent = '';
+      printPage.style.height = '18%';
+      setTimeout(() => {
+        printer.classList.remove('busy');
+        printer.classList.add('jammed');
+        printState = 'jammed';
+        say('paper jam. tray 2. there is no tray 2.');
+      }, 1900);
+      return 'printing. the printer is thinking about it.';
+    }
+    if (printState === 'busy') return "it's printing. you can hear it deciding.";
+    if (printState === 'jammed') {
+      printState = 'clearing';
+      printer.classList.remove('jammed');
+      printer.classList.add('busy');
+      printPage.style.height = '0';
+      setTimeout(() => {
+        printText.textContent = 'TRAY 2 IS A STATE OF MIND';
+        printPage.style.height = '46%';
+        printer.classList.remove('busy');
+        printState = 'printed';
+        setTimeout(() => {
+          printer.classList.add('dead');
+          printState = 'dead';
+          say('out of toner. it printed that page with the last of it. it chose that page.');
+        }, 2600);
+      }, 1500);
+      return 'you clear the jam. the printer resumes. it has one thing to say.';
+    }
+    if (printState === 'clearing' || printState === 'printed') return 'it printed one page. read it. that\'s the whole page.';
+    return pick(['out of toner. it was always out of toner.', 'the printer is out of toner. so is the other printer. there is no other printer.', 'you press print. the printer does not.']);
+  };
+
+  // ---------- the phone ----------
+  const phone = $('#phone');
+  let voicemails = 1;
+  let playing = false;
+  const VOICEMAIL = [
+    'you have one new message.',
+    "hi, it's dan. we had the sync. you weren't there.",
+    'we synced without you. it went fine.',
+    "we'll need to sync about that. i'll send an invite.",
+    'end of message. to delete this message, press nothing.',
+  ];
+  function playVoicemail() {
+    if (playing) return "it's playing. dan is still talking.";
+    if (!voicemails) return pick(['no new messages. the light is off. it feels wrong.', 'you have zero new messages. dan will fix that.']);
+    playing = true;
+    voicemails = 0;
+    phone.classList.remove('waiting');
+    VOICEMAIL.forEach((line, i) => setTimeout(() => {
+      say(line);
+      speak(line);
+      if (i === VOICEMAIL.length - 1) {
+        playing = false;
+        nextInvite(9000);
+      }
+    }, i * 3600));
+    return VOICEMAIL[0];
+  }
+
+  // ---------- the whiteboard ----------
+  let erased = 0;
+  const wb1 = $('#wb-1');
+  const wb2 = $('#wb-2');
+  const wb3 = $('#wb-3');
+  function eraseSome() {
+    erased++;
+    wb1.setAttribute('opacity', String(Math.max(0, 1 - erased * 0.34)));
+    wb2.setAttribute('opacity', String(Math.min(1, erased * 0.34)));
+    if (erased >= 4) {
+      wb2.setAttribute('opacity', String(Math.max(0, 1 - (erased - 3) * 0.5)));
+      wb3.setAttribute('opacity', String(Math.min(1, (erased - 3) * 0.5)));
+    }
+    if (erased === 1) return "you erase a bit. it said do not erase. there's an older diagram under it.";
+    if (erased === 2) return 'the older diagram is worse. it has a dotted line. nobody knows what the dotted line meant.';
+    if (erased === 3) return '"growth (?)" and "us". that was somebody\'s whole plan.';
+    if (erased === 4) return 'under that one there is a third diagram. it\'s the word "q3". circled.';
+    if (erased === 5) return 'q3. circled. that\'s the bottom. that\'s the original plan.';
+    return pick(['there is nothing under q3. q3 is load-bearing.', 'you keep erasing. q3 stays.', 'the board is clean now. except q3.']);
+  }
+
+  // ---------- everything else ----------
+  let incidentDays = 14;
+  const incidentEl = $('#incident-days');
+  const OBJ = {
+    whiteboard: eraseSome,
+    printer: printerLine,
+    phone: playVoicemail,
+    monitor: () => { openPc(); return meeting.on ? 'the meeting. still going.' : 'the spreadsheet. it has 4,212 unread rows. you have read none of them.'; },
+    cooler: cycle([
+      'the water cooler. it glugs. that is the whole conversation.',
+      "someone left one cup's worth in it. it's yours now. no.",
+      'the cooler has a hot tap. it makes lukewarm. that is its range.',
+      'nobody has changed the bottle. everybody has looked at it.',
+    ]),
+    plant: cycle([
+      "the plant is fake. it's thriving.",
+      'the tag says real. the tag is also fake.',
+      'someone waters it on tuesdays. it does not need water. it appreciates the routine.',
+    ]),
+    memo: cycle([
+      'memo: the fridge will be cleaned friday. it was not cleaned friday.',
+      'the memo is from 2019. the fridge is from before that.',
+      '"this means you." it did mean you.',
+    ]),
+    wfh: cycle([
+      'a sign that says wfh. it is at the office. think about it.',
+      "the sign is here so people know you're not. you are.",
+      'wfh. working from here. it counts.',
+    ]),
+    photo: cycle([
+      'a photo of a mountain. it is the only window in this cubicle.',
+      'the mountain is real. the office is also real. one of these is a problem.',
+      'it snowed there last week. it did not snow here. it never snows here.',
+    ]),
+    sticker: cycle([
+      'a snowboard sticker. the only thing in this cubicle that has been outside.',
+      "it's on the partition, at eye level, for when the spreadsheet gets to be too much.",
+      'the sticker is peeling at one corner. so is the partition. so is everyone.',
+    ]),
+    chair: cycle([
+      'the chair leans back exactly one degree too far.',
+      'the height lever does nothing. it did once. that day was a good day.',
+      'the chair has a name. nobody uses it. the chair is fine with that.',
+    ]),
+    mug: cycle([
+      'the mug says "ok". it was a gift. from cole. to cole.',
+      "the coffee is from this morning. it's the afternoon. it's still from this morning.",
+      'the steam is decorative. the coffee has been cold since the first meeting.',
+    ]),
+    stapler: () => {
+      const st = $('#stapler');
+      st.classList.remove('snap');
+      void st.offsetWidth;
+      st.classList.add('snap');
+      return pick([
+        "the stapler. it's red. it's yours. everyone knows it's yours. they take it anyway.",
+        'it has three staples left. nobody will refill it. nobody has ever refilled it.',
+        'click. it stapled nothing. it was satisfying anyway.',
+      ]);
+    },
+    poster: cycle([
+      '"commitment: it\'s like a meeting, but forever." the poster came with the office.',
+      'the mountain on the poster is not a real mountain. the sentiment is.',
+      'someone tried to take the poster down. it is load-bearing.',
+    ]),
+    incident: () => {
+      if (incidentDays > 0) { incidentDays = 0; incidentEl.textContent = '0'; return 'you touched the sign. it reset. that was the incident.'; }
+      return pick(['still 0. it has been 0 for a while.', 'the sign has been reset 41 times. this makes 42. this was also an incident.', 'zero days. the sign is used to it.']);
+    },
+    clock: () => meeting.on
+      ? `it's ${clockText()}. it has been ${clockText()} for a while. it will be ${clockText()} until the meeting ends.`
+      : `it's ${clockText()}. the clock is normal right now. enjoy it.`,
+  };
+  stage.addEventListener('click', e => {
+    if (e.target.closest('.toast')) return;
+    const el = e.target.closest('[data-obj]');
+    if (!el || !OBJ[el.dataset.obj]) return;
+    say(OBJ[el.dataset.obj]());
+  });
+
+  // back from another tab: you missed one
+  addEventListener('cizole:return', e => {
+    if (e.detail.awayMs < 4000) return;
+    if (meeting.on) { say("you tabbed away during the meeting. nobody noticed. the meeting continues."); return; }
+    say("you missed a meeting. it's been rescheduled.");
+    hideToast();
+    nextInvite(1500);
+  });
+
+  // ---------- go ----------
+  function frame(now) {
+    tickClock(now);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  say("the office. it's beige. it's fine. everything here is fine.");
+  invite('sync (30 min)', 'no agenda.', 9000);
+})();
+</script>
+<script src="../assets/rooms.js"></script>
+<script src="../assets/away.js"></script>
+</body>
+</html>
