@@ -170,7 +170,11 @@
     margin-top: 16px;
     font-size: 14px;
   }
-  .label { margin-right: 8px; color: var(--dim); }
+  /* the label sits to the left and the pills wrap under each other, not under the label */
+  .picker { display: flex; align-items: baseline; }
+  .picker:first-child { flex-basis: 100%; }
+  .picker > span:last-child { display: flex; flex-wrap: wrap; flex: 1; min-width: 0; }
+  .label { flex: none; margin-right: 8px; color: var(--dim); }
   .pill {
     margin: 0 6px 6px 0;
     padding: 5px 11px;
@@ -187,6 +191,9 @@
 
   @media (max-width: 560px) {
     .window { border-width: 12px; }
+    /* on a phone the label gets its own line and the pills get the full width under it */
+    .picker:first-child { flex-wrap: wrap; }
+    .picker:first-child .label { flex-basis: 100%; margin-bottom: 6px; }
     .sticky { max-width: 130px; font-size: 11px; }
     .mug { transform: scale(0.8); transform-origin: bottom left; }
   }
@@ -223,8 +230,8 @@
   </section>
 
   <div class="controls">
-    <div><span class="label">window faces:</span><span id="mountains"></span></div>
-    <div><span class="label">units:</span><button class="pill" type="button" data-unit="f">&deg;f</button><button class="pill" type="button" data-unit="c">&deg;c</button></div>
+    <div class="picker"><span class="label">window faces:</span><span id="mountains"></span></div>
+    <div class="picker"><span class="label">units:</span><span><button class="pill" type="button" data-unit="f">&deg;f</button><button class="pill" type="button" data-unit="c">&deg;c</button></span></div>
   </div>
 </main>
 
@@ -243,6 +250,13 @@
       { id: 'mammoth', name: 'mammoth', lat: 37.6308, lon: -119.0326, tagline: 'a big mountain with a big parking lot.', shape: { peaks: 1, height: 0.5, rough: 0.3, width: 0.42 } },
       { id: 'whistler', name: 'whistler', lat: 50.0590, lon: -122.9510, tagline: 'two mountains. one window.', shape: { peaks: 2, height: 0.52, rough: 0.45, width: 0.26 } },
       { id: 'chamonix', name: 'chamonix', lat: 45.9237, lon: 6.8694, tagline: 'the mountains here are extremely serious.', shape: { peaks: 5, height: 0.66, rough: 0.85, width: 0.1 } },
+      // the famous ones. these windows are at the summit, so the station reads summit weather.
+      { id: 'matterhorn', name: 'the matterhorn', lat: 45.9763, lon: 7.6586, tagline: "you've seen it on a chocolate bar. it's bigger than that.", shape: { peaks: 1, height: 0.72, rough: 0.5, width: 0.12 } },
+      { id: 'rainier', name: 'mount rainier', lat: 46.8523, lon: -121.7603, tagline: 'on clear days it looms over seattle. there are not many clear days.', shape: { peaks: 1, height: 0.52, rough: 0.3, width: 0.42 } },
+      { id: 'denali', name: 'denali', lat: 63.0692, lon: -151.0070, tagline: 'the tallest in north america. also the farthest from the car.', shape: { peaks: 2, height: 0.62, rough: 0.5, width: 0.3 } },
+      { id: 'fuji', name: 'mount fuji', lat: 35.3606, lon: 138.7274, tagline: 'perfectly symmetrical. it knows.', shape: { peaks: 1, height: 0.5, rough: 0.08, width: 0.5 } },
+      { id: 'kilimanjaro', name: 'kilimanjaro', lat: -3.0674, lon: 37.3556, tagline: 'snow on the equator. for now.', shape: { peaks: 1, height: 0.4, rough: 0.15, width: 0.62 } },
+      { id: 'everest', name: 'mount everest', lat: 27.9881, lon: 86.9250, tagline: 'the tallest one. there is a line.', shape: { peaks: 3, height: 0.74, rough: 0.95, width: 0.14 } },
     ],
   };
 
@@ -355,13 +369,15 @@
   }
   function fmtDepth(m) {
     if (!(m > 0)) return 'none';
-    return unit === 'f' ? Math.round(m * 39.37) + ' in' : Math.round(m * 100) + ' cm';
+    // glaciers report their snow too, which runs to four digits in inches
+    if (unit === 'f') return m * 39.37 >= 100 ? Math.round(m * 3.28084) + ' ft' : Math.round(m * 39.37) + ' in';
+    return m >= 1 ? m.toFixed(1) + ' m' : Math.round(m * 100) + ' cm';
   }
   const COMPASS = ['n', 'nne', 'ne', 'ene', 'e', 'ese', 'se', 'sse', 's', 'ssw', 'sw', 'wsw', 'w', 'wnw', 'nw', 'nnw'];
   const compass = deg => COMPASS[Math.round(((deg % 360) + 360) % 360 / 22.5) % 16];
   function fmtClock(h, m) {
     const ap = h < 12 ? 'am' : 'pm';
-    return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${ap}`;
+    return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${ap}`; // am/pm never wraps away from its time
   }
   const minutesOf = s => { const [h, m] = s.slice(11, 16).split(':').map(Number); return h * 60 + m; };
   const fmtIsoTime = s => (s ? fmtClock(Math.floor(minutesOf(s) / 60), minutesOf(s) % 60) : '--');
@@ -1099,8 +1115,9 @@
       row('wind', fmtWind(data.wind), `from the ${compass(data.windDir)}, gusts ${fmtWind(data.gusts)}`),
       row('precipitation', fmtPrecip(data.precip), 'last 15 min'),
       row('visibility', fmtDist(data.visibility)),
-      row('snow on the ground', fmtDepth(data.snowDepth)),
-      row('sunrise / sunset', `${fmtIsoTime(data.sunrise)} / ${fmtIsoTime(data.sunset)}`),
+      row('snow on the ground', fmtDepth(data.snowDepth), data.snowDepth > 3 ? 'most of that is glacier' : ''),
+      row('sunrise', fmtIsoTime(data.sunrise)),
+      row('sunset', fmtIsoTime(data.sunset)),
       row('local time there', fmtClock(clock.h, clock.m)),
     );
     $('#updated').textContent = 'updated ' + ago(Date.now() - data.fetchedAt) + (status.cached ? ' (cached)' : '');
