@@ -58,9 +58,19 @@
   .exhibits a:hover { color: var(--acid); }
   .num { color: var(--dim); font-size: 14px; }
   .name { font-size: 20px; font-weight: 700; }
-  .blurb { margin-left: auto; color: var(--dim); font-size: 15px; text-align: right; }
-  .note { display: block; color: var(--acid); font-size: 13px; }
-  .last .blurb::after { content: "  \00b7  you were just here"; color: var(--acid); }
+  .blurb { position: relative; margin-left: auto; color: var(--dim); font-size: 15px; text-align: right; }
+  /* "you were just here" and the management's pick hang under the blurb, in the row's
+     padding, so those rows stay the same height as the rest */
+  .tags {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: -2px;
+    color: var(--acid);
+    font-size: 13px;
+    line-height: 1;
+    white-space: nowrap;
+  }
   /* retired rooms keep their number, and a reason */
   .exhibits .closed {
     display: flex;
@@ -106,6 +116,7 @@
   @media (max-width: 520px) {
     .exhibits a, .exhibits .closed { flex-wrap: wrap; row-gap: 4px; }
     .blurb { flex-basis: 100%; margin-left: 0; text-align: left; }
+    .tags { right: auto; left: 0; }
   }
 </style>
 </head>
@@ -146,13 +157,16 @@
     const a = document.createElement('a');
     a.href = r.slug + '/';
     const blurb = span('blurb', r.blurb);
-    if (r.featured) blurb.appendChild(span('note', 'recommended by the management.'));
-    a.append(span('num', r.n), span('name', r.name), blurb);
-    if (visited.includes(r.slug)) a.classList.add('seen');
+    const tags = [];
+    if (r.featured) tags.push('recommended by the management.');
     if (r.slug === last) {
       a.classList.add('last');
       lastRow = li;
+      tags.push('you were just here');
     }
+    if (tags.length) blurb.appendChild(span('tags', tags.join('  ·  ')));
+    a.append(span('num', r.n), span('name', r.name), blurb);
+    if (visited.includes(r.slug)) a.classList.add('seen');
     li.appendChild(a);
     return li;
   }
