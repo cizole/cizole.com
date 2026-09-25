@@ -110,7 +110,29 @@
           <feGaussianBlur stdDeviation="4" result="b"/>
           <feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
         </filter>
+        <!-- writing gets a tighter glow, or the letters melt into each other -->
+        <filter id="glowText" x="-10%" y="-40%" width="120%" height="180%">
+          <feGaussianBlur stdDeviation="2.2" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
         <filter id="soft"><feGaussianBlur stdDeviation="2"/></filter>
+        <!-- the couch, the floor lamp and the side table stand in front of the baseboard and the carpet -->
+        <mask id="behindFurniture" maskUnits="userSpaceOnUse" x="0" y="0" width="1600" height="1000">
+          <rect width="1600" height="1000" fill="#fff"/>
+          <g fill="#000">
+            <rect x="320" y="560" width="560" height="130" rx="30"/>
+            <rect x="300" y="680" width="600" height="90" rx="20"/>
+            <rect x="280" y="600" width="70" height="190" rx="30"/>
+            <rect x="850" y="600" width="70" height="190" rx="30"/>
+            <rect x="310" y="788" width="14" height="20"/>
+            <rect x="876" y="788" width="14" height="20"/>
+            <ellipse cx="150" cy="960" rx="50" ry="12"/>
+            <rect x="146" y="420" width="8" height="540"/>
+            <rect x="950" y="660" width="120" height="12"/>
+            <rect x="958" y="672" width="8" height="110"/>
+            <rect x="1054" y="672" width="8" height="110"/>
+          </g>
+        </mask>
         <filter id="bigblur" x="-50%" y="-300%" width="200%" height="700%"><feGaussianBlur stdDeviation="10"/></filter>
         <pattern id="shag" width="14" height="14" patternUnits="userSpaceOnUse">
           <rect width="14" height="14" fill="#7d7465"/>
@@ -169,8 +191,8 @@
           <rect x="342" y="212" width="176" height="200" fill="#9fb0bf"/>
           <path d="M342 412 L400 300 L440 360 L480 280 L518 412 Z" fill="#6f7f8e"/>
           <path d="M400 300 L388 324 L404 318 L412 322 Z M480 280 L468 304 L484 298 L494 306 Z" fill="#e9e3d3"/>
-          <text x="430" y="440" text-anchor="middle" class="mono" font-size="14" fill="#4a4a4a">the mountains</text>
-          <text x="430" y="458" text-anchor="middle" class="mono" font-size="14" fill="#4a4a4a">are calling</text>
+          <text x="430" y="442" text-anchor="middle" class="mono" font-size="16" fill="#3a3a3a">the mountains</text>
+          <text x="430" y="462" text-anchor="middle" class="mono" font-size="16" fill="#3a3a3a">are calling</text>
           <rect x="322" y="194" width="30" height="12" fill="#e8d9a8" transform="rotate(-30 337 200)"/>
           <rect x="508" y="194" width="30" height="12" fill="#e8d9a8" transform="rotate(30 523 200)"/>
         </g>
@@ -187,7 +209,8 @@
             <circle cx="694" cy="372" r="7"/><circle cx="706" cy="372" r="7"/><circle cx="700" cy="383" r="7"/>
           </g>
           <path d="M650 395 Q700 422 752 393 Q700 410 650 395 Z" fill="#cdb45a"/>
-          <text x="700" y="440" text-anchor="middle" class="mono" font-size="14" fill="#4a4a4a">still life with fruit</text>
+          <text x="700" y="442" text-anchor="middle" class="mono" font-size="16" fill="#3a3a3a">still life</text>
+          <text x="700" y="462" text-anchor="middle" class="mono" font-size="16" fill="#3a3a3a">with fruit</text>
           <rect x="590" y="186" width="30" height="12" fill="#e8d9a8" transform="rotate(-25 605 192)"/>
           <rect x="780" y="186" width="30" height="12" fill="#e8d9a8" transform="rotate(25 795 192)"/>
         </g>
@@ -195,8 +218,8 @@
         <!-- certificate -->
         <rect x="1120" y="180" width="180" height="120" fill="#3a2a1c"/>
         <rect x="1130" y="190" width="160" height="100" fill="#efe6cf"/>
-        <text x="1210" y="224" text-anchor="middle" class="mono" font-size="12" fill="#5a4630">certificate of</text>
-        <text x="1210" y="242" text-anchor="middle" class="mono" font-size="12" fill="#5a4630">participation</text>
+        <text x="1210" y="224" text-anchor="middle" class="mono" font-size="14" fill="#4a3826">certificate of</text>
+        <text x="1210" y="244" text-anchor="middle" class="mono" font-size="14" fill="#4a3826">participation</text>
         <circle cx="1262" cy="268" r="10" fill="#b8322a"/>
 
         <!-- shelf -->
@@ -242,8 +265,8 @@
           <rect x="1498" y="430" width="14" height="44" rx="2" fill="#cfc9ba"/>
           <rect id="knob-lamp" x="1470" y="432" width="10" height="20" rx="2" fill="#f5f2ea" stroke="#a9a393"/>
           <rect id="knob-uv" x="1500" y="452" width="10" height="20" rx="2" fill="#f5f2ea" stroke="#a9a393"/>
-          <rect x="1434" y="530" width="112" height="22" fill="#e8d9a8" transform="rotate(-2 1490 541)"/>
-          <text x="1490" y="546" text-anchor="middle" class="marker" font-size="13" fill="#1b1b1b" transform="rotate(-2 1490 541)">lamp / the other one</text>
+          <rect x="1402" y="528" width="176" height="26" fill="#e8d9a8" transform="rotate(-2 1490 541)"/>
+          <text x="1490" y="547" text-anchor="middle" class="marker" font-size="16" fill="#1b1b1b" transform="rotate(-2 1490 541)">lamp / the other one</text>
           <rect x="1440" y="396" width="100" height="160" fill="transparent"/>
         </g>
 
@@ -281,50 +304,84 @@
 
       <!-- ============ what the blacklight tells you ============ -->
       <g id="fluo">
-        <!-- white things -->
+        <!-- white things. the furniture stands in front of the baseboard. -->
+        <g mask="url(#behindFurniture)">
+          <rect x="0" y="705" width="1600" height="18" fill="#b8a6ff" opacity="0.55" filter="url(#glow)"/>
+        </g>
         <g filter="url(#glow)">
-          <rect x="0" y="705" width="1600" height="18" fill="#b8a6ff" opacity="0.55"/>
           <path d="M846 606 L900 596 L932 612 L926 640 L906 634 L904 700 L858 704 L856 640 Z" fill="#c7b6ff" opacity="0.9"/>
           <rect x="1290" y="330" width="30" height="30" rx="3" fill="#c7b6ff" opacity="0.8"/>
           <path d="M1318 336 q14 0 14 12 q0 12 -14 12" fill="none" stroke="#c7b6ff" stroke-width="5" opacity="0.8"/>
-          <rect x="1450" y="400" width="80" height="120" rx="6" fill="#c7b6ff" opacity="0.45"/>
-          <rect x="1130" y="190" width="160" height="100" fill="#cbbcff" opacity="0.3"/>
+          <rect x="1450" y="400" width="80" height="120" rx="6" fill="#c7b6ff" opacity="0.4"/>
+          <rect x="1130" y="190" width="160" height="100" fill="#cbbcff" opacity="0.18"/>
           <rect x="330" y="200" width="200" height="270" fill="none" stroke="#b8a6ff" stroke-width="6" transform="rotate(-2 430 335)" opacity="0.7"/>
           <rect x="600" y="190" width="200" height="280" fill="none" stroke="#b8a6ff" stroke-width="6" opacity="0.7"/>
         </g>
+        <!-- the switches are white plastic too, so you can still find them -->
+        <g>
+          <rect x="1468" y="430" width="14" height="44" rx="2" fill="#1c1236"/>
+          <rect x="1498" y="430" width="14" height="44" rx="2" fill="#1c1236"/>
+          <rect id="knob-lamp-uv" x="1470" y="432" width="10" height="20" rx="2" fill="#efe6ff"/>
+          <rect id="knob-uv-uv" x="1500" y="452" width="10" height="20" rx="2" fill="#efe6ff"/>
+          <g transform="rotate(-2 1490 541)">
+            <rect x="1402" y="528" width="176" height="26" fill="#bfae8a" opacity="0.55"/>
+            <text x="1490" y="547" text-anchor="middle" class="marker" font-size="16" fill="#140c24">lamp / the other one</text>
+          </g>
+        </g>
 
         <!-- the posters were never just posters -->
-        <g filter="url(#glow)" transform="rotate(-2 430 335)" fill="none" stroke-linejoin="round">
-          <path d="M342 412 L400 300 L440 360 L480 280 L518 412" stroke="#ff3fd0" stroke-width="3"/>
-          <path d="M342 412 L392 336 L440 390 L486 316 L518 380" stroke="#3ae8ff" stroke-width="2.5"/>
-          <circle cx="470" cy="252" r="18" stroke="#ffb13a" stroke-width="3"/>
-          <text x="352" y="240" class="marker" font-size="17" fill="#7dff3a" stroke="none">i let it go</text>
-          <text x="352" y="262" class="marker" font-size="17" fill="#7dff3a" stroke="none">to voicemail.</text>
+        <g transform="rotate(-2 430 335)" fill="none" stroke-linejoin="round">
+          <g filter="url(#glow)">
+            <path d="M342 412 L400 300 L440 360 L480 280 L518 412" stroke="#ff3fd0" stroke-width="3"/>
+            <path d="M342 412 L392 336 L440 390 L486 316 L518 380" stroke="#3ae8ff" stroke-width="2.5"/>
+            <circle cx="497" cy="233" r="13" stroke="#ffb13a" stroke-width="3"/>
+          </g>
+          <g filter="url(#glowText)" class="marker" fill="#7dff3a" stroke="none" font-size="22">
+            <text x="350" y="248">i let it go</text>
+            <text x="350" y="274">to voicemail.</text>
+          </g>
         </g>
         <g filter="url(#glow)">
           <path d="M652 395 Q700 424 750 394" fill="none" stroke="#ffe93a" stroke-width="5" stroke-linecap="round"/>
-          <line x1="660" y1="436" x2="698" y2="433" stroke="#ff3fd0" stroke-width="3" stroke-linecap="round"/>
-          <text x="664" y="424" class="marker" font-size="15" fill="#ff3fd0" transform="rotate(-4 680 420)">alive</text>
+          <line x1="648" y1="437" x2="704" y2="435" stroke="#ff3fd0" stroke-width="3" stroke-linecap="round"/>
           <circle cx="660" cy="360" r="19" fill="#eef6ff"/>
           <circle cx="740" cy="360" r="19" fill="#eef6ff"/>
-          <text x="1150" y="282" class="marker" font-size="16" fill="#7dff3a">(barely)</text>
+        </g>
+        <g filter="url(#glowText)" class="marker">
+          <text x="612" y="428" font-size="21" fill="#ff3fd0" transform="rotate(-6 640 420)">alive</text>
+          <text x="1138" y="282" font-size="22" fill="#ff3fd0">(barely)</text>
         </g>
         <circle id="pupil-l" cx="660" cy="360" r="8" fill="#0a0612"/>
         <circle id="pupil-r" cx="740" cy="360" r="8" fill="#0a0612"/>
 
         <!-- the carpet -->
-        <g id="lint" fill="#d9ecff"></g>
+        <g mask="url(#behindFurniture)">
+          <g id="lint" fill="#d9ecff"></g>
+        </g>
         <path filter="url(#glow)" d="M1180 840 C1170 810 1230 800 1250 830 C1275 860 1240 890 1210 880 C1185 895 1160 870 1180 840 Z" fill="#7dff3a" opacity="0.55"/>
 
         <!-- previous occupants -->
-        <g filter="url(#glow)" class="marker">
-          <text x="40" y="250" font-size="26" fill="#ff3fd0" transform="rotate(-6 180 240)">cole was here (2009)</text>
-          <text x="560" y="172" font-size="26" fill="#7dff3a" transform="rotate(1 820 165)">if you can read this, the blacklight works</text>
-          <text x="1085" y="422" font-size="21" fill="#ffb13a" transform="rotate(-2 1250 415)">the password is not 'password'</text>
-          <text x="1090" y="612" font-size="22" fill="#3ae8ff" transform="rotate(3 1240 605)">don't ask about the carpet</text>
-          <path d="M1250 628 C1262 660 1240 684 1216 700 M1216 700 L1236 698 M1216 700 L1222 682" fill="none" stroke="#3ae8ff" stroke-width="4" stroke-linecap="round"/>
-          <g id="tally" stroke="#ffe93a" stroke-width="4" stroke-linecap="round"></g>
-          <g id="note" fill="#3ae8ff" transform="rotate(3 940 300)"></g>
+        <g class="marker">
+          <g filter="url(#glowText)">
+            <g fill="#ff3fd0" font-size="32" transform="rotate(-6 150 245)">
+              <text x="36" y="232">cole was here</text>
+              <text x="36" y="270">(2009)</text>
+            </g>
+            <text x="810" y="174" text-anchor="middle" font-size="28" fill="#7dff3a" transform="rotate(1 810 165)">if you can read this, the blacklight works</text>
+            <g fill="#ffb13a" font-size="26" transform="rotate(-2 1190 440)">
+              <text x="1085" y="436">the password is</text>
+              <text x="1085" y="466">not 'password'</text>
+            </g>
+            <g fill="#3ae8ff" font-size="27" transform="rotate(3 1190 610)">
+              <text x="1090" y="598">don't ask about</text>
+              <text x="1090" y="630">the carpet</text>
+            </g>
+            <g id="note" fill="#3ae8ff" font-size="22" transform="rotate(3 940 300)"></g>
+          </g>
+          <g filter="url(#glow)">
+            <path d="M1250 640 C1262 666 1240 688 1214 702 M1214 702 L1236 701 M1214 702 L1221 683" fill="none" stroke="#3ae8ff" stroke-width="4" stroke-linecap="round"/>
+            <g id="tally" stroke="#ffe93a" stroke-width="4" stroke-linecap="round"></g>
+          </g>
         </g>
 
         <!-- yours -->
@@ -421,7 +478,7 @@
     const lines = NOTES[(visits - 1) % NOTES.length];
     const note = document.getElementById('note');
     lines.forEach((line, i) => {
-      const t = el('text', { x: 835, y: 250 + i * 26, 'font-size': 18 }, note);
+      const t = el('text', { x: 832, y: 244 + i * 28 }, note);
       t.textContent = line;
     });
   })();
@@ -495,9 +552,9 @@
     lampBtn.classList.toggle('on', lampOn);
     uvBtn.textContent = uvSwitch ? 'blacklight: on' : 'blacklight: off';
     uvBtn.classList.toggle('on', uvSwitch);
-    // up is on
-    document.getElementById('knob-lamp').setAttribute('y', lampOn ? 432 : 452);
-    document.getElementById('knob-uv').setAttribute('y', uvSwitch ? 432 : 452);
+    // up is on. each knob has a twin that glows under the blacklight.
+    for (const id of ['knob-lamp', 'knob-lamp-uv']) document.getElementById(id).setAttribute('y', lampOn ? 432 : 452);
+    for (const id of ['knob-uv', 'knob-uv-uv']) document.getElementById(id).setAttribute('y', uvSwitch ? 432 : 452);
   }
 
   function setLamp(on) {
