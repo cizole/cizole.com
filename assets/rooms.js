@@ -2,18 +2,19 @@
 // and every room gets a "rooms" menu next to its lobby link, so you can go
 // room to room without scrolling the lobby.
 //
-// Room numbers are permanent. A retired room stays here with `defunct: '<reason>'`:
+// The list sorts itself by number, so moving a room is just changing its `n`. Once the
+// site settles, numbers are permanent. A retired room stays here with `defunct: '<reason>'`:
 // it shows as closed (struck through, not clickable) everywhere rooms are listed.
 // A room with `hidden: true` is a secret: it's left out of every list until the
 // visitor has unlocked it (the lobby's Konami code sets `cizole.nothing`).
 (() => {
   const ALL = [
-    { n: '001', slug: 'eyes', name: 'eyes', blurb: "they're watching" },
+    { n: '001', slug: 'funky-town', name: 'funky town', blurb: 'population: you' },
     { n: '002', slug: 'button', name: 'the button', blurb: "it doesn't want this" },
     { n: '003', slug: 'trip', name: 'trip', blurb: "don't stare too long" },
     { n: '004', slug: 'escape', name: 'escape room', blurb: "there's a way out. probably." },
     { n: '005', slug: 'server-room', name: 'server room', blurb: "please don't touch anything" },
-    { n: '006', slug: 'funky-town', name: 'funky town', blurb: 'population: you' },
+    { n: '006', slug: 'eyes', name: 'eyes', blurb: "they're watching" },
     { n: '007', slug: 'roomba-room', name: 'roomba room', blurb: "it's doing its best" },
     { n: '008', slug: 'fish-tank', name: 'fish tank', blurb: 'please do not tap the glass' },
     { n: '009', slug: 'blacklight', name: 'blacklight room', blurb: 'some things only show up in the dark' },
@@ -39,6 +40,7 @@
     // the missing 023 in the lobby is the clue. about is always 999 and always last.
     { n: '999', slug: 'about', name: 'about', blurb: 'regrettably, a person' },
   ];
+  ALL.sort((a, b) => a.n.localeCompare(b.n));
   const store = {
     get(k) { try { return localStorage.getItem(k); } catch (err) { return null; } },
     set(k, v) { try { localStorage.setItem(k, v); } catch (err) { /* storage off */ } },
