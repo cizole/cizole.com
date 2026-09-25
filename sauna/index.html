@@ -1239,26 +1239,22 @@
   // ---------- the door ----------
   const doorBtn = $('#door');
   let doorOpens = 0;
+  let leaving = false;
   doorBtn.addEventListener('click', () => {
-    const tab = window.open('../freezer/', '_blank');
-    if (tab) {
-      try { tab.opener = null; } catch (err) { /* cross-origin later, fine */ }
-    }
+    if (leaving) return;
+    leaving = true;
     doorOpens++;
     doorBtn.classList.add('ajar');
-    setTimeout(() => doorBtn.classList.remove('ajar'), 1300);
     coldAir();
     temp = Math.max(120, temp - 7);
     hum = Math.max(BASE_HUM - 4, hum - 12);
     burst = Math.max(0, burst - 0.5);
     wipeAt(vw * 0.85, vh * 0.45, Math.max(vw, vh) * 0.25);
-    if (!tab) say('the door is stuck. the freezer is down the hall. it always is.');
-    else if (doorOpens === 1) say('the cold plunge is out of order. the freezer will have to do. (it opened in a new tab.)');
-    else say(pick([
-      'you let the heat out. the person on the top bench noticed.',
-      'cold air. the steam flinches.',
-      'the freezer is still there. it opened in a new tab again.',
-    ]));
+    say(doorOpens === 1
+      ? 'the cold plunge is out of order. the freezer will have to do.'
+      : pick(['you let the heat out. the person on the top bench noticed.', 'cold air. the steam flinches. so do you.']));
+    // and through the door you go
+    setTimeout(() => (window.CIZOLE_GO ? window.CIZOLE_GO('../freezer/') : location.assign('../freezer/')), 1300);
   });
 
   // ---------- everything else ----------

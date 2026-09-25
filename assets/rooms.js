@@ -67,10 +67,54 @@
     document.title = `${room.name}${room.defunct ? ' (closed)' : ''} · cizole`;
   }
 
+  // ---------- walking between rooms ----------
+  // every link inside the site drops a veil before it goes (the fade-in on arrival is in
+  // site.css). rooms that navigate after their own animation can call CIZOLE_GO(href).
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const veil = document.createElement('div');
+  veil.className = 'veil';
+  veil.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(veil);
+  let going = false;
+  function labelFor(url) {
+    const bits = url.pathname.split('/').filter(Boolean);
+    if (bits.length && /\.html?$/.test(bits[bits.length - 1])) bits.pop();
+    const r = ALL.find(x => x.slug === bits[bits.length - 1]);
+    return r ? `→ ${r.n} · ${r.name}` : bits.length ? '' : '→ lobby';
+  }
+  function go(href, label) {
+    if (going) return;
+    going = true;
+    if (reduceMotion) { location.href = href; return; }
+    veil.textContent = label == null ? labelFor(new URL(href, location.href)) : label;
+    veil.classList.add('on');
+    setTimeout(() => { location.href = href; }, 320);
+  }
+  window.CIZOLE_GO = go;
+  // coming back through the browser's history restores the page as it was, veil and all
+  addEventListener('pageshow', () => { going = false; veil.classList.remove('on'); });
+  document.addEventListener('click', e => {
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const a = e.target.closest('a[href]');
+    if (!a || a.target === '_blank' || a.hasAttribute('download') || a.origin !== location.origin) return;
+    const url = new URL(a.href);
+    if (url.pathname === location.pathname && url.hash) return;
+    e.preventDefault();
+    go(a.href);
+  });
+
   // the lobby has no lobby link and draws its own list. a room missing from this list
   // (say, a cached copy older than the room) still gets the menu, just without prev/next.
   const lobbyLink = document.querySelector('.lobby-link');
   if (!lobbyLink) return;
+
+  // came in through a basement door? that's the way back, then.
+  let from = '';
+  try { from = new URL(document.referrer || 'about:blank', location.href).pathname; } catch (err) { /* odd referrer */ }
+  if (/\/basement\/?$/.test(from) && slug !== 'basement') {
+    lobbyLink.textContent = '← basement';
+    lobbyLink.href = '../basement/';
+  }
 
   // ---------- the "rooms" menu ----------
   const btn = document.createElement('button');
@@ -135,6 +179,32 @@
     keys.className = 'rooms-keys';
     keys.textContent = 'keys: < previous room · next room >';
     foot.appendChild(keys);
+    // the rooms on either side slide in when the pointer reaches the edge of the screen
+    if (matchMedia('(pointer: fine)').matches) {
+      const edge = (r, side) => {
+        const a = document.createElement('a');
+        a.className = 'edge ' + side;
+        a.href = `../${r.slug}/`;
+        a.textContent = side === 'left' ? `← ${r.n} ${r.name}` : `${r.n} ${r.name} →`;
+        document.body.appendChild(a);
+        return a;
+      };
+      const L = edge(prev, 'left');
+      const R = edge(next, 'right');
+      let hideTimer;
+      const hide = () => { L.classList.remove('show'); R.classList.remove('show'); };
+      addEventListener('pointermove', e => {
+        const tab = e.clientX < 28 ? L : e.clientX > innerWidth - 28 ? R : null;
+        if (!tab) return;
+        tab.classList.add('show');
+        clearTimeout(hideTimer);
+        hideTimer = setTimeout(hide, 2500);
+      }, { passive: true });
+      for (const tab of [L, R]) {
+        tab.addEventListener('pointerenter', () => clearTimeout(hideTimer));
+        tab.addEventListener('pointerleave', () => { hideTimer = setTimeout(hide, 700); });
+      }
+    }
     // < and > hop rooms from anywhere, as long as you're not typing
     document.addEventListener('keydown', e => {
       if (e.ctrlKey || e.metaKey || e.altKey) return;

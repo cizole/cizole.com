@@ -969,7 +969,7 @@
               <hr class="rainbow">
               <h2>cool links</h2>
               <ul class="links">
-                <li><a href="../" target="_blank" rel="noopener">the best page on the whole internet</a></li>
+                <li><a href="../">the best page on the whole internet</a></li>
                 <li><a href="#" data-dead="dave moved his page. he did not say where.">dave's page (moved??)</a></li>
                 <li><a href="#" data-dead="the download stopped at 97%. as is tradition.">free screensavers!!!</a></li>
                 <li><a href="#" data-dead="coming soon. it has been coming soon since 1998.">my snowboarding pics (coming soon)</a></li>
@@ -985,9 +985,9 @@
               <ul class="gb-list" id="gb-list"></ul>
               <div class="webring">
                 <b>~ the cizole webring ~</b>
-                <a id="ring-prev" href="../80s/" target="_blank" rel="noopener">&lt;&lt; prev</a> |
-                <a id="ring-random" href="../eyes/" target="_blank" rel="noopener">random</a> |
-                <a id="ring-next" href="../other-window/" target="_blank" rel="noopener">next &gt;&gt;</a> |
+                <a id="ring-prev" href="../80s/">&lt;&lt; prev</a> |
+                <a id="ring-random" href="../eyes/">random</a> |
+                <a id="ring-next" href="../other-window/">next &gt;&gt;</a> |
                 <a href="#" data-dead="webring membership is closed. it was always closed.">join</a>
                 <br><small>(opens in a new window. you'll stay connected here.)</small>
               </div>
@@ -1510,9 +1510,8 @@
   });
   $('#hp-error-ok').addEventListener('click', () => { hpError.hidden = true; });
 
-  // the webring: every link opens in a new window so this connection survives.
-  // the ring is every open room in assets/rooms.js, which loads after this script,
-  // so the links get filled in once the page has finished loading.
+  // the webring: the ring is every open room in assets/rooms.js, which loads after
+  // this script, so the links get filled in once the page has finished loading.
   const ring = () => (window.CIZOLE_ROOMS || []).filter(r => !r.defunct).map(r => r.slug);
   addEventListener('DOMContentLoaded', () => {
     const RING = ring();
@@ -1524,11 +1523,7 @@
   $('#ring-random').addEventListener('click', e => {
     const others = ring().filter(r => r !== '90s');
     if (others.length) e.currentTarget.href = `../${pick(others)}/`;
-    say('the webring opened another window. you are still connected here. the phone line is still ours.');
   });
-  ['#ring-prev', '#ring-next'].forEach(sel => $(sel).addEventListener('click', () => {
-    say('the webring opened another window. you are still connected here.');
-  }));
 
   const GB_KEY = 'cizole.90s.guestbook';
   const SEED = [

@@ -1272,20 +1272,11 @@
       say("it's already open. the knob is just a knob now.");
       return;
     }
-    // opened right here in the click, so the browser allows the new tab
-    const tab = window.open('../sauna/', '_blank');
-    if (tab) {
-      try { tab.opener = null; } catch (err) { /* cross-origin, fine */ }
-    }
     beyond.dataset.view = 'sauna';
     setDoor('open');
     say('the door opens into the sauna. of course it does.');
-    if (!tab) {
-      // new tab blocked: walk through the door instead
-      setTimeout(() => location.assign('../sauna/'), 1600);
-      return;
-    }
-    scheduleClose(4500, 'it closed again. they do that.');
+    // and you walk through it
+    setTimeout(() => (window.CIZOLE_GO ? window.CIZOLE_GO('../sauna/') : location.assign('../sauna/')), 1600);
   });
 
   // back from another tab: the door was open the whole time
