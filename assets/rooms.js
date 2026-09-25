@@ -198,7 +198,7 @@
         if (!tab) return;
         tab.classList.add('show');
         clearTimeout(hideTimer);
-        hideTimer = setTimeout(hide, 2500);
+        hideTimer = setTimeout(hide, 3500);
       }, { passive: true });
       for (const tab of [L, R]) {
         tab.addEventListener('pointerenter', () => clearTimeout(hideTimer));
