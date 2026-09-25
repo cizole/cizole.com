@@ -555,6 +555,8 @@
     transition: color 0.4s;
   }
   .stage.boots-off .mat { color: var(--acid); }
+  /* the mat has more to say than room to say it. longer lines get smaller letters. */
+  .mat.wordy { font-size: 1.45cqw; letter-spacing: 0.05em; line-height: 1.15; text-wrap: balance; }
   .sock { left: 33%; top: 86%; width: 3.6%; height: 4%; z-index: 12; }
   .sock[hidden] { display: none; }
   .sock svg { width: 100%; height: 100%; display: block; }
@@ -997,10 +999,13 @@
 
   // ---------- the mat has a tone ----------
   const matText = $('#mat-text');
+  const matEl = $('#mat');
   function updateMat() {
-    if (!S.worn) { matText.textContent = 'thank you.'; return; }
     const n = S.printCount;
-    matText.textContent = n < 12 ? 'wipe' : n < 26 ? 'wipe.' : n < 45 ? 'WIPE' : n < 75 ? 'wipe. please.' : n < 120 ? "you're not, are you." : 'fine.';
+    const text = !S.worn ? 'thank you.'
+      : n < 12 ? 'wipe' : n < 26 ? 'wipe.' : n < 45 ? 'WIPE' : n < 75 ? 'wipe. please.' : n < 120 ? "you're not, are you." : 'fine.';
+    matText.textContent = text;
+    matEl.classList.toggle('wordy', text.length > 5);
   }
 
   // ---------- mud on things ----------
