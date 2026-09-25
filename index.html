@@ -158,7 +158,7 @@
     a.href = r.slug + '/';
     const blurb = span('blurb', r.blurb);
     const tags = [];
-    if (r.featured) tags.push('recommended by the management.');
+    if (r.featured) tags.push('recommended by management');
     if (r.slug === last) {
       a.classList.add('last');
       lastRow = li;
@@ -198,10 +198,26 @@
   else if (seen >= open.length) footer.textContent = "you've been in all of them. there is no prize. the prize was the rooms.";
   else footer.textContent = `more rooms are being dug. you've been in ${seen} of ${open.length}.`;
 
-  // back from a room: pick up where you left off instead of at the top
+  // back from a room: the lobby is scrolled exactly where you left it (per tab, so a
+  // fresh visit still starts at the top). the list is already built, so this lands
+  // before the first paint instead of jumping after it.
+  const SCROLL_KEY = 'cizole.lobby-scroll';
+  addEventListener('pagehide', () => {
+    try { sessionStorage.setItem(SCROLL_KEY, String(Math.round(scrollY))); } catch (err) { /* storage off */ }
+  });
+  let savedY = null;
+  try { savedY = sessionStorage.getItem(SCROLL_KEY); } catch (err) { /* storage off */ }
+  if (savedY !== null && Number.isFinite(+savedY)) {
+    const y = +savedY;
+    scrollTo(0, y);
+    // late fonts can nudge the rows; put it back unless you've already scrolled
+    if (document.fonts) document.fonts.ready.then(() => { if (Math.abs(scrollY - y) < 40) scrollTo(0, y); });
+  }
+  // if you walked a few rooms over with < and >, the one you were just in may be off screen
   if (lastRow) {
     addEventListener('load', () => {
-      if (lastRow.getBoundingClientRect().bottom > innerHeight) lastRow.scrollIntoView({ block: 'center' });
+      const r = lastRow.getBoundingClientRect();
+      if (r.top < 0 || r.bottom > innerHeight) lastRow.scrollIntoView({ block: 'center' });
     });
   }
 
