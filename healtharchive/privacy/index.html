@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>healtharchive privacy · cizole</title>
+<link rel="icon" href="../../favicon.svg?v=2" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/site.css">
+<style>
+  .page { max-width: 680px; margin: 0 auto; padding: 72px 20px 56px; line-height: 1.65; font-size: 15px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: var(--dim); margin: 0 0 32px; }
+  h2 { font-size: 15px; color: var(--acid); margin: 32px 0 8px; font-weight: 400; }
+  ul { padding-left: 20px; }
+  code { color: var(--dim); }
+</style>
+</head>
+<body>
+<a class="lobby-link" href="../../">&larr; lobby</a>
+<main class="page">
+  <h1>HealthArchive privacy policy</h1>
+  <p class="sub">effective November 21, 2026</p>
+
+  <p>HealthArchive is a personal tool that runs only on its owner's computer. It is not offered to the public and
+    has no servers. This policy describes how it handles Google user data.</p>
+
+  <h2>google data it accesses</h2>
+  <p>HealthArchive requests a single Google permission, <code>drive.file</code>. With it, the tool can access only:</p>
+  <ul>
+    <li>Drive folders you explicitly select in Google's folder picker, and</li>
+    <li>files and folders the tool itself creates.</li>
+  </ul>
+  <p>It cannot see or read anything else in your Google Drive.</p>
+
+  <h2>how that data is used</h2>
+  <ul>
+    <li>to upload files from folders on your computer into the Drive folder you selected;</li>
+    <li>to read basic metadata of those uploads (name, folder, size, checksum, link) to confirm each copy is complete
+      and to avoid uploading the same file twice.</li>
+  </ul>
+  <p>The tool does not change sharing settings, does not delete Drive files, and does not read files it did not create.</p>
+
+  <h2>storage</h2>
+  <p>The Google sign-in token, the upload log, and the settings are stored only on the computer running the tool.
+    Nothing is sent to the developer or to any third party. There is no analytics or advertising.</p>
+
+  <h2>sharing</h2>
+  <p>Google user data is not sold, shared, or transferred to anyone. HealthArchive's use of information received
+    from Google APIs adheres to the
+    <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener">Google API
+    Services User Data Policy</a>, including the Limited Use requirements.</p>
+
+  <h2>removing access</h2>
+  <p>You can revoke HealthArchive's access at any time at
+    <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">myaccount.google.com/permissions</a>,
+    and delete its local data by removing its data folder.</p>
+
+  <h2>contact</h2>
+  <p>Questions go to the owner of this website, via the <a href="../../about/">about</a> page.</p>
+</main>
+<script src="../../assets/away.js"></script>
+</body>
+</html>

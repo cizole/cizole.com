@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>healtharchive · cizole</title>
+<link rel="icon" href="../favicon.svg?v=2" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/site.css">
+<style>
+  .page { max-width: 680px; margin: 0 auto; padding: 72px 20px 56px; line-height: 1.65; font-size: 15px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: var(--dim); margin: 0 0 32px; }
+  h2 { font-size: 15px; color: var(--acid); margin: 32px 0 8px; font-weight: 400; }
+  p, li { color: var(--fg); }
+  ul { padding-left: 20px; }
+  .small { color: var(--dim); font-size: 13px; margin-top: 40px; }
+</style>
+</head>
+<body>
+<a class="lobby-link" href="../">&larr; lobby</a>
+<main class="page">
+  <h1>HealthArchive</h1>
+  <p class="sub">not a room. a utility closet.</p>
+
+  <p>HealthArchive is a small personal tool that runs on one computer. It watches a few local folders and copies
+    finished files from them into a Google Drive folder that its owner chose, then checks that each copy arrived intact.</p>
+
+  <h2>what it does</h2>
+  <ul>
+    <li>uploads files from local folders to a chosen Google Drive folder, unchanged</li>
+    <li>verifies each upload by size and checksum</li>
+    <li>keeps a local log so nothing is uploaded twice</li>
+  </ul>
+
+  <h2>what it doesn't do</h2>
+  <ul>
+    <li>it is not a service. there is no server, no account, and nobody else's data.</li>
+    <li>it can only see Drive items it created or that you explicitly picked.</li>
+    <li>it never shares, sells, or sends anything anywhere except your own Drive.</li>
+  </ul>
+
+  <p><a href="privacy/">privacy policy</a></p>
+
+  <p class="small">it is just a script. it would like that noted.</p>
+</main>
+<script src="../assets/away.js"></script>
+</body>
+</html>
